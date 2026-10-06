@@ -166,10 +166,16 @@ export default function Page() {
     <button className="cal-nav" id="cal-next">›</button>
     <button className="cal-today-btn" id="cal-today-btn">Heute</button>
   </div>
-  <div className="cal-weekdays">
-    <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
+  <div className="ladder-board" id="ladder-board">
+    <div className="cal-grid" id="cal-grid"></div>
+    <svg className="ladder-svg" id="ladder-svg" aria-hidden="true"></svg>
+    <div className="pawn-layer" id="pawn-layer"></div>
   </div>
-  <div className="cal-grid" id="cal-grid"></div>
+  <div className="ladder-controls">
+    <button className="ladder-die" id="ladder-die" title="Würfeln" aria-label="Würfeln"></button>
+    <div className="ladder-status" id="ladder-status"></div>
+    <button className="ladder-reset" id="ladder-reset">Neues Spiel</button>
+  </div>
 
   <div className="cal-day-panel">
     <div className="panel-label" id="cal-selected-label">Eintrag hinzufügen</div>

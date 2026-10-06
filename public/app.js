@@ -1397,30 +1397,97 @@ function fmtDate(d){
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
+// Leitern (hoch) und Seile (runter) für den angezeigten Monat – fest pro Monat, damit das Brett gleich bleibt
+let calLinks = {}; // Tag -> Zieltag
+let calGameKey = null;
+function buildCalLinks(n, seed){
+  let x = seed;
+  const rnd = () => { x = (x * 9301 + 49297) % 233280; return x / 233280; };
+  const rows = Math.ceil(n / 7);
+  // Tag an einer Brett-Position (Reihe von unten, Spalte von links)
+  const dayAt = (row, col) => { const d = row * 7 + (row % 2 === 0 ? col : 6 - col) + 1; return d >= 1 && d <= n ? d : null; };
+  const used = new Set([1, n]);
+  const usedGap = new Set(); // "Lücke zwischen Reihe r und r+1 / Spalte" – so kreuzen sich Leitern und Seile nie
+  const links = {};
+  const tryAdd = (up) => {
+    for(let tries = 0; tries < 300; tries++){
+      const row = up ? Math.floor(rnd() * (rows - 1)) : 1 + Math.floor(rnd() * (rows - 1));
+      const col = Math.floor(rnd() * 7);
+      const from = dayAt(row, col);
+      const span = up && rnd() < 0.3 && row + 2 < rows ? 2 : 1;
+      const toCol = up ? col : Math.max(0, Math.min(6, col + (rnd() < 0.5 ? -1 : 1)));
+      const to = dayAt(up ? row + span : row - 1, toCol);
+      if(!from || !to || used.has(from) || used.has(to)) continue;
+      const gaps = [];
+      for(let g = Math.min(row, up ? row + span : row - 1); g < Math.max(row, up ? row + span : row - 1); g++){
+        for(let c = Math.min(col, toCol); c <= Math.max(col, toCol); c++) gaps.push(g + '/' + c);
+      }
+      if(gaps.some(k => usedGap.has(k))) continue;
+      gaps.forEach(k => usedGap.add(k));
+      used.add(from); used.add(to);
+      links[from] = to;
+      return;
+    }
+  };
+  for(let k = 0; k < 3; k++){ tryAdd(true); tryAdd(false); }
+  return links;
+}
+// Position eines Tages auf dem Brett: Tag 1 unten links, dann in Schlangenlinien nach oben
+function calBoardPos(day, rows){
+  const row = Math.floor((day - 1) / 7);
+  const i = (day - 1) % 7;
+  return { gridRow: rows - row, gridCol: (row % 2 === 0 ? i : 6 - i) + 1, row };
+}
+
 function renderCalendar(){
   calMonthLabel.textContent = monthNames[calViewMonth] + ' ' + calViewYear;
 
-  const firstOfMonth = new Date(calViewYear, calViewMonth, 1);
-  // Montag = 0 ... Sonntag = 6
-  const startOffset = (firstOfMonth.getDay() + 6) % 7;
   const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+  const rows = Math.ceil(daysInMonth / 7);
+  calLinks = buildCalLinks(daysInMonth, calViewYear * 12 + calViewMonth + 7);
 
   calGrid.innerHTML = '';
+  calGrid.style.gridTemplateRows = `repeat(${rows}, auto)`;
 
-  for(let i = 0; i < startOffset; i++){
-    const empty = document.createElement('div');
-    empty.className = 'cal-day empty';
-    calGrid.appendChild(empty);
+  // Bahn: pro Reihe ein hellblaues Band, an den Wendestellen eine runde Kurve
+  for(let row = 0; row < rows; row++){
+    const band = document.createElement('div');
+    band.className = 'ladder-band';
+    band.style.gridRow = String(rows - row);
+    band.style.gridColumn = '1 / -1';
+    // Aussenecken der Kurven rund: Kurve nach oben (rechts bei geraden Reihen) und Kurve nach unten
+    const R = '30px', r0 = '6px';
+    const upSide = row < rows - 1 ? (row % 2 === 0 ? 'right' : 'left') : null;
+    const downSide = row > 0 ? ((row - 1) % 2 === 0 ? 'right' : 'left') : null;
+    const tl = downSide === 'left' ? R : r0, tr = downSide === 'right' ? R : r0;
+    const br = upSide === 'right' ? R : r0, bl = upSide === 'left' ? R : r0;
+    band.style.borderRadius = `${tl} ${tr} ${br} ${bl}`;
+    calGrid.appendChild(band);
+    if(row < rows - 1){
+      const turn = document.createElement('div');
+      const right = row % 2 === 0;
+      turn.className = 'ladder-turn ' + (right ? 'right' : 'left');
+      turn.style.gridRow = `${rows - row - 1} / ${rows - row + 1}`;
+      turn.style.gridColumn = right ? '7' : '1';
+      calGrid.appendChild(turn);
+    }
   }
 
   for(let day = 1; day <= daysInMonth; day++){
     const dateObj = new Date(calViewYear, calViewMonth, day);
     const dateStr = fmtDate(dateObj);
+    const pos = calBoardPos(day, rows);
     const cell = document.createElement('div');
-    cell.className = 'cal-day';
+    cell.className = 'cal-day' + (day % 2 === 0 ? ' dark' : '');
+    cell.dataset.day = day;
+    cell.style.gridRow = String(pos.gridRow);
+    cell.style.gridColumn = String(pos.gridCol);
+    if(calLinks[day]) cell.classList.add(calLinks[day] > day ? 'up' : 'down');
+    if(day === 1) cell.classList.add('start');
+    if(day === daysInMonth) cell.classList.add('goal');
     if(dateStr === fmtDate(today)) cell.classList.add('today');
     if(dateStr === calSelectedDate) cell.classList.add('selected');
-    cell.textContent = day;
+    cell.innerHTML = `<span class="cal-wd">${weekdayFull[dateObj.getDay()].slice(0, 2)}</span>${day}`;
     if(calEvents[dateStr] && calEvents[dateStr].length > 0){
       const dot = document.createElement('div');
       dot.className = 'cal-dot';
@@ -1433,7 +1500,139 @@ function renderCalendar(){
     });
     calGrid.appendChild(cell);
   }
+  // Neues Spiel nur bei einem anderen Monat, nicht beim Anklicken eines Tages
+  const gameKey = calViewYear + '-' + calViewMonth;
+  if(gameKey !== calGameKey){ calGameKey = gameKey; ladderGame.reset(daysInMonth); }
+  requestAnimationFrame(drawCalLinks);
 }
+
+// Leitern und Seile über das Brett zeichnen
+const ladderSvg = document.getElementById('ladder-svg');
+function calCellCenter(day){
+  const cell = calGrid.querySelector(`.cal-day[data-day="${day}"]`);
+  if(!cell) return null;
+  return { x: calGrid.offsetLeft + cell.offsetLeft + cell.offsetWidth / 2, y: calGrid.offsetTop + cell.offsetTop + cell.offsetHeight / 2, w: cell.offsetWidth, h: cell.offsetHeight };
+}
+function drawCalLinks(){
+  if(!ladderSvg || calGrid.offsetParent === null) return;
+  let out = '';
+  const f = (n) => n.toFixed(1);
+  Object.entries(calLinks).forEach(([fromStr, to]) => {
+    const from = +fromStr;
+    const a = calCellCenter(from), b = calCellCenter(to);
+    if(!a || !b) return;
+    if(to > from){
+      // Holzleiter vom unteren zum oberen Tag
+      // Leiter steht am oberen Rand des Starttags und reicht bis zum unteren Rand des Zieltags (Zahlen bleiben frei)
+      const sx = a.x - a.w * 0.3, sy = a.y - a.h * 0.28, ex = b.x - b.w * 0.3, ey = b.y + b.h * 0.34;
+      const dx = ex - sx, dy = ey - sy, len = Math.hypot(dx, dy);
+      const nx = -dy / len * 6, ny = dx / len * 6;
+      out += `<g class="ladder">`;
+      const rungs = Math.max(3, Math.round(len / 14));
+      for(let k = 1; k < rungs; k++){
+        const t = k / rungs, px = sx + (ex - sx) * t, py = sy + (ey - sy) * t;
+        out += `<line x1="${f(px - nx)}" y1="${f(py - ny)}" x2="${f(px + nx)}" y2="${f(py + ny)}" stroke="#7a4a1c" stroke-width="2.6" stroke-linecap="round"/>`;
+      }
+      [-1, 1].forEach(side => {
+        out += `<line x1="${f(sx + nx * side)}" y1="${f(sy + ny * side)}" x2="${f(ex + nx * side)}" y2="${f(ey + ny * side)}" stroke="#5a3311" stroke-width="4.6" stroke-linecap="round"/>`;
+        out += `<line x1="${f(sx + nx * side)}" y1="${f(sy + ny * side)}" x2="${f(ex + nx * side)}" y2="${f(ey + ny * side)}" stroke="#c48a4a" stroke-width="2.6" stroke-linecap="round"/>`;
+      });
+      out += `</g>`;
+    } else {
+      // Seil, das vom oberen Tag nach unten hängt
+      // Seil hängt von der rechten unteren Ecke des Starttags zur rechten oberen Ecke des Zieltags
+      const ax = a.x + a.w * 0.3, ay = a.y + a.h * 0.3, bx = b.x + b.w * 0.3, by = b.y - b.h * 0.3;
+      const mx = (ax + bx) / 2 + (bx > ax ? -1 : 1) * 14 + (bx === ax ? 14 : 0);
+      const my = (ay + by) / 2 + 8;
+      const d = `M${f(ax)},${f(ay)} Q${f(mx)},${f(my)} ${f(bx)},${f(by)}`;
+      out += `<path d="${d}" fill="none" stroke="#2a2a2a" stroke-width="3.6" stroke-linecap="round" opacity="0.85"/>`;
+      out += `<path d="${d}" fill="none" stroke="#e0262b" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="4 4"/>`;
+      out += `<circle cx="${f(ax)}" cy="${f(ay)}" r="3.4" fill="#2a2a2a"/>`;
+    }
+  });
+  ladderSvg.innerHTML = out;
+  ladderGame.place(true);
+}
+// Neu zeichnen, wenn sich das Brett in der Grösse ändert (auch beim Wechsel in den Kalender-Tab)
+const ladderBoardEl = document.getElementById('ladder-board');
+if(ladderBoardEl && 'ResizeObserver' in window) new ResizeObserver(() => drawCalLinks()).observe(ladderBoardEl);
+
+// Leiterspiel: zwei Figuren, ein Würfel. Leiter = hoch, Seil = runter. Wer genau auf dem letzten Tag landet, gewinnt.
+const ladderGame = (() => {
+  const dieBtn = document.getElementById('ladder-die');
+  const statusEl = document.getElementById('ladder-status');
+  const layer = document.getElementById('pawn-layer');
+  const players = [{ name: 'Rot', cls: 'red', pos: 1, el: null }, { name: 'Blau', cls: 'blue', pos: 1, el: null }];
+  let n = 31, turn = 0, busy = false, winner = null;
+  const pips = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
+  function showDie(v){
+    if(!dieBtn) return;
+    dieBtn.innerHTML = Array.from({ length: 9 }, (_, i) => pips[v].includes(i + 1) ? '<span></span>' : '<i></i>').join('');
+  }
+  function status(){
+    if(!statusEl) return;
+    const p = players[turn];
+    statusEl.innerHTML = winner
+      ? `<span class="${winner.cls}">${winner.name}</span> gewinnt! 🎉`
+      : `<span class="${p.cls}">${p.name}</span> ist dran – würfeln!`;
+    players.forEach((pl, i) => pl.el && pl.el.classList.toggle('active', !winner && i === turn && !busy));
+  }
+  function place(instant){
+    if(!layer) return;
+    players.forEach((pl, i) => {
+      if(!pl.el){ pl.el = document.createElement('div'); pl.el.className = 'pawn ' + pl.cls; layer.appendChild(pl.el); }
+      const c = calCellCenter(pl.pos);
+      if(!c) return;
+      const share = players.filter(o => o.pos === pl.pos).length > 1;
+      const ox = share ? (i === 0 ? -9 : 9) : 0;
+      if(instant) pl.el.style.transition = 'none';
+      pl.el.style.transform = `translate(${(c.x - 11 + ox).toFixed(1)}px, ${(c.y - 22).toFixed(1)}px)`;
+      if(instant){ void pl.el.offsetWidth; pl.el.style.transition = ''; }
+    });
+  }
+  const wait = (ms) => new Promise(res => setTimeout(res, ms));
+  async function roll(){
+    if(busy || winner) return;
+    busy = true; status();
+    dieBtn.classList.add('rolling');
+    for(let k = 0; k < 6; k++){ showDie(1 + Math.floor(Math.random() * 6)); await wait(90); }
+    const v = 1 + Math.floor(Math.random() * 6);
+    showDie(v);
+    dieBtn.classList.remove('rolling');
+    const p = players[turn];
+    // Feld für Feld weiterziehen; wer über das Ziel hinaus würfelt, läuft zurück
+    let dir = 1;
+    for(let k = 0; k < v; k++){
+      if(p.pos === n) dir = -1;
+      p.pos += dir;
+      place(false);
+      await wait(260);
+    }
+    if(calLinks[p.pos]){
+      await wait(250);
+      p.el.classList.add('climb');
+      p.pos = calLinks[p.pos];
+      place(false);
+      await wait(950);
+      p.el.classList.remove('climb');
+    }
+    if(p.pos === n) winner = p;
+    else if(v !== 6) turn = (turn + 1) % players.length; // bei einer 6 nochmal
+    busy = false;
+    status();
+  }
+  function reset(days){
+    n = days || n;
+    players.forEach(pl => { pl.pos = 1; });
+    turn = 0; winner = null; busy = false;
+    showDie(1);
+    status();
+  }
+  if(dieBtn) dieBtn.addEventListener('click', roll);
+  const resetBtn = document.getElementById('ladder-reset');
+  if(resetBtn) resetBtn.addEventListener('click', () => { reset(); place(true); });
+  return { reset, place };
+})();
 
 function renderCalEntries(){
   const d = new Date(calSelectedDate + 'T12:00:00');

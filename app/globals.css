@@ -1455,6 +1455,13 @@
   .cal-day .cal-dot{
     position:absolute; bottom:5px; right:6px; width:6px; height:6px; border-radius:50%; background:#e0262b;
   }
+  /* Passende Objekte zu den Figuren des Monats – gross im Feld, die Zahl verschwindet dort */
+  .cal-deco{
+    position:absolute; left:14%; top:16%; width:72%; height:72%; pointer-events:none;
+    transform:rotate(var(--tilt, 0deg)); filter: drop-shadow(0 2px 2px rgba(10,40,80,0.4));
+  }
+  .cal-deco svg{ display:block; width:100%; height:100%; }
+  .cal-day.has-deco .cal-num{ visibility:hidden; }
   .ladder-svg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:2; overflow:visible; }
   .pawn-layer{ position:absolute; inset:0; pointer-events:none; z-index:3; }
   .pawn{
@@ -1472,6 +1479,13 @@
     border-radius: 45% 45% 18% 18% / 70% 70% 22% 22%;
     background: radial-gradient(circle at 35% 30%, var(--pawn-hi), var(--pawn) 55%, var(--pawn-lo));
   }
+  .pawn.char::before, .pawn.char::after{ display:none; }
+  .pawn.char svg{ display:block; width:100%; height:100%; overflow:visible; }
+  .pawn.char{ width:36px; height:47px; }
+  .pawn.thor, .pawn.loki{ width:36px; height:47px; }
+  .pawn.tom{ width:38px; height:44px; }
+  .pawn.spongebob, .pawn.patrick{ width:36px; height:47px; }
+  .pawn.jerry{ width:28px; height:34px; }
   .pawn.red{ --pawn:#d8202a; --pawn-hi:#ff8a8a; --pawn-lo:#8a0f14; }
   .pawn.blue{ --pawn:#2a7fd0; --pawn-hi:#9fd2ff; --pawn-lo:#123f73; }
   .pawn.active{ animation: pawn-wiggle 1s ease-in-out infinite; }
@@ -1490,6 +1504,9 @@
   @keyframes die-roll{ 0%{ transform:rotate(0); } 30%{ transform:rotate(-25deg) translateY(-6px); } 60%{ transform:rotate(200deg) translateY(-3px); } 100%{ transform:rotate(360deg); } }
   .ladder-status{ flex:1; font-family:'Oswald'; font-weight:600; font-size:1.05rem; text-transform:uppercase; letter-spacing:0.02em; }
   .ladder-status .red{ color:#ff5a5f; } .ladder-status .blue{ color:#5fb0ff; }
+  .ladder-status .thor{ color:#ff5a5f; } .ladder-status .loki{ color:#4fc27a; }
+  .ladder-status .tom{ color:#9fb3cc; } .ladder-status .jerry{ color:#e09a5a; }
+  .ladder-status .spongebob{ color:#f6e04b; } .ladder-status .patrick{ color:#f59aa6; }
   .ladder-reset{
     background:var(--board-2); color:rgb(var(--fg)); border:1px solid var(--line); border-radius:8px;
     height:36px; padding:0 14px; font-family:'JetBrains Mono'; font-weight:700; font-size:0.72rem;
@@ -1503,7 +1520,11 @@
     .cal-day.start::after, .cal-day.goal::after{ font-size:0.4rem; bottom:1px; }
     .ladder-controls{ gap:10px; }
     .cal-day .cal-wd{ display:none; }
-    .pawn{ transform-origin:50% 100%; }
+    .pawn.char{ width:28px; height:37px; }
+    .pawn.thor, .pawn.loki{ width:28px; height:37px; }
+    .pawn.tom{ width:30px; height:35px; }
+    .pawn.spongebob, .pawn.patrick{ width:28px; height:37px; }
+    .pawn.jerry{ width:22px; height:27px; }
   }
 
   .cal-day-panel{ max-width:640px; }

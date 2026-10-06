@@ -1400,6 +1400,7 @@ function fmtDate(d){
 // Leitern (hoch) und Seile (runter) für den angezeigten Monat – fest pro Monat, damit das Brett gleich bleibt
 let calLinks = {}; // Tag -> Zieltag
 let calGameKey = null;
+let calDecoNames = [];
 function buildCalLinks(n, seed){
   let x = seed;
   const rnd = () => { x = (x * 9301 + 49297) % 233280; return x / 233280; };
@@ -1432,6 +1433,74 @@ function buildCalLinks(n, seed){
   for(let k = 0; k < 3; k++){ tryAdd(true); tryAdd(false); }
   return links;
 }
+// Passende Objekte auf dem Spielbrett zu den Figuren des Monats (kleine Bildchen, selbst gezeichnet)
+const boardDecoIcons = {
+  cheese: '<path d="M2 15 L16 6 L22 12 L22 19 L2 19 Z" fill="#f7c948" stroke="#b58a0f" stroke-width="0.8"/><path d="M2 15 L22 12" stroke="#b58a0f" stroke-width="0.8"/><circle cx="8" cy="16.5" r="1.4" fill="#d9a520"/><circle cx="15" cy="16" r="1.8" fill="#d9a520"/><circle cx="18" cy="10.8" r="1" fill="#d9a520"/>',
+  yarn: '<circle cx="11" cy="12" r="8" fill="#e0609a" stroke="#a0306a" stroke-width="0.8"/><path d="M5 8 Q11 12 17 6 M4 13 Q11 17 18 9 M6 18 Q12 19 19 13 M9 4.5 Q7 12 11 20" fill="none" stroke="#a0306a" stroke-width="0.8"/><path d="M18 16 Q22 18 21 22" fill="none" stroke="#e0609a" stroke-width="1.2"/>',
+  mousetrap: '<rect x="2" y="13" width="20" height="7" rx="1" fill="#c48a4a" stroke="#7a4a1c" stroke-width="0.8"/><path d="M5 13 Q5 6 12 6 Q19 6 19 13" fill="none" stroke="#9aa3ad" stroke-width="1.4"/><path d="M13 15 L18 15 L16 12 Z" fill="#f7c948"/>',
+  hammer: '<rect x="10.5" y="10" width="3" height="12" rx="1" fill="#7a4a24"/><rect x="4" y="3" width="16" height="8" rx="1.5" fill="#9aa3ad" stroke="#4d545c" stroke-width="0.8"/><path d="M4 7 h16" stroke="#4d545c" stroke-width="0.5"/>',
+  lightning: '<path d="M14 1 L4 13 L11 13 L9 23 L20 9 L13 9 Z" fill="#f6d43a" stroke="#b58a0f" stroke-width="0.8" stroke-linejoin="round"/>',
+  hornhelmet: '<path d="M5 18 C5 10 19 10 19 18 Z" fill="#d4a933" stroke="#8a6a12" stroke-width="0.8"/><path d="M7 12 C4 8 3 4 4 1 C6 4 8 7 10 10 Z M17 12 C20 8 21 4 20 1 C18 4 16 7 14 10 Z" fill="#d4a933" stroke="#8a6a12" stroke-width="0.8"/><rect x="4" y="17" width="16" height="3" fill="#2e8a4c"/>',
+  jellyfish: '<path d="M3 12 C3 4 21 4 21 12 Z" fill="#f2a5d6" stroke="#b0508a" stroke-width="0.8"/><circle cx="9" cy="8" r="1.2" fill="#d36ab0"/><circle cx="15" cy="9" r="1" fill="#d36ab0"/><path d="M6 12 q-1 4 1 9 M10 12 q1 4 -1 9 M14 12 q-1 4 1 9 M18 12 q1 4 -1 9" fill="none" stroke="#b0508a" stroke-width="1"/>',
+  burger: '<path d="M3 11 C3 4 21 4 21 11 Z" fill="#e0a050" stroke="#9a6020" stroke-width="0.8"/><rect x="2.5" y="11" width="19" height="2.2" rx="1" fill="#5fb04a"/><rect x="3" y="13" width="18" height="3" rx="1" fill="#7a3a1a"/><rect x="2.5" y="15.6" width="19" height="1.6" fill="#f7c948"/><path d="M3 17.2 h18 v1.8 q0 2 -2 2 h-14 q-2 0 -2 -2 Z" fill="#e0a050" stroke="#9a6020" stroke-width="0.8"/><circle cx="9" cy="7" r="0.5" fill="#fff"/><circle cx="14" cy="6" r="0.5" fill="#fff"/>',
+  pineapple: '<path d="M12 8 L9 1 L12 4 L15 1 Z M12 8 L6 3 M12 8 L18 3" stroke="#3fa64a" stroke-width="1.6" fill="#3fa64a" stroke-linecap="round"/><ellipse cx="12" cy="15" rx="6.5" ry="8" fill="#f2a91a" stroke="#a86a0a" stroke-width="0.8"/><path d="M7 11 L17 21 M6 16 L13 23 M9 8 L18 17 M17 11 L7 21 M18 16 L11 23 M15 8 L6 17" stroke="#a86a0a" stroke-width="0.5"/><rect x="10" y="13" width="2" height="3" fill="#7a3a1a"/>',
+  fedora: '<ellipse cx="12" cy="17" rx="11" ry="3.5" fill="#8a5a2b" stroke="#5a3a18" stroke-width="0.8"/><path d="M5 17 C5 8 8 6 12 8 C16 6 19 8 19 17 Z" fill="#a8723a" stroke="#5a3a18" stroke-width="0.8"/><rect x="5" y="13.5" width="14" height="2.5" fill="#3a2410"/>',
+  wrench: '<path d="M5 19 L14 10 A4.5 4.5 0 0 1 19.5 3.5 L17 6 L18 8 L20 9 L22.5 6.5 A4.5 4.5 0 0 1 16 12 L7 21 Z" fill="#9aa3ad" stroke="#4d545c" stroke-width="0.8" stroke-linejoin="round"/>',
+  rocket: '<path d="M12 1 C17 5 17 13 15 18 L9 18 C7 13 7 5 12 1 Z" fill="#f4f4f4" stroke="#6b737b" stroke-width="0.8"/><circle cx="12" cy="9" r="2" fill="#5fb0ff" stroke="#2f5fae" stroke-width="0.6"/><path d="M9 13 L5 18 L9 18 Z M15 13 L19 18 L15 18 Z" fill="#e0262b"/><path d="M10 18 L12 23 L14 18 Z" fill="#f6a01a"/>',
+  portal: '<ellipse cx="12" cy="12" rx="9" ry="11" fill="#7cf06a" stroke="#2f9a2a" stroke-width="1"/><ellipse cx="12" cy="12" rx="6" ry="8" fill="#b6ff9a"/><path d="M12 5 C17 7 17 15 12 16 C9 16 8 12 11 11 C13 10.5 14 12.5 12.5 13.5" fill="none" stroke="#2f9a2a" stroke-width="1"/>',
+  portalgun: '<rect x="2" y="9" width="15" height="7" rx="2" fill="#e8e8e8" stroke="#6b737b" stroke-width="0.8"/><rect x="16" y="10.5" width="6" height="4" rx="1" fill="#7cf06a" stroke="#2f9a2a" stroke-width="0.6"/><rect x="5" y="15" width="4" height="7" rx="1" fill="#9aa3ad" stroke="#4d545c" stroke-width="0.6"/><circle cx="8" cy="12.5" r="2" fill="#7cf06a"/>',
+  pickle: '<path d="M6 20 C2 16 8 6 14 3 C19 1 22 4 19 9 C16 14 10 22 6 20 Z" fill="#6aa83a" stroke="#3d6e1a" stroke-width="0.8"/><circle cx="10" cy="13" r="0.7" fill="#3d6e1a"/><circle cx="14" cy="8" r="0.7" fill="#3d6e1a"/><circle cx="12" cy="16" r="0.7" fill="#3d6e1a"/><path d="M14 8.5 a1 1 0 0 0 2 0 M10.5 10.5 a1 1 0 0 0 2 0" stroke="#1b1b1b" stroke-width="0.6" fill="none"/><path d="M11 13 q2 1.5 4 0" stroke="#1b1b1b" stroke-width="0.6" fill="none"/>',
+  snowflake: '<g stroke="#5fc0f0" stroke-width="1.6" stroke-linecap="round"><path d="M12 2 V22 M3.3 7 L20.7 17 M3.3 17 L20.7 7"/><path d="M12 5 L9.5 3 M12 5 L14.5 3 M12 19 L9.5 21 M12 19 L14.5 21 M5.5 8.3 L5 5.2 M5.5 8.3 L2.6 9.3 M18.5 15.7 L19 18.8 M18.5 15.7 L21.4 14.7 M5.5 15.7 L2.6 14.7 M5.5 15.7 L5 18.8 M18.5 8.3 L21.4 9.3 M18.5 8.3 L19 5.2"/></g>',
+  snowman: '<circle cx="12" cy="17" r="6" fill="#fff" stroke="#9ab" stroke-width="0.8"/><circle cx="12" cy="8" r="4.5" fill="#fff" stroke="#9ab" stroke-width="0.8"/><path d="M12 8.5 L17 9.5 L12 9.6 Z" fill="#f08a24"/><circle cx="10.5" cy="7" r="0.6" fill="#1b1b1b"/><circle cx="13.5" cy="7" r="0.6" fill="#1b1b1b"/><path d="M12 3.5 L11 0.5 M12 3.5 L13.5 1" stroke="#5a3a18" stroke-width="0.8"/><circle cx="12" cy="15" r="0.7" fill="#1b1b1b"/><circle cx="12" cy="18" r="0.7" fill="#1b1b1b"/>',
+  crown: '<path d="M3 18 L2 7 L7.5 12 L12 4 L16.5 12 L22 7 L21 18 Z" fill="#f6c21a" stroke="#a87b0a" stroke-width="0.8" stroke-linejoin="round"/><rect x="3" y="18" width="18" height="3" fill="#e0a810" stroke="#a87b0a" stroke-width="0.6"/><circle cx="12" cy="14" r="1.5" fill="#5fb0ff"/><circle cx="7" cy="15.5" r="1" fill="#e0262b"/><circle cx="17" cy="15.5" r="1" fill="#e0262b"/>',
+  trophy: '<path d="M6 3 H18 V9 C18 14 15 15 12 15 C9 15 6 14 6 9 Z" fill="#f6c21a" stroke="#a87b0a" stroke-width="0.8"/><path d="M6 5 H2.5 C2.5 10 5 10.5 6.5 10.5 M18 5 H21.5 C21.5 10 19 10.5 17.5 10.5" fill="none" stroke="#a87b0a" stroke-width="1.2"/><rect x="10.5" y="15" width="3" height="4" fill="#e0a810"/><rect x="7" y="19" width="10" height="3" rx="0.5" fill="#7a4a24"/>',
+  cone: '<path d="M9 3 H15 L19 20 H5 Z" fill="#f08a24" stroke="#a8520a" stroke-width="0.8" stroke-linejoin="round"/><path d="M8 9 H16 M6.6 15 H17.4" stroke="#fff" stroke-width="2.2"/><rect x="3" y="20" width="18" height="2.5" rx="0.5" fill="#a8520a"/>',
+  flag: '<rect x="3" y="2" width="1.8" height="21" fill="#4d545c"/><rect x="4.8" y="3" width="16" height="11" fill="#fff" stroke="#1b1b1b" stroke-width="0.6"/><path d="M4.8 3 h4 v3.7 h-4 Z M12.8 3 h4 v3.7 h-4 Z M8.8 6.7 h4 v3.6 h-4 Z M16.8 6.7 h4 v3.6 h-4 Z M4.8 10.3 h4 v3.7 h-4 Z M12.8 10.3 h4 v3.7 h-4 Z" fill="#1b1b1b"/>',
+  banana: '<path d="M4 6 C3 15 9 21 19 19 C21 18.5 21 17 19.5 16.8 C12 17 7 13 6.5 6 Z" fill="#f7d84a" stroke="#b58a0f" stroke-width="0.8"/><path d="M4 6 L4.5 3.5 L6.8 4.5 L6.5 6 Z" fill="#7a5a24"/><path d="M8 9 C9 14 13 16.5 18 17" fill="none" stroke="#d9b42a" stroke-width="0.8"/>',
+  goggles: '<rect x="1" y="10" width="22" height="3" fill="#2a2a2a"/><circle cx="8" cy="11.5" r="5.5" fill="#9aa3ad" stroke="#4d545c" stroke-width="1"/><circle cx="16" cy="11.5" r="5.5" fill="#9aa3ad" stroke="#4d545c" stroke-width="1"/><circle cx="8" cy="11.5" r="3.6" fill="#fff"/><circle cx="16" cy="11.5" r="3.6" fill="#fff"/><circle cx="8.6" cy="11.8" r="1.6" fill="#7a4a24"/><circle cx="15.4" cy="11.8" r="1.6" fill="#7a4a24"/>',
+  dumpling: '<path d="M2 17 C2 9 22 9 22 17 C22 20 2 20 2 17 Z" fill="#f7efe0" stroke="#b5a68a" stroke-width="0.8"/><path d="M6 11.5 q1 3 0 5 M9.5 10.3 q1 3.5 0 6.5 M13 10 q1 3.5 0 7 M16.5 10.6 q1 3.5 0 6.2 M19.5 12 q0.6 2.5 0 4.5" fill="none" stroke="#b5a68a" stroke-width="0.7"/><path d="M3 7 q1 -2 0 -4 M8 6 q1 -2 0 -4" stroke="#c9d1d9" stroke-width="0.8" fill="none"/>',
+  peach: '<path d="M12 6 C4 4 1 13 6 19 C9 22.5 15 22.5 18 19 C23 13 20 4 12 6 Z" fill="#ffab8a" stroke="#d9603a" stroke-width="0.8"/><path d="M12 6 C10 11 11 17 12 21" fill="none" stroke="#d9603a" stroke-width="0.7"/><path d="M12 6 C14 2 18 1.5 20 3 C18 5.5 15 6 12 6 Z" fill="#3fa64a"/>',
+  scroll: '<rect x="5" y="4" width="14" height="16" fill="#f4e4b8" stroke="#a88a4a" stroke-width="0.8"/><rect x="3" y="2" width="18" height="3" rx="1.5" fill="#a8723a"/><rect x="3" y="19" width="18" height="3" rx="1.5" fill="#a8723a"/><path d="M8 8 h8 M8 11 h6 M8 14 h8" stroke="#5a3a18" stroke-width="0.9"/>',
+  ramen: '<path d="M2 11 H22 C22 17 18 21 12 21 C6 21 2 17 2 11 Z" fill="#e0452a" stroke="#8a1f12" stroke-width="0.8"/><path d="M5 14 h14" stroke="#fff" stroke-width="1"/><ellipse cx="12" cy="11" rx="10" ry="2" fill="#f2d39a"/><circle cx="9" cy="10.6" r="1.6" fill="#fff"/><circle cx="9" cy="10.6" r="0.8" fill="#f6c21a"/><circle cx="14.5" cy="10.8" r="1.4" fill="#f2a1b1" stroke="#fff" stroke-width="0.4"/><path d="M16 2 L19 11 M19 2 L20.5 11" stroke="#a8723a" stroke-width="1" stroke-linecap="round"/>',
+  kunai: '<path d="M12 1 L15 10 L12 13 L9 10 Z" fill="#9aa3ad" stroke="#4d545c" stroke-width="0.8" stroke-linejoin="round"/><rect x="11" y="13" width="2" height="6" fill="#3a3a44"/><circle cx="12" cy="21" r="2.2" fill="none" stroke="#4d545c" stroke-width="1.2"/>',
+  shuriken: '<path d="M12 1 L14 10 L23 12 L14 14 L12 23 L10 14 L1 12 L10 10 Z" fill="#9aa3ad" stroke="#4d545c" stroke-width="0.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="1.8" fill="#2a2a2a"/>',
+  fishingrod: '<path d="M3 22 L19 3" stroke="#7a4a24" stroke-width="1.8" stroke-linecap="round"/><path d="M19 3 Q22 10 20 17" fill="none" stroke="#6b737b" stroke-width="0.6"/><circle cx="20" cy="18" r="1.4" fill="#e0262b"/><circle cx="7" cy="17.5" r="2" fill="#4d545c"/>',
+  skateboard: '<rect x="1" y="11" width="22" height="3.2" rx="1.6" fill="#3a8fe0" stroke="#1f5fa8" stroke-width="0.8"/><circle cx="6" cy="17" r="2" fill="#f6c21a" stroke="#a87b0a" stroke-width="0.6"/><circle cx="18" cy="17" r="2" fill="#f6c21a" stroke="#a87b0a" stroke-width="0.6"/><path d="M5 14 L6 15 M19 14 L18 15" stroke="#4d545c" stroke-width="1"/>',
+  bone: '<path d="M6 9 L18 9 A3 3 0 1 1 20 13 A3 3 0 1 1 18 15 L6 15 A3 3 0 1 1 4 11 A3 3 0 1 1 6 9 Z" fill="#c98a4a" stroke="#7a4a1c" stroke-width="0.8"/><path d="M9 11 h6 M9 13 h6" stroke="#7a4a1c" stroke-width="0.5"/>',
+  sandwich: '<path d="M2 9 L12 3 L22 9 Z" fill="#e0b070" stroke="#9a6a20" stroke-width="0.8"/><path d="M2 9 h20 l-1 2 h-18 Z" fill="#5fb04a"/><rect x="2" y="11" width="20" height="2.6" fill="#e0607a"/><rect x="2" y="13.6" width="20" height="2" fill="#f7c948"/><rect x="2" y="15.6" width="20" height="2.4" fill="#7a3a1a"/><path d="M2 18 h20 v2 q0 1.5 -1.5 1.5 h-17 q-1.5 0 -1.5 -1.5 Z" fill="#e0b070" stroke="#9a6a20" stroke-width="0.8"/>',
+  ghost: '<path d="M4 22 V10 C4 4 20 4 20 10 V22 L17 19.5 L14.5 22 L12 19.5 L9.5 22 L7 19.5 Z" fill="#f4f4fa" stroke="#9aa3c0" stroke-width="0.8"/><ellipse cx="9.5" cy="11" rx="1.4" ry="2" fill="#1b1b1b"/><ellipse cx="14.5" cy="11" rx="1.4" ry="2" fill="#1b1b1b"/><ellipse cx="12" cy="15.5" rx="1.6" ry="1.2" fill="#1b1b1b"/>',
+  pokeball: '<circle cx="12" cy="12" r="10" fill="#fff" stroke="#1b1b1b" stroke-width="1.2"/><path d="M2 12 A10 10 0 0 1 22 12 Z" fill="#e0262b" stroke="#1b1b1b" stroke-width="1.2"/><path d="M2 12 H22" stroke="#1b1b1b" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="#fff" stroke="#1b1b1b" stroke-width="1.4"/>',
+  badge: '<path d="M12 2 L18 6 L19 13 L12 22 L5 13 L6 6 Z" fill="#9aa3ad" stroke="#4d545c" stroke-width="0.8"/><path d="M12 5 L16 8 L16.5 12.5 L12 18.5 L7.5 12.5 L8 8 Z" fill="#d8dde3"/>',
+  broom: '<path d="M19 1 L11 13" stroke="#8a5a2b" stroke-width="1.8" stroke-linecap="round"/><path d="M10 11 L14 14 L9 23 C6 21 3 19 2 17 Z" fill="#e0b84a" stroke="#9a7a1a" stroke-width="0.8" stroke-linejoin="round"/><path d="M8.5 15 L4 19 M10 16.5 L6 21.5" stroke="#9a7a1a" stroke-width="0.6"/><path d="M10 11 L14 14" stroke="#e0262b" stroke-width="1.4"/>',
+  horseshoe: '<path d="M5 3 C2 10 3 20 12 21 C21 20 22 10 19 3 L15.5 4 C17.5 9.5 17 16.5 12 17 C7 16.5 6.5 9.5 8.5 4 Z" fill="#9aa3ad" stroke="#4d545c" stroke-width="0.8"/><circle cx="6.2" cy="8" r="0.7" fill="#4d545c"/><circle cx="17.8" cy="8" r="0.7" fill="#4d545c"/><circle cx="6.8" cy="13" r="0.7" fill="#4d545c"/><circle cx="17.2" cy="13" r="0.7" fill="#4d545c"/>',
+  star: '<path d="M12 1.5 L15 8.5 L22.5 9.2 L16.8 14.2 L18.5 21.7 L12 17.8 L5.5 21.7 L7.2 14.2 L1.5 9.2 L9 8.5 Z" fill="#f6d43a" stroke="#b58a0f" stroke-width="0.8" stroke-linejoin="round"/>',
+  house: '<path d="M2 11 L12 3 L22 11 Z" fill="#e0452a" stroke="#8a1f12" stroke-width="0.8"/><rect x="4" y="11" width="16" height="11" fill="#f6d43a" stroke="#a87b0a" stroke-width="0.8"/><rect x="6" y="13" width="4" height="4" fill="#5fb0ff" stroke="#2f5fae" stroke-width="0.5"/><rect x="13" y="15" width="4.5" height="7" fill="#3fa64a" stroke="#256b2e" stroke-width="0.5"/>',
+  coins: '<ellipse cx="9" cy="18" rx="7" ry="3" fill="#e0a810" stroke="#8a6a0a" stroke-width="0.8"/><ellipse cx="9" cy="15.5" rx="7" ry="3" fill="#f6c21a" stroke="#8a6a0a" stroke-width="0.8"/><ellipse cx="15" cy="10" rx="7" ry="3" fill="#e0a810" stroke="#8a6a0a" stroke-width="0.8"/><ellipse cx="15" cy="7.5" rx="7" ry="3" fill="#f6c21a" stroke="#8a6a0a" stroke-width="0.8"/><path d="M13.5 7.5 h3 M7.5 15.5 h3" stroke="#8a6a0a" stroke-width="0.8"/>',
+  lollipop: '<path d="M12 13 L12 23" stroke="#f4f4f4" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="8" r="7" fill="#ff7aa8" stroke="#c0407a" stroke-width="0.8"/><path d="M12 8 m-5 0 a5 5 0 0 1 10 0 a3.5 3.5 0 0 1 -7 0 a2 2 0 0 1 4 0" fill="none" stroke="#fff" stroke-width="1.2"/>',
+  bow: '<path d="M12 12 L3 5 Q1 12 3 19 Z M12 12 L21 5 Q23 12 21 19 Z" fill="#e0262b" stroke="#8a0f14" stroke-width="0.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.6" fill="#e0262b" stroke="#8a0f14" stroke-width="0.8"/><circle cx="5" cy="9" r="0.8" fill="#fff"/><circle cx="5" cy="15" r="0.8" fill="#fff"/><circle cx="19" cy="9" r="0.8" fill="#fff"/><circle cx="19" cy="15" r="0.8" fill="#fff"/>',
+  heart: '<path d="M12 21 C3 15 1 10 3.5 6 C6 2.5 10 3.5 12 7 C14 3.5 18 2.5 20.5 6 C23 10 21 15 12 21 Z" fill="#ff5a7a" stroke="#b02a4a" stroke-width="0.8"/><ellipse cx="7.5" cy="8" rx="1.6" ry="1" fill="#fff" opacity="0.7" transform="rotate(-30 7.5 8)"/>',
+  balloon: '<path d="M12 15 Q11 19 13 23" stroke="#6b737b" stroke-width="0.6" fill="none"/><circle cx="12" cy="10" r="5.5" fill="#1b1b1b"/><circle cx="6" cy="4.5" r="3" fill="#1b1b1b"/><circle cx="18" cy="4.5" r="3" fill="#1b1b1b"/><path d="M10.5 15 h3 l-1.5 1.5 Z" fill="#1b1b1b"/><ellipse cx="10" cy="8" rx="1.4" ry="0.8" fill="#fff" opacity="0.5"/>',
+};
+const boardDecoSets = {
+  tomJerry: ['cheese', 'yarn', 'mousetrap'],
+  thorLoki: ['hammer', 'lightning', 'hornhelmet'],
+  spongePatrick: ['jellyfish', 'burger', 'pineapple'],
+  phineasFerb: ['fedora', 'wrench', 'rocket'],
+  rickMorty: ['portal', 'portalgun', 'pickle'],
+  elsaAnna: ['snowflake', 'snowman', 'crown'],
+  mcqueenHook: ['trophy', 'cone', 'flag'],
+  gruMinion: ['banana', 'goggles', 'rocket'],
+  poShifu: ['dumpling', 'peach', 'scroll'],
+  narutoSasuke: ['ramen', 'kunai', 'shuriken'],
+  gonKillua: ['fishingrod', 'skateboard', 'lightning'],
+  scoobyShaggy: ['bone', 'sandwich', 'ghost'],
+  ashPikachu: ['pokeball', 'lightning', 'badge'],
+  bibiTina: ['broom', 'horseshoe', 'star'],
+  pippiNilsson: ['house', 'coins', 'lollipop'],
+  mickyMinnie: ['bow', 'heart', 'balloon']
+};
+const decoSvg = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${boardDecoIcons[name] || ''}</svg>`;
+
 // Position eines Tages auf dem Brett: Tag 1 unten links, dann in Schlangenlinien nach oben
 function calBoardPos(day, rows){
   const row = Math.floor((day - 1) / 7);
@@ -1473,6 +1542,9 @@ function renderCalendar(){
     }
   }
 
+  // Passende Objekte zu den Figuren (werden in drawCalLinks auf die Lücken zwischen den Reihen verteilt)
+  calDecoNames = boardDecoSets[ladderGame.setFor(calViewMonth, calViewYear)] || [];
+
   for(let day = 1; day <= daysInMonth; day++){
     const dateObj = new Date(calViewYear, calViewMonth, day);
     const dateStr = fmtDate(dateObj);
@@ -1487,7 +1559,7 @@ function renderCalendar(){
     if(day === daysInMonth) cell.classList.add('goal');
     if(dateStr === fmtDate(today)) cell.classList.add('today');
     if(dateStr === calSelectedDate) cell.classList.add('selected');
-    cell.innerHTML = `<span class="cal-wd">${weekdayFull[dateObj.getDay()].slice(0, 2)}</span>${day}`;
+    cell.innerHTML = `<span class="cal-wd">${weekdayFull[dateObj.getDay()].slice(0, 2)}</span><span class="cal-num">${day}</span>`;
     if(calEvents[dateStr] && calEvents[dateStr].length > 0){
       const dot = document.createElement('div');
       dot.className = 'cal-dot';
@@ -1502,7 +1574,7 @@ function renderCalendar(){
   }
   // Neues Spiel nur bei einem anderen Monat, nicht beim Anklicken eines Tages
   const gameKey = calViewYear + '-' + calViewMonth;
-  if(gameKey !== calGameKey){ calGameKey = gameKey; ladderGame.reset(daysInMonth); }
+  if(gameKey !== calGameKey){ calGameKey = gameKey; ladderGame.reset(daysInMonth, calViewMonth, calViewYear); }
   requestAnimationFrame(drawCalLinks);
 }
 
@@ -1551,7 +1623,49 @@ function drawCalLinks(){
     }
   });
   ladderSvg.innerHTML = out;
+  placeCalDecos();
   ladderGame.place(true);
+}
+// Objekte gross in einige Felder setzen (die Zahl verschwindet dort).
+// Nie auf Start, Ziel oder Feldern, über die eine Leiter oder ein Seil geht.
+function placeCalDecos(){
+  calGrid.querySelectorAll('.cal-deco').forEach(d => d.remove());
+  calGrid.querySelectorAll('.cal-day.has-deco').forEach(c => c.classList.remove('has-deco'));
+  if(!calDecoNames.length) return;
+  const cells = [...calGrid.querySelectorAll('.cal-day')];
+  const n = cells.length;
+  if(!n) return;
+  // Felder sammeln, die von gezeichneten Leitern/Seilen berührt werden
+  const blocked = new Set([1, n, ...Object.keys(calLinks).map(Number), ...Object.values(calLinks)]);
+  const rects = cells.map(c => ({ day: +c.dataset.day, x: calGrid.offsetLeft + c.offsetLeft, y: calGrid.offsetTop + c.offsetTop, w: c.offsetWidth, h: c.offsetHeight }));
+  ladderSvg.querySelectorAll('line, path').forEach(el => {
+    const len = el.getTotalLength();
+    for(let t = 0; t <= len; t += 3){
+      const pt = el.getPointAtLength(t);
+      rects.forEach(rc => { if(pt.x > rc.x - 3 && pt.x < rc.x + rc.w + 3 && pt.y > rc.y - 3 && pt.y < rc.y + rc.h + 3) blocked.add(rc.day); });
+    }
+  });
+  const free = rects.map(rc => rc.day).filter(d => !blocked.has(d)).sort((a, b) => a - b);
+  // Gleichmässig über das Brett verteilt, nicht zwei direkt nebeneinander
+  let seed = calViewYear * 12 + calViewMonth;
+  const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  const want = Math.min(6, free.length);
+  const chosen = [];
+  for(let k = 0; k < want; k++){
+    const from = Math.floor(k * free.length / want), to = Math.floor((k + 1) * free.length / want);
+    const options = free.slice(from, to).filter(d => !chosen.some(c => Math.abs(c - d) < 2));
+    if(options.length) chosen.push(options[Math.floor(rnd() * options.length)]);
+  }
+  chosen.forEach((day, i) => {
+    const cell = calGrid.querySelector(`.cal-day[data-day="${day}"]`);
+    if(!cell) return;
+    const d = document.createElement('span');
+    d.className = 'cal-deco';
+    d.style.setProperty('--tilt', ((rnd() - 0.5) * 24).toFixed(0) + 'deg');
+    d.innerHTML = decoSvg(calDecoNames[i % calDecoNames.length]);
+    cell.appendChild(d);
+    cell.classList.add('has-deco');
+  });
 }
 // Neu zeichnen, wenn sich das Brett in der Grösse ändert (auch beim Wechsel in den Kalender-Tab)
 const ladderBoardEl = document.getElementById('ladder-board');
@@ -1562,7 +1676,550 @@ const ladderGame = (() => {
   const dieBtn = document.getElementById('ladder-die');
   const statusEl = document.getElementById('ladder-status');
   const layer = document.getElementById('pawn-layer');
-  const players = [{ name: 'Rot', cls: 'red', pos: 1, el: null }, { name: 'Blau', cls: 'blue', pos: 1, el: null }];
+  // Spielfiguren (selbst gezeichnet): Tom & Jerry und Thor & Loki – je nach Monat
+  const tomSvg = `<svg viewBox="0 0 40 46" aria-hidden="true">
+    <ellipse cx="20" cy="44" rx="11" ry="2.2" fill="rgba(0,0,0,0.25)"/>
+    <ellipse cx="20" cy="38" rx="11" ry="7" fill="#7b8da4"/>
+    <ellipse cx="20" cy="39.5" rx="6" ry="5" fill="#f4f1ea"/>
+    <path d="M8 15 L5 1.5 L16 10 Z" fill="#7b8da4" stroke="#4d5c70" stroke-width="0.8" stroke-linejoin="round"/>
+    <path d="M32 15 L35 1.5 L24 10 Z" fill="#7b8da4" stroke="#4d5c70" stroke-width="0.8" stroke-linejoin="round"/>
+    <path d="M8.6 12.5 L6.8 4.5 L13.5 10 Z" fill="#f2a5b1"/>
+    <path d="M31.4 12.5 L33.2 4.5 L26.5 10 Z" fill="#f2a5b1"/>
+    <path d="M7 22 L3 25 L7.5 25.5 L4.5 29 L9.5 27.5 C12 32 28 32 30.5 27.5 L35.5 29 L32.5 25.5 L37 25 L33 22 C34 14 28 8.5 20 8.5 C12 8.5 6 14 7 22 Z" fill="#8798ae" stroke="#4d5c70" stroke-width="0.8" stroke-linejoin="round"/>
+    <ellipse cx="20" cy="26" rx="8.5" ry="5.6" fill="#f4f1ea"/>
+    <ellipse cx="15.3" cy="18" rx="4.2" ry="5.2" fill="#f4f1ea"/>
+    <ellipse cx="24.7" cy="18" rx="4.2" ry="5.2" fill="#f4f1ea"/>
+    <ellipse cx="16" cy="18.6" rx="2.4" ry="3.3" fill="#c9d23a"/>
+    <ellipse cx="24" cy="18.6" rx="2.4" ry="3.3" fill="#c9d23a"/>
+    <ellipse cx="16.4" cy="19" rx="1.2" ry="2.3" fill="#1b1b1b"/>
+    <ellipse cx="23.6" cy="19" rx="1.2" ry="2.3" fill="#1b1b1b"/>
+    <path d="M11 12.5 L18 14" stroke="#3e4a5a" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M29 12.5 L22 14" stroke="#3e4a5a" stroke-width="1.3" stroke-linecap="round"/>
+    <ellipse cx="20" cy="23.4" rx="2.2" ry="1.5" fill="#2a2a2a"/>
+    <path d="M16 27 Q20 30.5 24 27" fill="none" stroke="#2a2a2a" stroke-width="1" stroke-linecap="round"/>
+    <path d="M12 25 L4 23.5 M12 26.5 L4.5 27.5 M28 25 L36 23.5 M28 26.5 L35.5 27.5" stroke="#2a2a2a" stroke-width="0.6" stroke-linecap="round"/>
+  </svg>`;
+  const jerrySvg = `<svg viewBox="0 0 32 38" aria-hidden="true">
+    <ellipse cx="16" cy="36" rx="8" ry="1.8" fill="rgba(0,0,0,0.25)"/>
+    <ellipse cx="16" cy="31" rx="7" ry="5" fill="#b4682c"/>
+    <ellipse cx="16" cy="32" rx="4" ry="3.6" fill="#f2c993"/>
+    <circle cx="7" cy="9" r="7" fill="#b4682c" stroke="#7a4216" stroke-width="0.7"/>
+    <circle cx="25" cy="9" r="7" fill="#b4682c" stroke="#7a4216" stroke-width="0.7"/>
+    <circle cx="7.3" cy="9.4" r="4.4" fill="#f2a48c"/>
+    <circle cx="24.7" cy="9.4" r="4.4" fill="#f2a48c"/>
+    <ellipse cx="16" cy="17.5" rx="10" ry="9" fill="#b8702f" stroke="#7a4216" stroke-width="0.7"/>
+    <ellipse cx="16" cy="21.5" rx="7.2" ry="5.2" fill="#f2c993"/>
+    <ellipse cx="12.7" cy="15.5" rx="2.7" ry="3.5" fill="#fff"/>
+    <ellipse cx="19.3" cy="15.5" rx="2.7" ry="3.5" fill="#fff"/>
+    <ellipse cx="13.2" cy="16.2" rx="1.4" ry="2.2" fill="#1b1b1b"/>
+    <ellipse cx="18.8" cy="16.2" rx="1.4" ry="2.2" fill="#1b1b1b"/>
+    <circle cx="13.6" cy="15.3" r="0.5" fill="#fff"/>
+    <circle cx="19.2" cy="15.3" r="0.5" fill="#fff"/>
+    <circle cx="16" cy="20.2" r="1.6" fill="#1b1b1b"/>
+    <path d="M13 22.6 Q16 25.4 19 22.6" fill="none" stroke="#1b1b1b" stroke-width="0.9" stroke-linecap="round"/>
+    <path d="M11 21 L4.5 19.8 M11 22.4 L5 23.4 M21 21 L27.5 19.8 M21 22.4 L27 23.4" stroke="#1b1b1b" stroke-width="0.5" stroke-linecap="round"/>
+  </svg>`;
+  const thorSvg = `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <path d="M10 24 C6 34 6 44 8 49 L32 49 C34 44 34 34 30 24 Z" fill="#b3161c" stroke="#6e0a0e" stroke-width="0.7"/>
+    <rect x="15" y="40" width="4" height="9" rx="1.5" fill="#2a2d33"/>
+    <rect x="21" y="40" width="4" height="9" rx="1.5" fill="#2a2d33"/>
+    <path d="M12.5 27 C12.5 24 15 22.5 20 22.5 C25 22.5 27.5 24 27.5 27 L27 41 L13 41 Z" fill="#3a3f48" stroke="#1d2026" stroke-width="0.6"/>
+    <circle cx="17" cy="30" r="1.6" fill="#a9b2bd"/><circle cx="23" cy="30" r="1.6" fill="#a9b2bd"/>
+    <circle cx="17" cy="35" r="1.6" fill="#a9b2bd"/><circle cx="23" cy="35" r="1.6" fill="#a9b2bd"/>
+    <rect x="12.5" y="37.5" width="15" height="2.2" fill="#6b7480"/>
+    <path d="M28 27 C31 28 32.5 31 32 34" fill="none" stroke="#e8c8a8" stroke-width="3.2" stroke-linecap="round"/>
+    <rect x="31" y="31" width="2.4" height="11" rx="1" fill="#6b4a2a" transform="rotate(18 32 36)"/>
+    <rect x="29.5" y="39.5" width="10" height="6.5" rx="1.2" fill="#9aa3ad" stroke="#4d545c" stroke-width="0.7" transform="rotate(18 34.5 42.7)"/>
+    <path d="M9.5 15 C8 22 9 27 12 30 L13 18 Z M30.5 15 C32 22 31 27 28 30 L27 18 Z" fill="#e8b84a" stroke="#a87b1c" stroke-width="0.5"/>
+    <ellipse cx="20" cy="15" rx="8.5" ry="9" fill="#f0cfae"/>
+    <path d="M11.5 17 C12 25 16 27 20 27 C24 27 28 25 28.5 17 C27 21 24.5 22 20 22 C15.5 22 13 21 11.5 17 Z" fill="#d9a63a"/>
+    <path d="M10.8 13 C11 6 15 4 20 4 C25 4 29 6 29.2 13 C26 9.5 23 8.8 20 9 C17 8.8 14 9.5 10.8 13 Z" fill="#e8b84a"/>
+    <ellipse cx="16.6" cy="15" rx="1.3" ry="1.6" fill="#1d4f8f"/><ellipse cx="23.4" cy="15" rx="1.3" ry="1.6" fill="#1d4f8f"/>
+    <path d="M14.8 12.6 L18.2 13 M25.2 12.6 L21.8 13" stroke="#a87b1c" stroke-width="1" stroke-linecap="round"/>
+    <path d="M17.5 21.5 Q20 22.8 22.5 21.5" fill="none" stroke="#7a3a2a" stroke-width="0.9" stroke-linecap="round"/>
+  </svg>`;
+  const lokiSvg = `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <path d="M10 25 C6 35 6 44 8 49 L32 49 C34 44 34 35 30 25 Z" fill="#1f6b3a" stroke="#0d3a1e" stroke-width="0.7"/>
+    <rect x="15" y="40" width="4" height="9" rx="1.5" fill="#1b1e22"/>
+    <rect x="21" y="40" width="4" height="9" rx="1.5" fill="#1b1e22"/>
+    <path d="M12.5 27.5 C12.5 24.5 15 23 20 23 C25 23 27.5 24.5 27.5 27.5 L27 41 L13 41 Z" fill="#23272c" stroke="#111" stroke-width="0.6"/>
+    <path d="M20 23 L17 41 L23 41 Z" fill="#2e8a4c"/>
+    <path d="M13 27 L17.5 24 L18 27 L14 31 Z M27 27 L22.5 24 L22 27 L26 31 Z" fill="#d4a933" stroke="#8a6a12" stroke-width="0.4"/>
+    <rect x="12.5" y="37.5" width="15" height="2.2" fill="#d4a933"/>
+    <path d="M12 26 C9 28 7.5 31 8 34" fill="none" stroke="#efe0d2" stroke-width="3" stroke-linecap="round"/>
+    <path d="M7.2 30 L9.2 30.6 L8.6 42 L7.6 42 Z" fill="#c9d1d9" stroke="#6b737b" stroke-width="0.4" transform="rotate(-12 8 36)"/>
+    <path d="M11 13 C10 20 10 26 12 30 L13.5 17 Z M29 13 C30 20 30 26 28 30 L26.5 17 Z" fill="#141414"/>
+    <ellipse cx="20" cy="16" rx="8" ry="8.6" fill="#efe0d2"/>
+    <path d="M12 15 C13 11 15.5 10 20 10 C24.5 10 27 11 28 15 C26 12.5 23.5 12 20 12.5 C16.5 12 14 12.5 12 15 Z" fill="#141414"/>
+    <path d="M11.5 14 C11 8 14 5.5 20 5.5 C26 5.5 29 8 28.5 14 L26.5 12.5 C25.5 10 23 9.3 20 9.3 C17 9.3 14.5 10 13.5 12.5 Z" fill="#d4a933" stroke="#8a6a12" stroke-width="0.6"/>
+    <path d="M14 9 C11 6 8 1 9.5 -3 C11.5 1 14.5 3.5 16.5 7 Z" fill="#d4a933" stroke="#8a6a12" stroke-width="0.6"/>
+    <path d="M26 9 C29 6 32 1 30.5 -3 C28.5 1 25.5 3.5 23.5 7 Z" fill="#d4a933" stroke="#8a6a12" stroke-width="0.6"/>
+    <path d="M18.5 6 L20 3.5 L21.5 6 Z" fill="#2e8a4c"/>
+    <ellipse cx="16.8" cy="16.5" rx="1.2" ry="1.5" fill="#2e8a4c"/><ellipse cx="23.2" cy="16.5" rx="1.2" ry="1.5" fill="#2e8a4c"/>
+    <path d="M14.8 14.4 L18.4 15.2 M25.2 14.4 L21.6 15.2" stroke="#141414" stroke-width="0.9" stroke-linecap="round"/>
+    <path d="M17.6 21 Q20.5 22.4 23 20.6" fill="none" stroke="#7a3a3a" stroke-width="0.9" stroke-linecap="round"/>
+  </svg>`;
+  const spongebobSvg = `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="14.5" y="40" width="2" height="8" fill="#f6e04b"/><rect x="23.5" y="40" width="2" height="8" fill="#f6e04b"/>
+    <rect x="14" y="44" width="3" height="3.4" fill="#fff"/><rect x="23" y="44" width="3" height="3.4" fill="#fff"/>
+    <path d="M14 47.5 h4.5 a1.6 1.6 0 0 1 0 2.4 h-4.5 Z M22.5 47.5 h4.5 a1.6 1.6 0 0 1 0 2.4 h-4.5 Z" fill="#1b1b1b"/>
+    <path d="M7 4 Q9.5 2.5 12 4 Q14.5 2.5 17 4 Q19.5 2.5 22 4 Q24.5 2.5 27 4 Q29.5 2.5 32 4 L33 30 L7 30 Z" fill="#f6e04b" stroke="#b9a51e" stroke-width="0.8"/>
+    <ellipse cx="11" cy="9" rx="1.6" ry="2" fill="#c8c234" opacity="0.8"/><ellipse cx="29.5" cy="11" rx="1.3" ry="1.8" fill="#c8c234" opacity="0.8"/>
+    <ellipse cx="10" cy="25" rx="1.3" ry="1.6" fill="#c8c234" opacity="0.8"/><ellipse cx="30" cy="24" rx="1.8" ry="1.3" fill="#c8c234" opacity="0.8"/>
+    <rect x="7" y="30" width="26" height="4" fill="#fff" stroke="#b9b9b9" stroke-width="0.4"/>
+    <path d="M17 30 L20 33 L23 30 Z" fill="#fff" stroke="#999" stroke-width="0.3"/>
+    <path d="M19 31.5 L21 31.5 L21.6 36 L20 37.5 L18.4 36 Z" fill="#d62828"/>
+    <path d="M7 34 H33 V39 Q33 41 31 41 H9 Q7 41 7 39 Z" fill="#8a5a2b"/>
+    <rect x="9" y="35.2" width="3" height="1" fill="#1b1b1b"/><rect x="14" y="35.2" width="3" height="1" fill="#1b1b1b"/><rect x="23" y="35.2" width="3" height="1" fill="#1b1b1b"/><rect x="28" y="35.2" width="3" height="1" fill="#1b1b1b"/>
+    <circle cx="15" cy="14" r="5" fill="#fff" stroke="#1b1b1b" stroke-width="0.5"/><circle cx="25" cy="14" r="5" fill="#fff" stroke="#1b1b1b" stroke-width="0.5"/>
+    <circle cx="15.6" cy="14.4" r="2.3" fill="#3aa0e0"/><circle cx="24.4" cy="14.4" r="2.3" fill="#3aa0e0"/>
+    <circle cx="15.6" cy="14.4" r="1.1" fill="#1b1b1b"/><circle cx="24.4" cy="14.4" r="1.1" fill="#1b1b1b"/>
+    <path d="M12 8.6 L11.4 7 M14.5 8.2 L14.4 6.5 M17 8.6 L17.6 7 M23 8.6 L22.4 7 M25.5 8.2 L25.6 6.5 M28 8.6 L28.6 7" stroke="#1b1b1b" stroke-width="0.6" stroke-linecap="round"/>
+    <path d="M18.5 18 Q20 15.5 21.5 18 Q20.5 19.5 20 19.5 Q19.5 19.5 18.5 18 Z" fill="#f6e04b" stroke="#b9a51e" stroke-width="0.6"/>
+    <path d="M11.5 20.5 Q20 28 28.5 20.5" fill="#7a1f1f" stroke="#1b1b1b" stroke-width="0.7"/>
+    <rect x="17" y="21.6" width="2.6" height="2.6" fill="#fff" stroke="#999" stroke-width="0.3"/><rect x="20.4" y="21.6" width="2.6" height="2.6" fill="#fff" stroke="#999" stroke-width="0.3"/>
+    <circle cx="10.5" cy="20" r="1.8" fill="#f2a16f" opacity="0.7"/><circle cx="29.5" cy="20" r="1.8" fill="#f2a16f" opacity="0.7"/>
+  </svg>`;
+  const patrickSvg = `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <path d="M20 1 C23 1 24.5 10 25.5 18 C30 20 36 23 36.5 27 C37 30 31 30.5 28 30.5 C28.5 37 30 44 28 48 C26 50 23 48 20 44 C17 48 14 50 12 48 C10 44 11.5 37 12 30.5 C9 30.5 3 30 3.5 27 C4 23 10 20 14.5 18 C15.5 10 17 1 20 1 Z" fill="#f59aa6" stroke="#c4606f" stroke-width="0.8"/>
+    <path d="M11.5 32 C14 30.5 26 30.5 28.5 32 L29 39 C26 41 14 41 11 39 Z" fill="#7cc242" stroke="#4d8a24" stroke-width="0.6"/>
+    <circle cx="15" cy="34.5" r="1.4" fill="#9a5ad1"/><circle cx="21" cy="36.5" r="1.4" fill="#9a5ad1"/><circle cx="25.5" cy="33.8" r="1.4" fill="#9a5ad1"/><circle cx="18" cy="38.2" r="1.1" fill="#9a5ad1"/>
+    <ellipse cx="17.6" cy="13.5" rx="2.2" ry="3.2" fill="#fff" stroke="#1b1b1b" stroke-width="0.5"/><ellipse cx="22.4" cy="13.5" rx="2.2" ry="3.2" fill="#fff" stroke="#1b1b1b" stroke-width="0.5"/>
+    <circle cx="18" cy="14.2" r="1" fill="#1b1b1b"/><circle cx="22" cy="14.2" r="1" fill="#1b1b1b"/>
+    <path d="M15.6 9.6 L18.8 9 M24.4 9.6 L21.2 9" stroke="#1b1b1b" stroke-width="1.1" stroke-linecap="round"/>
+    <path d="M14.5 20 Q20 25.5 25.5 20 Q20 22.5 14.5 20 Z" fill="#8a1f2f" stroke="#1b1b1b" stroke-width="0.7"/>
+    <ellipse cx="13.8" cy="18.5" rx="1.6" ry="1" fill="#e7707f" opacity="0.7"/><ellipse cx="26.2" cy="18.5" rx="1.6" ry="1" fill="#e7707f" opacity="0.7"/>
+  </svg>`;
+  // Weitere Figuren (selbst gezeichnet)
+  const moreFigures = {
+    scooby: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <path d="M30 34 Q37 30 36 22 Q38 30 33 37 Z" fill="#a8722e" stroke="#6b4416" stroke-width="0.5"/>
+    <path d="M12 32 Q12 26 20 26 Q28 26 28 32 L28 44 L12 44 Z" fill="#b97f36" stroke="#6b4416" stroke-width="0.6"/>
+    <circle cx="15" cy="34" r="1.3" fill="#3a2410"/><circle cx="24" cy="38" r="1.5" fill="#3a2410"/><circle cx="18" cy="41" r="1" fill="#3a2410"/>
+    <rect x="12.5" y="42" width="5" height="6" rx="2" fill="#b97f36" stroke="#6b4416" stroke-width="0.5"/><rect x="22.5" y="42" width="5" height="6" rx="2" fill="#b97f36" stroke="#6b4416" stroke-width="0.5"/>
+    <path d="M12.5 26 Q20 29.5 27.5 26 L27.5 28 Q20 31.5 12.5 28 Z" fill="#3a8fd0"/>
+    <path d="M18.4 28.6 L21.6 28.6 L21.2 32 L20 33 L18.8 32 Z" fill="#f6c21a" stroke="#b58a0f" stroke-width="0.4"/>
+    <path d="M10 8 Q6 10 7 17 Q9 16 11 12 Z M27 7 Q32 8 32 15 Q29.5 14 28 11 Z" fill="#7a4e1e"/>
+    <path d="M10.5 15 C9 7 14 3 21 4 C26 4.5 29 8 29 13 L34 16 C36 17.5 35 21 32.5 21.5 L27 22.5 C24 25 15 25 12 21 Z" fill="#b97f36" stroke="#6b4416" stroke-width="0.6"/>
+    <ellipse cx="33.5" cy="17.5" rx="2.2" ry="1.6" fill="#1b1b1b"/>
+    <ellipse cx="17.5" cy="12.5" rx="2.6" ry="3" fill="#fff" stroke="#1b1b1b" stroke-width="0.4"/><ellipse cx="23" cy="12" rx="2.6" ry="3" fill="#fff" stroke="#1b1b1b" stroke-width="0.4"/>
+    <circle cx="18.2" cy="13" r="1.1" fill="#1b1b1b"/><circle cx="23.7" cy="12.5" r="1.1" fill="#1b1b1b"/>
+    <path d="M15.5 10.4 Q17.5 9 19.5 10.2 M21 9.8 Q23 8.4 25 9.6" fill="none" stroke="#3a2410" stroke-width="0.6"/>
+    <path d="M20 21.5 Q25 23 30 20.5" fill="none" stroke="#1b1b1b" stroke-width="0.8" stroke-linecap="round"/>
+  </svg>`,
+    shaggy: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15" y="39" width="4" height="9" fill="#8a5a2b"/><rect x="21" y="39" width="4" height="9" fill="#8a5a2b"/><path d="M13.5 47.5 h6 v2.5 h-6 Z M20.5 47.5 h6 v2.5 h-6 Z" fill="#1b1b1b"/>
+    <path d="M11.5 27 Q11.5 25 20 25 Q28.5 25 28.5 27 L29 40 L11 40 Z" fill="#8fbf3a" stroke="#5f8a1f" stroke-width="0.6"/>
+    <path d="M17 25 L20 28 L23 25" fill="none" stroke="#5f8a1f" stroke-width="0.7"/>
+    <ellipse cx="20" cy="17" rx="8.5" ry="9" fill="#f6d6b8" stroke="#d1ad96" stroke-width="0.6"/>
+    <path d="M10.5 18 C8 9 13 4 20 4 C27 4 32 9 29.5 18 L28 13 L26.5 16 L25 11 L22.5 13.5 L20 10 L17.5 13.5 L15 11 L13.5 16 L12 13 Z" fill="#8a5a2b" stroke="#5a3a18" stroke-width="0.5"/>
+    <ellipse cx="16.6" cy="17.2" rx="1.5" ry="1.9" fill="#5a3a18"/><ellipse cx="23.4" cy="17.2" rx="1.5" ry="1.9" fill="#5a3a18"/><circle cx="16.6" cy="17.4" r="0.7" fill="#1b1b1b"/><circle cx="23.4" cy="17.4" r="0.7" fill="#1b1b1b"/><circle cx="17.1" cy="16.6" r="0.45" fill="#fff"/><circle cx="23.9" cy="16.6" r="0.45" fill="#fff"/>
+    <path d="M18 22 Q20 23.5 22 22" fill="none" stroke="#1b1b1b" stroke-width="0.7" stroke-linecap="round"/>
+    <path d="M18.5 24.2 L20 27 L21.5 24.2 Z" fill="#8a5a2b"/>
+  </svg>`,
+    ash: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15" y="39" width="4" height="9" fill="#3a5fae"/><rect x="21" y="39" width="4" height="9" fill="#3a5fae"/><path d="M13.5 47.5 h6 v2.5 h-6 Z M20.5 47.5 h6 v2.5 h-6 Z" fill="#1b1b1b"/>
+    <path d="M12 27 Q12 25 20 25 Q28 25 28 27 L28.5 40 L11.5 40 Z" fill="#1d1d2a"/>
+    <path d="M12 27 Q12 25 17 25 L17.5 40 L11.5 40 Z M28 27 Q28 25 23 25 L22.5 40 L28.5 40 Z" fill="#2f6fd0" stroke="#1b4a99" stroke-width="0.5"/>
+    <path d="M10 18 L6 15 L10 14 L7.5 10 L12 11 Z M30 18 L34 15 L30 14 L32.5 10 L28 11 Z" fill="#1b1d26"/>
+    <ellipse cx="20" cy="17" rx="8.5" ry="9" fill="#f6d6b8" stroke="#d1ad96" stroke-width="0.6"/>
+    <path d="M11.5 15 C11.5 12 14 12 16 13 L19 11.5 L21 13.5 L24 12 L28.5 15 C29 13 28.5 11 27 10 L13 10 C11.5 11 11 13 11.5 15 Z" fill="#1b1d26"/>
+    <path d="M10.5 11 C10.5 4 15 2 20 2 C25 2 29.5 4 29.5 11 Z" fill="#e0262b" stroke="#8a0f14" stroke-width="0.5"/>
+    <path d="M14 11 C14 5 17 3 20 3 C23 3 26 5 26 11 Z" fill="#f4f4f4"/>
+    <path d="M18 6.5 C18 5 22 5 22 6.5 C21.5 8 18.5 8 18 6.5 Z" fill="#3fa64a"/>
+    <path d="M8 11 L32 11 L31 12.5 L9 12.5 Z" fill="#e0262b" stroke="#8a0f14" stroke-width="0.4"/>
+    <ellipse cx="16.6" cy="17.2" rx="1.5" ry="1.9" fill="#5a3a18"/><ellipse cx="23.4" cy="17.2" rx="1.5" ry="1.9" fill="#5a3a18"/><circle cx="16.6" cy="17.4" r="0.7" fill="#1b1b1b"/><circle cx="23.4" cy="17.4" r="0.7" fill="#1b1b1b"/><circle cx="17.1" cy="16.6" r="0.45" fill="#fff"/><circle cx="23.9" cy="16.6" r="0.45" fill="#fff"/>
+    <path d="M14 20.2 l1.5 -0.6 M14.3 21.3 l1.4 -0.6 M26 20.2 l-1.5 -0.6 M25.7 21.3 l-1.4 -0.6" stroke="#b56a4a" stroke-width="0.4"/>
+    <path d="M16.5 22 Q20 25.5 23.5 22" fill="#7a1f1f" stroke="#1b1b1b" stroke-width="0.6"/>
+  </svg>`,
+    pikachu: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <path d="M27 38 L33 34 L30.5 31 L36 25 L38 27 L35 32 L37 34 L29 42 Z" fill="#f7d33a" stroke="#b58a0f" stroke-width="0.6" stroke-linejoin="round"/>
+    <path d="M27 38 L29.5 36.5 L31 39.5 L29 42 Z" fill="#8a5a2b"/>
+    <ellipse cx="20" cy="38" rx="10" ry="10" fill="#f7d33a" stroke="#b58a0f" stroke-width="0.6"/>
+    <path d="M14 36 Q20 33.5 26 36" fill="none" stroke="#8a5a2b" stroke-width="1.2"/>
+    <ellipse cx="14.5" cy="47.5" rx="3" ry="1.8" fill="#f7d33a" stroke="#b58a0f" stroke-width="0.5"/><ellipse cx="25.5" cy="47.5" rx="3" ry="1.8" fill="#f7d33a" stroke="#b58a0f" stroke-width="0.5"/>
+    <path d="M12 14 L5 0 L15 10 Z M28 14 L35 0 L25 10 Z" fill="#f7d33a" stroke="#b58a0f" stroke-width="0.6" stroke-linejoin="round"/>
+    <path d="M5 0 L7.6 5.3 L9.6 4.5 Z M35 0 L32.4 5.3 L30.4 4.5 Z" fill="#1b1b1b"/>
+    <ellipse cx="20" cy="18" rx="11" ry="9.5" fill="#f7d33a" stroke="#b58a0f" stroke-width="0.6"/>
+    <circle cx="15.5" cy="16" r="2.2" fill="#1b1b1b"/><circle cx="24.5" cy="16" r="2.2" fill="#1b1b1b"/>
+    <circle cx="16.2" cy="15.2" r="0.8" fill="#fff"/><circle cx="25.2" cy="15.2" r="0.8" fill="#fff"/>
+    <circle cx="12.5" cy="21" r="2.4" fill="#e0262b"/><circle cx="27.5" cy="21" r="2.4" fill="#e0262b"/>
+    <path d="M19.4 18.5 L20.6 18.5 L20 19.2 Z" fill="#1b1b1b"/>
+    <path d="M17.5 20.5 Q18.8 22 20 20.5 Q21.2 22 22.5 20.5" fill="none" stroke="#1b1b1b" stroke-width="0.6" stroke-linecap="round"/>
+  </svg>`,
+    bibi: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15" y="39" width="4" height="9" fill="#2f4f9e"/><rect x="21" y="39" width="4" height="9" fill="#2f4f9e"/><path d="M13.5 47.5 h6 v2.5 h-6 Z M20.5 47.5 h6 v2.5 h-6 Z" fill="#5a3a18"/>
+    <path d="M11.5 27 Q11.5 25 20 25 Q28.5 25 28.5 27 L29 40 L11 40 Z" fill="#3a8fe0" stroke="#1f5fa8" stroke-width="0.6"/>
+    <path d="M20 29.5 l1 2 2.2 0.3 -1.6 1.5 0.4 2.2 -2 -1 -2 1 0.4 -2.2 -1.6 -1.5 2.2 -0.3 Z" fill="#f6d43a"/>
+    <path d="M22 4 C23 -1 30 -2 31 2 C28 1 26 3 25 6 Z" fill="#f4dc6a" stroke="#c9a91f" stroke-width="0.5"/>
+    <circle cx="22.5" cy="4.5" r="1.4" fill="#e0262b"/>
+    <ellipse cx="20" cy="17" rx="8.5" ry="9" fill="#f6d6b8" stroke="#d1ad96" stroke-width="0.6"/>
+    <path d="M11.5 15 C10.5 8 14.5 5 20 5 C25.5 5 29.5 8 28.5 15 C27 11 24 10 20 11 C16 10 13 11 11.5 15 Z" fill="#f4dc6a" stroke="#c9a91f" stroke-width="0.5"/>
+    <ellipse cx="16.6" cy="17.2" rx="1.5" ry="1.9" fill="#3a8fe0"/><ellipse cx="23.4" cy="17.2" rx="1.5" ry="1.9" fill="#3a8fe0"/><circle cx="16.6" cy="17.4" r="0.7" fill="#1b1b1b"/><circle cx="23.4" cy="17.4" r="0.7" fill="#1b1b1b"/><circle cx="17.1" cy="16.6" r="0.45" fill="#fff"/><circle cx="23.9" cy="16.6" r="0.45" fill="#fff"/>
+    <circle cx="14" cy="20.5" r="1.2" fill="#f2a1a1" opacity="0.7"/><circle cx="26" cy="20.5" r="1.2" fill="#f2a1a1" opacity="0.7"/>
+    <path d="M16.5 22 Q20 25.5 23.5 22" fill="#7a1f1f" stroke="#1b1b1b" stroke-width="0.6"/>
+  </svg>`,
+    tina: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15" y="39" width="4" height="9" fill="#e8dcc0"/><rect x="21" y="39" width="4" height="9" fill="#e8dcc0"/>
+    <path d="M14.5 42 h5 v8 h-5 Z M20.5 42 h5 v8 h-5 Z" fill="#3a2410"/>
+    <path d="M11.5 27 Q11.5 25 20 25 Q28.5 25 28.5 27 L29 40 L11 40 Z" fill="#c8302f" stroke="#8a1f1f" stroke-width="0.6"/>
+    <path d="M17 25 L20 28.5 L23 25" fill="#f4f4f4"/>
+    <path d="M10.5 15 C9 22 9.5 28 11 33 L13.5 32 L13 18 Z M29.5 15 C31 22 30.5 28 29 33 L26.5 32 L27 18 Z" fill="#5a2f14"/>
+    <ellipse cx="20" cy="17" rx="8.5" ry="9" fill="#f6d6b8" stroke="#d1ad96" stroke-width="0.6"/>
+    <path d="M11.5 16 C10.5 8 14.5 5 20 5 C25.5 5 29.5 8 28.5 16 C26.5 11 23 9.5 19 10.5 C15.5 10 13 12 11.5 16 Z" fill="#5a2f14"/>
+    <ellipse cx="16.6" cy="17.2" rx="1.5" ry="1.9" fill="#5a3a18"/><ellipse cx="23.4" cy="17.2" rx="1.5" ry="1.9" fill="#5a3a18"/><circle cx="16.6" cy="17.4" r="0.7" fill="#1b1b1b"/><circle cx="23.4" cy="17.4" r="0.7" fill="#1b1b1b"/><circle cx="17.1" cy="16.6" r="0.45" fill="#fff"/><circle cx="23.9" cy="16.6" r="0.45" fill="#fff"/>
+    <path d="M16.5 22 Q20 25.5 23.5 22" fill="#7a1f1f" stroke="#1b1b1b" stroke-width="0.6"/>
+  </svg>`,
+    pippi: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15" y="39" width="4" height="9" fill="#5a3a18"/><rect x="21" y="39" width="4" height="9" fill="#f4f4f4"/>
+    <path d="M21 41 h4 M21 43.5 h4 M21 46 h4" stroke="#1b1b1b" stroke-width="1"/>
+    <path d="M12.5 47.5 h7 v2.5 h-7 Z M20.5 47.5 h8 v2.5 h-8 Z" fill="#1b1b1b"/>
+    <path d="M12 26 Q12 24.5 20 24.5 Q28 24.5 28 26 L30 40 L10 40 Z" fill="#3a8fd0" stroke="#1f5fa8" stroke-width="0.6"/>
+    <rect x="14" y="31" width="4" height="4" fill="#f6d43a" transform="rotate(-8 16 33)"/><rect x="23" y="34" width="3.5" height="3.5" fill="#e0262b" transform="rotate(10 24.7 35.7)"/>
+    <path d="M11 13 L2 7 L3 9.5 L1 10 L11.5 16 Z M29 13 L38 7 L37 9.5 L39 10 L28.5 16 Z" fill="#e8601c" stroke="#a83f0c" stroke-width="0.5"/>
+    <path d="M4.5 9.3 l1.2 -1.6 M7 11 l1.2 -1.6 M35.5 9.3 l-1.2 -1.6 M33 11 l-1.2 -1.6" stroke="#a83f0c" stroke-width="0.5"/>
+    <ellipse cx="20" cy="17" rx="8.5" ry="9" fill="#f6d6b8" stroke="#d1ad96" stroke-width="0.6"/>
+    <path d="M11.5 15 C11 8 15 5 20 5 C25 5 29 8 28.5 15 C27 11 24 9.5 20 10 C16 9.5 13 11 11.5 15 Z" fill="#e8601c" stroke="#a83f0c" stroke-width="0.5"/>
+    <ellipse cx="16.6" cy="17.2" rx="1.5" ry="1.9" fill="#3a8fe0"/><ellipse cx="23.4" cy="17.2" rx="1.5" ry="1.9" fill="#3a8fe0"/><circle cx="16.6" cy="17.4" r="0.7" fill="#1b1b1b"/><circle cx="23.4" cy="17.4" r="0.7" fill="#1b1b1b"/><circle cx="17.1" cy="16.6" r="0.45" fill="#fff"/><circle cx="23.9" cy="16.6" r="0.45" fill="#fff"/>
+    <circle cx="14.5" cy="20" r="0.4" fill="#c46a3a"/><circle cx="15.7" cy="20.6" r="0.4" fill="#c46a3a"/><circle cx="14.8" cy="21.3" r="0.4" fill="#c46a3a"/><circle cx="25.5" cy="20" r="0.4" fill="#c46a3a"/><circle cx="24.3" cy="20.6" r="0.4" fill="#c46a3a"/><circle cx="25.2" cy="21.3" r="0.4" fill="#c46a3a"/>
+    <path d="M15.5 21.8 Q20 26.5 24.5 21.8" fill="#7a1f1f" stroke="#1b1b1b" stroke-width="0.6"/>
+    <path d="M17.5 22.6 h5 v1 h-5 Z" fill="#fff"/>
+  </svg>`,
+    nilsson: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <path d="M27 42 Q35 42 34 33 Q33 28 36 26" fill="none" stroke="#7a4a24" stroke-width="2" stroke-linecap="round"/>
+    <path d="M13 40 L27 40 L27.5 46 L12.5 46 Z" fill="#2f5fae" stroke="#1b3f7a" stroke-width="0.5"/>
+    <ellipse cx="15" cy="48" rx="2.8" ry="1.8" fill="#7a4a24"/><ellipse cx="25" cy="48" rx="2.8" ry="1.8" fill="#7a4a24"/>
+    <ellipse cx="20" cy="34" rx="8" ry="8.5" fill="#8a5a2b" stroke="#5a3a18" stroke-width="0.6"/>
+    <ellipse cx="20" cy="35" rx="5" ry="5.5" fill="#d9b48a"/>
+    <path d="M12.5 31 Q20 33.5 27.5 31 L27.5 34 Q20 36.5 12.5 34 Z" fill="#e0262b" opacity="0.9"/>
+    <circle cx="9.5" cy="17" r="3.5" fill="#8a5a2b" stroke="#5a3a18" stroke-width="0.6"/><circle cx="30.5" cy="17" r="3.5" fill="#8a5a2b" stroke="#5a3a18" stroke-width="0.6"/>
+    <circle cx="9.5" cy="17" r="2" fill="#d9b48a"/><circle cx="30.5" cy="17" r="2" fill="#d9b48a"/>
+    <ellipse cx="20" cy="17" rx="9" ry="8.5" fill="#8a5a2b" stroke="#5a3a18" stroke-width="0.6"/>
+    <path d="M13 17 C13 12 16.5 11.5 20 13 C23.5 11.5 27 12 27 17 C27 22 24 25 20 25 C16 25 13 22 13 17 Z" fill="#d9b48a"/>
+    <circle cx="17" cy="16.5" r="1.3" fill="#1b1b1b"/><circle cx="23" cy="16.5" r="1.3" fill="#1b1b1b"/>
+    <circle cx="17.4" cy="16.1" r="0.4" fill="#fff"/><circle cx="23.4" cy="16.1" r="0.4" fill="#fff"/>
+    <path d="M19 19.5 h2" stroke="#5a3a18" stroke-width="0.8" stroke-linecap="round"/>
+    <path d="M17 21.5 Q20 23.5 23 21.5" fill="none" stroke="#5a3a18" stroke-width="0.7" stroke-linecap="round"/>
+    <ellipse cx="20" cy="9.5" rx="9" ry="1.8" fill="#e8cf7a" stroke="#a88a2a" stroke-width="0.5"/>
+    <path d="M14.5 9.5 C14.5 4.5 25.5 4.5 25.5 9.5 Z" fill="#e8cf7a" stroke="#a88a2a" stroke-width="0.5"/>
+    <path d="M14.7 8 h10.6" stroke="#e0262b" stroke-width="1.2"/>
+  </svg>`,
+    micky: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="16" y="40" width="2.6" height="6" fill="#1b1b1b"/><rect x="21.4" y="40" width="2.6" height="6" fill="#1b1b1b"/>
+    <ellipse cx="15.5" cy="47.5" rx="4" ry="2.4" fill="#f6c21a" stroke="#b58a0f" stroke-width="0.5"/><ellipse cx="24.5" cy="47.5" rx="4" ry="2.4" fill="#f6c21a" stroke="#b58a0f" stroke-width="0.5"/>
+    <path d="M13 26 Q13 24.5 20 24.5 Q27 24.5 27 26 L27 33 L13 33 Z" fill="#1b1b1b"/>
+    <path d="M12.5 32 L27.5 32 L28 40 Q20 42 12 40 Z" fill="#e0262b" stroke="#8a0f14" stroke-width="0.5"/>
+    <ellipse cx="17" cy="35" rx="1" ry="1.5" fill="#fff"/><ellipse cx="23" cy="35" rx="1" ry="1.5" fill="#fff"/>
+    <circle cx="10.5" cy="31.5" r="2.6" fill="#fff" stroke="#999" stroke-width="0.4"/><circle cx="29.5" cy="31.5" r="2.6" fill="#fff" stroke="#999" stroke-width="0.4"/>
+    <path d="M13 27 L11 30 M27 27 L29 30" stroke="#1b1b1b" stroke-width="2"/>
+    <circle cx="9.5" cy="7" r="5.5" fill="#1b1b1b"/><circle cx="30.5" cy="7" r="5.5" fill="#1b1b1b"/>
+    <ellipse cx="20" cy="16" rx="9" ry="9" fill="#1b1b1b"/>
+    <path d="M12.5 18 C12 13 15 10.5 17.5 12 C18.5 12.6 19.5 13 20 13 C20.5 13 21.5 12.6 22.5 12 C25 10.5 28 13 27.5 18 C27 23 24 25 20 25 C16 25 13 23 12.5 18 Z" fill="#f6d6b8"/>
+    <ellipse cx="18" cy="15.5" rx="1.2" ry="2.4" fill="#fff" stroke="#1b1b1b" stroke-width="0.3"/><ellipse cx="22" cy="15.5" rx="1.2" ry="2.4" fill="#fff" stroke="#1b1b1b" stroke-width="0.3"/>
+    <ellipse cx="18.2" cy="16.4" rx="0.7" ry="1.3" fill="#1b1b1b"/><ellipse cx="21.8" cy="16.4" rx="0.7" ry="1.3" fill="#1b1b1b"/>
+    <ellipse cx="20" cy="19" rx="1.6" ry="1.1" fill="#1b1b1b"/>
+    <path d="M15.5 20.5 Q20 25.5 24.5 20.5 Q20 22.5 15.5 20.5 Z" fill="#7a1f1f" stroke="#1b1b1b" stroke-width="0.5"/>
+  </svg>`,
+    minnie: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="16" y="41" width="2.6" height="5" fill="#1b1b1b"/><rect x="21.4" y="41" width="2.6" height="5" fill="#1b1b1b"/>
+    <ellipse cx="15.5" cy="47.5" rx="3.6" ry="2.2" fill="#f6c21a" stroke="#b58a0f" stroke-width="0.5"/><ellipse cx="24.5" cy="47.5" rx="3.6" ry="2.2" fill="#f6c21a" stroke="#b58a0f" stroke-width="0.5"/>
+    <path d="M14 25 Q20 24 26 25 L30.5 41 Q20 44 9.5 41 Z" fill="#e0262b" stroke="#8a0f14" stroke-width="0.5"/>
+    <circle cx="15" cy="30" r="1" fill="#fff"/><circle cx="21" cy="28" r="1" fill="#fff"/><circle cx="24.5" cy="33" r="1" fill="#fff"/><circle cx="17" cy="36" r="1" fill="#fff"/><circle cx="23" cy="39" r="1" fill="#fff"/><circle cx="13" cy="39" r="1" fill="#fff"/><circle cx="27.5" cy="38.5" r="1" fill="#fff"/>
+    <circle cx="10" cy="31" r="2.4" fill="#fff" stroke="#999" stroke-width="0.4"/><circle cx="30" cy="31" r="2.4" fill="#fff" stroke="#999" stroke-width="0.4"/>
+    <circle cx="9.5" cy="7.5" r="5.2" fill="#1b1b1b"/><circle cx="30.5" cy="7.5" r="5.2" fill="#1b1b1b"/>
+    <ellipse cx="20" cy="16" rx="9" ry="9" fill="#1b1b1b"/>
+    <path d="M12.5 18 C12 13 15 10.5 17.5 12 C18.5 12.6 19.5 13 20 13 C20.5 13 21.5 12.6 22.5 12 C25 10.5 28 13 27.5 18 C27 23 24 25 20 25 C16 25 13 23 12.5 18 Z" fill="#f6d6b8"/>
+    <ellipse cx="18" cy="15.5" rx="1.2" ry="2.4" fill="#fff" stroke="#1b1b1b" stroke-width="0.3"/><ellipse cx="22" cy="15.5" rx="1.2" ry="2.4" fill="#fff" stroke="#1b1b1b" stroke-width="0.3"/>
+    <ellipse cx="18.2" cy="16.4" rx="0.7" ry="1.3" fill="#1b1b1b"/><ellipse cx="21.8" cy="16.4" rx="0.7" ry="1.3" fill="#1b1b1b"/>
+    <path d="M16.6 13 l-0.8 -1.2 M17.6 12.7 l-0.4 -1.3 M23.4 13 l0.8 -1.2 M22.4 12.7 l0.4 -1.3" stroke="#1b1b1b" stroke-width="0.5"/>
+    <ellipse cx="20" cy="19" rx="1.6" ry="1.1" fill="#1b1b1b"/>
+    <path d="M15.5 20.5 Q20 25.5 24.5 20.5 Q20 22.5 15.5 20.5 Z" fill="#7a1f1f" stroke="#1b1b1b" stroke-width="0.5"/>
+    <path d="M20 6 L13 2 Q11.5 6 13 10 Z M20 6 L27 2 Q28.5 6 27 10 Z" fill="#e0262b" stroke="#8a0f14" stroke-width="0.5"/>
+    <circle cx="20" cy="6" r="2" fill="#e0262b" stroke="#8a0f14" stroke-width="0.5"/>
+    <circle cx="14.5" cy="5" r="0.7" fill="#fff"/><circle cx="13.6" cy="8" r="0.7" fill="#fff"/><circle cx="25.5" cy="5" r="0.7" fill="#fff"/><circle cx="26.4" cy="8" r="0.7" fill="#fff"/>
+  </svg>`,
+    naruto: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15" y="39" width="4" height="9" fill="#f08a24"/><rect x="21" y="39" width="4" height="9" fill="#f08a24"/><path d="M13.5 47.5 h6 v2.5 h-6 Z M20.5 47.5 h6 v2.5 h-6 Z" fill="#2f5fae"/>
+    <path d="M12 27 Q12 25 20 25 Q28 25 28 27 L28.5 40 L11.5 40 Z" fill="#f08a24" stroke="#b5620f" stroke-width="0.6"/>
+    <path d="M12 27 Q12 25 20 25 Q28 25 28 27 L28 30 Q20 28.5 12 30 Z" fill="#1d1d2a"/>
+    <path d="M20 28 L20 40" stroke="#f4f4f4" stroke-width="1"/>
+    <path d="M10 15 L4 13 L9 10 L5 5 L12 7 L12 1 L17 5 L20 -1 L23 5 L28 1 L28 7 L35 5 L31 10 L36 13 L30 15 Z" fill="#f6d43a" stroke="#c9a91f" stroke-width="0.6" stroke-linejoin="round"/>
+    <ellipse cx="20" cy="17" rx="8.5" ry="9" fill="#f6d6b8" stroke="#d1ad96" stroke-width="0.6"/>
+    <path d="M11.5 12 L13 15 L15 12.5 L17 15.5 L20 12 L23 15.5 L25 12.5 L27 15 L28.5 12 C27 8 13 8 11.5 12 Z" fill="#f6d43a" stroke="#c9a91f" stroke-width="0.5"/>
+    <rect x="11" y="9.5" width="18" height="3.2" rx="1" fill="#2f5fae"/>
+    <rect x="16" y="9.8" width="8" height="2.6" rx="0.5" fill="#c9d1d9" stroke="#6b737b" stroke-width="0.3"/>
+    <path d="M18.6 11.6 Q20 10 21.4 11.1 Q20.6 12 20 11.4" fill="none" stroke="#4d545c" stroke-width="0.4"/>
+    <ellipse cx="16.6" cy="17" rx="1.4" ry="1.8" fill="#3a8fe0"/><ellipse cx="23.4" cy="17" rx="1.4" ry="1.8" fill="#3a8fe0"/>
+    <circle cx="16.6" cy="17.2" r="0.6" fill="#1b1b1b"/><circle cx="23.4" cy="17.2" r="0.6" fill="#1b1b1b"/>
+    <path d="M12.5 18.8 l2.4 0.4 M12.6 20.2 l2.4 0.2 M12.9 21.6 l2.2 0 M27.5 18.8 l-2.4 0.4 M27.4 20.2 l-2.4 0.2 M27.1 21.6 l-2.2 0" stroke="#8a5a3a" stroke-width="0.5" stroke-linecap="round"/>
+    <path d="M16.5 22.5 Q20 25.5 23.5 22.5" fill="#7a1f1f" stroke="#1b1b1b" stroke-width="0.6"/>
+  </svg>`,
+    sasuke: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15" y="39" width="4" height="9" fill="#f2f2f2"/><rect x="21" y="39" width="4" height="9" fill="#f2f2f2"/><path d="M13.5 47.5 h6 v2.5 h-6 Z M20.5 47.5 h6 v2.5 h-6 Z" fill="#2f3a5a"/>
+    <rect x="13" y="36" width="14" height="5" rx="1" fill="#f2f2f2" stroke="#b5b5b5" stroke-width="0.5"/>
+    <path d="M12 27 Q12 25 20 25 Q28 25 28 27 L28 37 L12 37 Z" fill="#26304f" stroke="#141a2c" stroke-width="0.6"/>
+    <path d="M13 24 L27 24 L26 28 L14 28 Z" fill="#26304f" stroke="#141a2c" stroke-width="0.5"/>
+    <path d="M28 12 L36 6 L32 13 L38 12 L31 17 L35 20 L28.5 19 Z" fill="#1b1d26"/>
+    <ellipse cx="20" cy="17" rx="8.5" ry="9" fill="#f6d6b8" stroke="#d1ad96" stroke-width="0.6"/>
+    <path d="M11 17 C9.5 9 14 5 20 5 C26 5 30 8 29 15 L28.5 21 L27 14 L24 11.5 L21 14 L19 11 L16 14.5 L14 11.5 L12.5 21 Z" fill="#1b1d26"/>
+    <rect x="11" y="9" width="18" height="3" rx="1" fill="#2f5fae"/>
+    <rect x="16" y="9.3" width="8" height="2.4" rx="0.5" fill="#c9d1d9" stroke="#6b737b" stroke-width="0.3"/>
+    <path d="M18.6 11 Q20 9.6 21.4 10.6 Q20.6 11.4 20 10.9" fill="none" stroke="#4d545c" stroke-width="0.4"/>
+    <ellipse cx="16.8" cy="17.5" rx="1.3" ry="1.5" fill="#1b1b1b"/><ellipse cx="23.2" cy="17.5" rx="1.3" ry="1.5" fill="#1b1b1b"/>
+    <circle cx="17.2" cy="17.1" r="0.4" fill="#fff"/><circle cx="23.6" cy="17.1" r="0.4" fill="#fff"/>
+    <path d="M15 15.4 L18.4 16.2 M25 15.4 L21.6 16.2" stroke="#1b1b1b" stroke-width="0.7" stroke-linecap="round"/>
+    <path d="M18 23 h4" stroke="#1b1b1b" stroke-width="0.7" stroke-linecap="round"/>
+  </svg>`,
+    gon: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15" y="39" width="4" height="9" fill="#f6d6b8"/><rect x="21" y="39" width="4" height="9" fill="#f6d6b8"/><path d="M13.5 47.5 h6 v2.5 h-6 Z M20.5 47.5 h6 v2.5 h-6 Z" fill="#e0452a"/>
+    <rect x="13" y="35" width="14" height="6" rx="1" fill="#3f9a4a" stroke="#256b2e" stroke-width="0.5"/>
+    <path d="M12 27 Q12 25 20 25 Q28 25 28 27 L28 36 L12 36 Z" fill="#3f9a4a" stroke="#256b2e" stroke-width="0.6"/>
+    <path d="M17 25 L20 29 L23 25" fill="#256b2e"/>
+    <path d="M10 14 L6 4 L13 9 L13 -1 L18 6 L20 -4 L23 6 L28 -1 L27 9 L34 4 L30 14 Z" fill="#1b1d26" stroke="#0d0e12" stroke-width="0.5" stroke-linejoin="round"/>
+    <path d="M6 4 L8 6.5 M13 -1 L13.5 2.5 M20 -4 L20.3 0 M28 -1 L27.5 2.5 M34 4 L32 6.5" stroke="#3f9a4a" stroke-width="1.6" stroke-linecap="round"/>
+    <ellipse cx="20" cy="17" rx="8.5" ry="9" fill="#f6d6b8" stroke="#d1ad96" stroke-width="0.6"/>
+    <path d="M11.5 14 C12 9 15 8.5 20 8.5 C25 8.5 28 9 28.5 14 L26 11.5 L23 13 L20 11 L17 13 L14 11.5 Z" fill="#1b1d26"/>
+    <ellipse cx="16.6" cy="17" rx="1.6" ry="2" fill="#7a4a24"/><ellipse cx="23.4" cy="17" rx="1.6" ry="2" fill="#7a4a24"/>
+    <circle cx="16.6" cy="17.2" r="0.7" fill="#1b1b1b"/><circle cx="23.4" cy="17.2" r="0.7" fill="#1b1b1b"/>
+    <circle cx="17.1" cy="16.4" r="0.45" fill="#fff"/><circle cx="23.9" cy="16.4" r="0.45" fill="#fff"/>
+    <path d="M16 22 Q20 26 24 22" fill="#7a1f1f" stroke="#1b1b1b" stroke-width="0.6"/>
+  </svg>`,
+    killua: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15" y="39" width="4" height="9" fill="#f6d6b8"/><rect x="21" y="39" width="4" height="9" fill="#f6d6b8"/><path d="M13.5 47.5 h6 v2.5 h-6 Z M20.5 47.5 h6 v2.5 h-6 Z" fill="#5a4ab0"/>
+    <rect x="13" y="35" width="14" height="6" rx="1" fill="#2f3a6a" stroke="#1b2244" stroke-width="0.5"/>
+    <path d="M12 27 Q12 25 20 25 Q28 25 28 27 L28 36 L12 36 Z" fill="#f4f4f4" stroke="#b5b5b5" stroke-width="0.6"/>
+    <path d="M12 28 Q20 30.5 28 28 L28 31 Q20 33.5 12 31 Z" fill="#6a4ab8" opacity="0.9"/>
+    <path d="M16 25 Q20 27.5 24 25" fill="none" stroke="#6a4ab8" stroke-width="1.2"/>
+    <path d="M9.5 18 C4 15 5 9 8 8 C7 4 12 1 15 3 C16 -1 24 -1 25 3 C28 1 33 4 32 8 C35 9 36 15 30.5 18 Z" fill="#eef1f6" stroke="#b8c1cf" stroke-width="0.6"/>
+    <ellipse cx="20" cy="17" rx="8.5" ry="9" fill="#f6d6b8" stroke="#d1ad96" stroke-width="0.6"/>
+    <path d="M11.5 15 C11 9.5 15 8 20 8 C25 8 29 9.5 28.5 15 L27 12 L25 14.5 L23 11.5 L20.5 14 L18 11.5 L15.5 14.5 L13.5 12 Z" fill="#eef1f6" stroke="#b8c1cf" stroke-width="0.4"/>
+    <ellipse cx="16.6" cy="17.2" rx="1.6" ry="1.9" fill="#3a8fe0"/><ellipse cx="23.4" cy="17.2" rx="1.6" ry="1.9" fill="#3a8fe0"/>
+    <circle cx="16.6" cy="17.4" r="0.7" fill="#1b1b1b"/><circle cx="23.4" cy="17.4" r="0.7" fill="#1b1b1b"/>
+    <circle cx="17.1" cy="16.6" r="0.45" fill="#fff"/><circle cx="23.9" cy="16.6" r="0.45" fill="#fff"/>
+    <path d="M17 22.5 Q19 24 20 22.6 Q21 24 23 22.5" fill="none" stroke="#1b1b1b" stroke-width="0.7" stroke-linecap="round"/>
+  </svg>`,
+    phineas: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15" y="41" width="3" height="7" fill="#f6c9a0"/><rect x="22" y="41" width="3" height="7" fill="#f6c9a0"/>
+    <path d="M13 47.5 h6 v2.5 h-6 Z M21 47.5 h6 v2.5 h-6 Z" fill="#f4f4f4" stroke="#999" stroke-width="0.4"/>
+    <rect x="13.5" y="36" width="13" height="6" rx="1" fill="#2f5fae"/>
+    <rect x="13" y="25" width="14" height="12" rx="2" fill="#f4f4f4"/>
+    <path d="M13 27 h14 M13 30 h14 M13 33 h14 M13 36 h14" stroke="#f08a24" stroke-width="1.6"/>
+    <path d="M10 8 Q10 4.5 13.5 5.5 L34.5 16.5 Q36 18.5 34 19.8 L13.5 25.5 Q10 26 10 22 Z" fill="#f6c9a0" stroke="#c99a70" stroke-width="0.6"/>
+    <path d="M12 6 L13.5 2.5 L15.5 6.5 L17.5 3.5 L19 8 L21.5 5.5 L22.5 10 L25.5 8.5 L25.5 12.5 L28.5 12 L27 14.5 L13 6.5 Z" fill="#e0452a"/>
+    <circle cx="19" cy="14" r="3" fill="#fff" stroke="#1b1b1b" stroke-width="0.5"/><circle cx="19.8" cy="14.2" r="1.2" fill="#1b1b1b"/>
+    <circle cx="23.5" cy="14.8" r="2.4" fill="#fff" stroke="#1b1b1b" stroke-width="0.5"/><circle cx="24.1" cy="15" r="1" fill="#1b1b1b"/>
+    <path d="M22 20.5 Q26 22.5 29.5 19.5" fill="none" stroke="#1b1b1b" stroke-width="0.9" stroke-linecap="round"/>
+  </svg>`,
+    ferb: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15.5" y="38" width="3" height="10" fill="#3a3a44"/><rect x="21.5" y="38" width="3" height="10" fill="#3a3a44"/>
+    <path d="M14 47.5 h5 v2.5 h-5 Z M21 47.5 h5 v2.5 h-5 Z" fill="#1b1b1b"/>
+    <rect x="14" y="27" width="12" height="12" rx="2" fill="#7d4cc0"/>
+    <path d="M16 27 L20 31 L24 27 Z" fill="#f4f4f4"/>
+    <rect x="13.5" y="7" width="13" height="20" rx="3" fill="#f6c9a0" stroke="#c99a70" stroke-width="0.6"/>
+    <path d="M13.5 10 C13 4 15 0 19 -2 C18.5 1.5 19.5 3 22 2 C21.5 4 23 5.5 26.5 6 L26.5 10 C22 8.5 17 8.5 13.5 10 Z" fill="#3fa64a"/>
+    <path d="M16 15 h3.6 M21.4 15 h3.6" stroke="#1b1b1b" stroke-width="0.6"/>
+    <path d="M16.2 15 Q17.8 17.2 19.4 15 Z M21.6 15 Q23.4 17.6 25 15 Z" fill="#fff" stroke="#1b1b1b" stroke-width="0.5"/>
+    <circle cx="17.8" cy="15.8" r="0.8" fill="#1b1b1b"/><circle cx="23.3" cy="16" r="0.8" fill="#1b1b1b"/>
+    <path d="M20.5 17 L21.5 20.5 L20 20.6" fill="none" stroke="#c99a70" stroke-width="0.7"/>
+    <path d="M18 23.5 h4.5" stroke="#1b1b1b" stroke-width="0.8" stroke-linecap="round"/>
+  </svg>`,
+    rick: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15.5" y="38" width="3" height="10" fill="#8a5a2b"/><rect x="21.5" y="38" width="3" height="10" fill="#8a5a2b"/>
+    <path d="M14 47.5 h5 v2.5 h-5 Z M21 47.5 h5 v2.5 h-5 Z" fill="#1b1b1b"/>
+    <path d="M11 25 L29 25 L31 44 L9 44 Z" fill="#f2f2f2" stroke="#b5b5b5" stroke-width="0.6"/>
+    <path d="M17 25 L23 25 L22 38 L18 38 Z" fill="#9fd4ea"/>
+    <path d="M17 25 L20 30 L23 25" fill="none" stroke="#b5b5b5" stroke-width="0.6"/>
+    <path d="M9 12 L3 8 L9 9 L5 3 L12 6 L12 0 L17 4.5 L20 -1 L23 4.5 L28 0 L28 6 L35 3 L31 9 L37 8 L31 12 L36 15 L30 15 Z" fill="#a9d6e8" stroke="#6fa4bb" stroke-width="0.6" stroke-linejoin="round"/>
+    <ellipse cx="20" cy="15" rx="9" ry="10" fill="#f0d6bd" stroke="#c9a888" stroke-width="0.6"/>
+    <path d="M13 11.5 Q20 9.5 27 11.5" fill="none" stroke="#6fa4bb" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="16.5" cy="14.5" r="2.6" fill="#fff" stroke="#1b1b1b" stroke-width="0.5"/><circle cx="23.5" cy="14.5" r="2.6" fill="#fff" stroke="#1b1b1b" stroke-width="0.5"/>
+    <circle cx="16.8" cy="14.7" r="0.7" fill="#1b1b1b"/><circle cx="23.2" cy="14.7" r="0.7" fill="#1b1b1b"/>
+    <path d="M20 16 L19 19.5 L21 19.5" fill="none" stroke="#c9a888" stroke-width="0.7"/>
+    <path d="M15.5 22 Q20 20.5 24.5 22.3" fill="none" stroke="#1b1b1b" stroke-width="0.9" stroke-linecap="round"/>
+    <path d="M23.5 22.2 Q24 24.5 23.2 25.5" fill="none" stroke="#bfe6c0" stroke-width="0.9" stroke-linecap="round"/>
+  </svg>`,
+    morty: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15" y="38" width="4" height="10" fill="#2f5fae"/><rect x="21" y="38" width="4" height="10" fill="#2f5fae"/>
+    <path d="M13.5 47.5 h6 v2.5 h-6 Z M20.5 47.5 h6 v2.5 h-6 Z" fill="#f4f4f4" stroke="#999" stroke-width="0.4"/>
+    <rect x="12.5" y="26" width="15" height="13" rx="3" fill="#f5d33f" stroke="#c9a91f" stroke-width="0.6"/>
+    <ellipse cx="20" cy="15" rx="11" ry="11" fill="#f0d6bd" stroke="#c9a888" stroke-width="0.6"/>
+    <path d="M9 14 C8.5 6 14 3 20 3 C26 3 31.5 6 31 14 C29 9 26 7.5 20 7.5 C14 7.5 11 9 9 14 Z" fill="#7a4a24"/>
+    <circle cx="16.3" cy="14.5" r="3.2" fill="#fff" stroke="#1b1b1b" stroke-width="0.5"/><circle cx="23.7" cy="14.5" r="3.2" fill="#fff" stroke="#1b1b1b" stroke-width="0.5"/>
+    <circle cx="16.5" cy="14.8" r="0.8" fill="#1b1b1b"/><circle cx="23.5" cy="14.8" r="0.8" fill="#1b1b1b"/>
+    <path d="M16 22 Q18 20.5 20 22 Q22 23.5 24 22" fill="none" stroke="#1b1b1b" stroke-width="0.9" stroke-linecap="round"/>
+  </svg>`,
+    elsa: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <path d="M9 30 C8 40 6 46 4 49 L36 49 C34 46 32 40 31 30 Z" fill="#bfe6f7" opacity="0.75" stroke="#8cc6e0" stroke-width="0.5"/>
+    <path d="M14 26 L26 26 L30 49 L10 49 Z" fill="#6fb8e4" stroke="#3d8cbf" stroke-width="0.6"/>
+    <circle cx="16" cy="36" r="0.7" fill="#fff"/><circle cx="23" cy="41" r="0.7" fill="#fff"/><circle cx="19" cy="45" r="0.7" fill="#fff"/><circle cx="25" cy="33" r="0.6" fill="#fff"/>
+    <ellipse cx="20" cy="15" rx="8.5" ry="9.5" fill="#f6dccb" stroke="#d1ad96" stroke-width="0.6"/>
+    <path d="M11.5 15 C10 6 15 3.5 20.5 3.5 C26 3.5 30 6.5 28.5 13 C26 8 22 7.5 18 9 C15 10 13 12 11.5 15 Z" fill="#f4ecc4" stroke="#d6c88a" stroke-width="0.5"/>
+    <path d="M27 11 C30 15 29 20 27 24 C25.5 28 27 32 25.5 36 C24.5 33 24 28 25 24 Z" fill="#f4ecc4" stroke="#d6c88a" stroke-width="0.5"/>
+    <path d="M25.8 26 l1.6 0.6 M25.4 29 l1.6 0.6 M25.4 32 l1.4 0.5" stroke="#d6c88a" stroke-width="0.5"/>
+    <ellipse cx="16.6" cy="15.5" rx="1.5" ry="2" fill="#3a7fc4"/><ellipse cx="23.4" cy="15.5" rx="1.5" ry="2" fill="#3a7fc4"/>
+    <circle cx="17" cy="15" r="0.5" fill="#fff"/><circle cx="23.8" cy="15" r="0.5" fill="#fff"/>
+    <path d="M14.8 12.6 Q16.6 11.8 18.2 12.6 M21.8 12.6 Q23.4 11.8 25.2 12.6" fill="none" stroke="#8a6a4a" stroke-width="0.6"/>
+    <path d="M18 20.5 Q20 21.8 22 20.5" fill="#d9536f" stroke="#b03a55" stroke-width="0.6"/>
+  </svg>`,
+    anna: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <path d="M9 28 C7 38 6 45 7 49 L33 49 C34 45 33 38 31 28 Z" fill="#b0306a" stroke="#7a1f48" stroke-width="0.6"/>
+    <path d="M14 34 L26 34 L29 49 L11 49 Z" fill="#2b3f8a" stroke="#1b2a63" stroke-width="0.6"/>
+    <path d="M14 26 L26 26 L26 35 L14 35 Z" fill="#1d1d2a"/>
+    <path d="M16 28 L24 33 M24 28 L16 33" stroke="#d9a63a" stroke-width="0.6"/>
+    <ellipse cx="20" cy="15" rx="8.5" ry="9.5" fill="#f6dccb" stroke="#d1ad96" stroke-width="0.6"/>
+    <path d="M11.5 16 C10 6 15 3.5 20 3.5 C25 3.5 30 6 28.5 16 C27 10 24 8.5 20 9 C16 8.5 13 10 11.5 16 Z" fill="#a8461f" stroke="#7a2f12" stroke-width="0.5"/>
+    <path d="M17 4.5 C16 6 15.5 8 15.8 9.5" fill="none" stroke="#f4ecc4" stroke-width="1.2"/>
+    <path d="M11.5 15 C10 20 10.5 26 9.5 31 C11.5 28 12.5 22 13 17 Z M28.5 15 C30 20 29.5 26 30.5 31 C28.5 28 27.5 22 27 17 Z" fill="#a8461f" stroke="#7a2f12" stroke-width="0.5"/>
+    <ellipse cx="16.6" cy="15.5" rx="1.5" ry="2" fill="#4a9ad8"/><ellipse cx="23.4" cy="15.5" rx="1.5" ry="2" fill="#4a9ad8"/>
+    <circle cx="17" cy="15" r="0.5" fill="#fff"/><circle cx="23.8" cy="15" r="0.5" fill="#fff"/>
+    <circle cx="15" cy="18.6" r="0.35" fill="#c47a5a"/><circle cx="16.2" cy="19" r="0.35" fill="#c47a5a"/><circle cx="23.8" cy="19" r="0.35" fill="#c47a5a"/><circle cx="25" cy="18.6" r="0.35" fill="#c47a5a"/>
+    <path d="M17.5 20.6 Q20 23 22.5 20.6" fill="#d9536f" stroke="#b03a55" stroke-width="0.6"/>
+  </svg>`,
+    mcqueen: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <path d="M3 42 C3 37 6 35 10 34.5 L14 29 C16 27 24 27 27 29 L32 34 C36 34.5 38 36.5 38 40 L38 43 L3 44 Z" fill="#d81e1e" stroke="#8a0f0f" stroke-width="0.7"/>
+    <path d="M15 30 C17 28.5 23.5 28.5 26 30 L29.5 34 L13 34.5 Z" fill="#e9f3fb" stroke="#8a0f0f" stroke-width="0.6"/>
+    <ellipse cx="18" cy="31.8" rx="2" ry="1.6" fill="#fff" stroke="#1b1b1b" stroke-width="0.3"/><ellipse cx="23.5" cy="31.8" rx="2" ry="1.6" fill="#fff" stroke="#1b1b1b" stroke-width="0.3"/>
+    <circle cx="18.6" cy="31.9" r="0.9" fill="#3a7fc4"/><circle cx="24.1" cy="31.9" r="0.9" fill="#3a7fc4"/>
+    <path d="M8 38 L18 36.5 L14 39 L23 38" fill="none" stroke="#f6c21a" stroke-width="1.6" stroke-linejoin="round"/>
+    <text x="27.5" y="40.8" font-family="Oswald, sans-serif" font-weight="700" font-size="5.2" fill="#fff" stroke="#1b1b1b" stroke-width="0.25">95</text>
+    <path d="M33 38.5 Q35.5 41 37.5 39.5" fill="none" stroke="#1b1b1b" stroke-width="0.7"/>
+    <circle cx="10" cy="44" r="4.2" fill="#1b1b1b"/><circle cx="31" cy="44" r="4.2" fill="#1b1b1b"/>
+    <circle cx="10" cy="44" r="2" fill="#d81e1e"/><circle cx="31" cy="44" r="2" fill="#d81e1e"/>
+  </svg>`,
+    hook: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <path d="M30 26 L30 20 M30 20 L37 26" stroke="#5a3a24" stroke-width="1.6" fill="none"/>
+    <path d="M37 26 L37 31 Q37 34 34.5 33.5" fill="none" stroke="#3a3a3a" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M4 43 L4 34 Q4 31 7 31 L10 31 L12 24 Q12.5 22.5 14 22.5 L22 22.5 Q24 22.5 24 24.5 L24 31 L34 31 L35 43 Z" fill="#9a6338" stroke="#5a3a24" stroke-width="0.7"/>
+    <circle cx="9" cy="37" r="1.4" fill="#5fa3a8" opacity="0.8"/><circle cx="28" cy="35" r="1.8" fill="#5fa3a8" opacity="0.8"/>
+    <path d="M13.2 24.5 L22.6 24.5 L22.6 30.5 L12 30.5 Z" fill="#e9f3fb" stroke="#5a3a24" stroke-width="0.5"/>
+    <ellipse cx="15.6" cy="27.5" rx="1.9" ry="1.8" fill="#fff" stroke="#1b1b1b" stroke-width="0.3"/><ellipse cx="20.2" cy="27.5" rx="1.9" ry="1.8" fill="#fff" stroke="#1b1b1b" stroke-width="0.3"/>
+    <circle cx="16" cy="27.6" r="0.9" fill="#6b4a2a"/><circle cx="20.6" cy="27.6" r="0.9" fill="#6b4a2a"/>
+    <path d="M5 37 Q9 41.5 15 37.5" fill="#5a2a1a" stroke="#1b1b1b" stroke-width="0.6"/>
+    <rect x="8.3" y="37.4" width="2" height="2.2" fill="#fff"/><rect x="11" y="37.5" width="2" height="2.2" fill="#fff"/>
+    <circle cx="10" cy="44" r="4.2" fill="#1b1b1b"/><circle cx="30" cy="44" r="4.2" fill="#1b1b1b"/>
+    <circle cx="10" cy="44" r="1.8" fill="#8a8a8a"/><circle cx="30" cy="44" r="1.8" fill="#8a8a8a"/>
+  </svg>`,
+    gru: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="14" y="40" width="4" height="8" fill="#2a2a30"/><rect x="22" y="40" width="4" height="8" fill="#2a2a30"/>
+    <path d="M12.5 47.5 h6 v2.5 h-6 Z M21.5 47.5 h6 v2.5 h-6 Z" fill="#1b1b1b"/>
+    <path d="M9 30 Q9 24 20 24 Q31 24 31 30 L29 42 L11 42 Z" fill="#2f3036" stroke="#16171a" stroke-width="0.6"/>
+    <path d="M12 23 Q20 27 28 23 L28 28 Q20 32 12 28 Z" fill="#6b6b6b"/>
+    <path d="M14 24.5 L14 29 M18 25.7 L18 30.3 M22 25.7 L22 30.3 M26 24.5 L26 29" stroke="#2a2a2a" stroke-width="1.6"/>
+    <ellipse cx="20" cy="13" rx="9" ry="10.5" fill="#f2dccc" stroke="#c9ad98" stroke-width="0.6"/>
+    <ellipse cx="25.5" cy="17" rx="6" ry="3.2" fill="#f2dccc" stroke="#c9ad98" stroke-width="0.6"/>
+    <circle cx="16.5" cy="12.5" r="2.2" fill="#fff" stroke="#1b1b1b" stroke-width="0.4"/><circle cx="22.5" cy="12.5" r="2.2" fill="#fff" stroke="#1b1b1b" stroke-width="0.4"/>
+    <circle cx="17" cy="12.8" r="0.8" fill="#1b1b1b"/><circle cx="23" cy="12.8" r="0.8" fill="#1b1b1b"/>
+    <path d="M14 10 Q16.5 8.5 19 10 M21 10 Q23.5 8.5 26 10" fill="none" stroke="#3a3a3a" stroke-width="0.8"/>
+    <path d="M15.5 21.5 Q19 20 22 21.2" fill="none" stroke="#1b1b1b" stroke-width="0.8" stroke-linecap="round"/>
+  </svg>`,
+    minion: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <rect x="15" y="43" width="3.5" height="4" fill="#3d63a8"/><rect x="21.5" y="43" width="3.5" height="4" fill="#3d63a8"/>
+    <path d="M13.5 47 h6 v3 h-6 Z M20.5 47 h6 v3 h-6 Z" fill="#1b1b1b"/>
+    <path d="M10 18 Q10 6 20 6 Q30 6 30 18 L30 38 Q30 45 20 45 Q10 45 10 38 Z" fill="#f7d84a" stroke="#c9a91f" stroke-width="0.7"/>
+    <path d="M10 32 L14 32 L14 28 L26 28 L26 32 L30 32 L30 38 Q30 45 20 45 Q10 45 10 38 Z" fill="#3d63a8" stroke="#294a85" stroke-width="0.6"/>
+    <circle cx="20" cy="33" r="2" fill="#294a85"/>
+    <path d="M14 28 L11 22 M26 28 L29 22" stroke="#3d63a8" stroke-width="1.4"/>
+    <rect x="10" y="15" width="20" height="3" fill="#2a2a2a"/>
+    <circle cx="16" cy="16.5" r="4.3" fill="#9aa3ad" stroke="#5a626b" stroke-width="0.8"/><circle cx="24" cy="16.5" r="4.3" fill="#9aa3ad" stroke="#5a626b" stroke-width="0.8"/>
+    <circle cx="16" cy="16.5" r="3" fill="#fff"/><circle cx="24" cy="16.5" r="3" fill="#fff"/>
+    <circle cx="16.5" cy="16.8" r="1.4" fill="#7a4a24"/><circle cx="23.5" cy="16.8" r="1.4" fill="#7a4a24"/>
+    <circle cx="16.5" cy="16.8" r="0.7" fill="#1b1b1b"/><circle cx="23.5" cy="16.8" r="0.7" fill="#1b1b1b"/>
+    <path d="M16 24 Q20 27.5 24 24" fill="#7a1f1f" stroke="#1b1b1b" stroke-width="0.6"/>
+    <path d="M18 6.3 L17 3 M20 6 L20 2.5 M22 6.3 L23 3" stroke="#1b1b1b" stroke-width="0.5"/>
+  </svg>`,
+    po: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <ellipse cx="14" cy="46" rx="4" ry="3.5" fill="#1b1b1b"/><ellipse cx="26" cy="46" rx="4" ry="3.5" fill="#1b1b1b"/>
+    <ellipse cx="20" cy="35" rx="12" ry="11" fill="#f7f4ee" stroke="#c9c4b8" stroke-width="0.6"/>
+    <path d="M8.5 38 Q20 44 31.5 38 L31 43 Q20 49 9 43 Z" fill="#c9a26a" stroke="#8a6a3a" stroke-width="0.5"/>
+    <path d="M9 28 Q4 31 6 37 Q8 38 10 34 Z M31 28 Q36 31 34 37 Q32 38 30 34 Z" fill="#1b1b1b"/>
+    <path d="M10 26 Q20 31 30 26 L30 29 Q20 34 10 29 Z" fill="#1b1b1b"/>
+    <circle cx="11.5" cy="7" r="4" fill="#1b1b1b"/><circle cx="28.5" cy="7" r="4" fill="#1b1b1b"/>
+    <ellipse cx="20" cy="15" rx="10.5" ry="9.5" fill="#f7f4ee" stroke="#c9c4b8" stroke-width="0.6"/>
+    <ellipse cx="15.5" cy="14.5" rx="3.6" ry="3" fill="#1b1b1b" transform="rotate(-25 15.5 14.5)"/><ellipse cx="24.5" cy="14.5" rx="3.6" ry="3" fill="#1b1b1b" transform="rotate(25 24.5 14.5)"/>
+    <circle cx="16" cy="14.5" r="1.6" fill="#3fa64a"/><circle cx="24" cy="14.5" r="1.6" fill="#3fa64a"/>
+    <circle cx="16.3" cy="14.2" r="0.7" fill="#1b1b1b"/><circle cx="23.7" cy="14.2" r="0.7" fill="#1b1b1b"/>
+    <ellipse cx="20" cy="18.5" rx="1.8" ry="1.2" fill="#1b1b1b"/>
+    <path d="M17 21 Q20 23.5 23 21" fill="none" stroke="#1b1b1b" stroke-width="0.8" stroke-linecap="round"/>
+  </svg>`,
+    shifu: `<svg viewBox="0 0 40 52" aria-hidden="true">
+    <ellipse cx="20" cy="50" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>
+    <path d="M27 44 Q35 42 35 34 Q33 38 29 39" fill="#c25a2a" stroke="#7a3412" stroke-width="0.5"/>
+    <path d="M30.5 37.5 l2 -1 M32 35 l2 -0.6" stroke="#f2d0a0" stroke-width="1"/>
+    <path d="M12 30 L28 30 L30 48 L10 48 Z" fill="#8a8f7a" stroke="#5a5f4a" stroke-width="0.6"/>
+    <path d="M16 30 L20 36 L24 30" fill="none" stroke="#c9a26a" stroke-width="1"/>
+    <rect x="11" y="39" width="18" height="2" fill="#5a3a24"/>
+    <path d="M8 10 L7 1 L15 7 Z M32 10 L33 1 L25 7 Z" fill="#c25a2a" stroke="#7a3412" stroke-width="0.6"/>
+    <path d="M9 7 L8.5 3 L12.5 6.5 Z M31 7 L31.5 3 L27.5 6.5 Z" fill="#f2e6d0"/>
+    <ellipse cx="20" cy="18" rx="11" ry="10" fill="#c25a2a" stroke="#7a3412" stroke-width="0.6"/>
+    <path d="M12 21 Q14 16 18 18 L20 21 L22 18 Q26 16 28 21 Q26 27 20 27.5 Q14 27 12 21 Z" fill="#f2e6d0"/>
+    <path d="M13 14 Q16.5 12 19 14.5 M21 14.5 Q23.5 12 27 14" fill="none" stroke="#f7f4ee" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M13.5 13.5 Q8 13 4 16 M26.5 13.5 Q32 13 36 16" fill="none" stroke="#f7f4ee" stroke-width="0.8" stroke-linecap="round"/>
+    <circle cx="16.5" cy="17" r="1.3" fill="#1b1b1b"/><circle cx="23.5" cy="17" r="1.3" fill="#1b1b1b"/>
+    <ellipse cx="20" cy="21.2" rx="1.6" ry="1.1" fill="#1b1b1b"/>
+    <path d="M18 23.5 Q20 22.8 22 23.5 M18 23.5 Q15 26 13 31 M22 23.5 Q25 26 27 31" fill="none" stroke="#f7f4ee" stroke-width="0.8" stroke-linecap="round"/>
+  </svg>`,
+  };
+  const fig = (name, cls, color) => ({ name, cls, svg: moreFigures[cls], color });
+  const characterSets = {
+    tomJerry: [{ name: 'Tom', cls: 'tom', svg: tomSvg }, { name: 'Jerry', cls: 'jerry', svg: jerrySvg }],
+    thorLoki: [{ name: 'Thor', cls: 'thor', svg: thorSvg }, { name: 'Loki', cls: 'loki', svg: lokiSvg }],
+    spongePatrick: [{ name: 'SpongeBob', cls: 'spongebob', svg: spongebobSvg }, { name: 'Patrick', cls: 'patrick', svg: patrickSvg }],
+    phineasFerb: [fig('Phineas', 'phineas', '#f08a24'), fig('Ferb', 'ferb', '#4fc27a')],
+    rickMorty: [fig('Rick', 'rick', '#a9d6e8'), fig('Morty', 'morty', '#f5d33f')],
+    elsaAnna: [fig('Elsa', 'elsa', '#8fd0f2'), fig('Anna', 'anna', '#e0609a')],
+    mcqueenHook: [fig('Lightning McQueen', 'mcqueen', '#ff5a5f'), fig('Hook', 'hook', '#d99a6a')],
+    gruMinion: [fig('Gru', 'gru', '#b9bcc6'), fig('Minion', 'minion', '#f7d84a')],
+    poShifu: [fig('Po', 'po', '#f7f4ee'), fig('Meister Shifu', 'shifu', '#e07a4a')],
+    narutoSasuke: [fig('Naruto', 'naruto', '#f08a24'), fig('Sasuke', 'sasuke', '#8fa2d8')],
+    gonKillua: [fig('Gon', 'gon', '#4fc27a'), fig('Killua', 'killua', '#c9b8f2')],
+    scoobyShaggy: [fig('Scooby-Doo', 'scooby', '#d9a35a'), fig('Shaggy', 'shaggy', '#9fd04a')],
+    ashPikachu: [fig('Ash', 'ash', '#ff5a5f'), fig('Pikachu', 'pikachu', '#f7d33a')],
+    bibiTina: [fig('Bibi', 'bibi', '#5fb0ff'), fig('Tina', 'tina', '#ff6a6a')],
+    pippiNilsson: [fig('Pippi Langstrumpf', 'pippi', '#ff8a3a'), fig('Herr Nilsson', 'nilsson', '#d9a35a')],
+    mickyMinnie: [fig('Micky', 'micky', '#ff5a5f'), fig('Minnie', 'minnie', '#ff7aa8')]
+  };
+  // Figuren pro Monat (0 = Januar), gilt jedes Jahr …
+  const monthSets = ['phineasFerb', 'rickMorty', 'elsaAnna', 'mcqueenHook', 'gruMinion', 'poShifu', 'narutoSasuke', 'gonKillua', 'scoobyShaggy', 'tomJerry', 'thorLoki', 'spongePatrick'];
+  // … ausser für diese bestimmten Monate ("Jahr-Monat", Monat ab 1)
+  const yearMonthSets = { '2027-10': 'ashPikachu', '2027-11': 'bibiTina', '2027-12': 'pippiNilsson', '2028-1': 'mickyMinnie' };
+  const setForMonth = (month, year) => yearMonthSets[year + '-' + (month + 1)] || monthSets[month];
+  let currentSet = null;
+  let players = [];
+  function useCharacters(setName){
+    if(setName === currentSet) return;
+    currentSet = setName;
+    players.forEach(pl => pl.el && pl.el.remove());
+    players = characterSets[setName].map(c => ({ ...c, pos: 1, el: null }));
+  }
   let n = 31, turn = 0, busy = false, winner = null;
   const pips = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
   function showDie(v){
@@ -1573,20 +2230,21 @@ const ladderGame = (() => {
     if(!statusEl) return;
     const p = players[turn];
     statusEl.innerHTML = winner
-      ? `<span class="${winner.cls}">${winner.name}</span> gewinnt! 🎉`
-      : `<span class="${p.cls}">${p.name}</span> ist dran – würfeln!`;
+      ? `<span class="${winner.cls}"${winner.color ? ` style="color:${winner.color}"` : ''}>${winner.name}</span> gewinnt! 🎉`
+      : `<span class="${p.cls}"${p.color ? ` style="color:${p.color}"` : ''}>${p.name}</span> ist dran – würfeln!`;
     players.forEach((pl, i) => pl.el && pl.el.classList.toggle('active', !winner && i === turn && !busy));
   }
   function place(instant){
     if(!layer) return;
     players.forEach((pl, i) => {
-      if(!pl.el){ pl.el = document.createElement('div'); pl.el.className = 'pawn ' + pl.cls; layer.appendChild(pl.el); }
+      if(!pl.el){ pl.el = document.createElement('div'); pl.el.className = 'pawn char ' + pl.cls; pl.el.innerHTML = pl.svg; layer.appendChild(pl.el); }
       const c = calCellCenter(pl.pos);
       if(!c) return;
       const share = players.filter(o => o.pos === pl.pos).length > 1;
-      const ox = share ? (i === 0 ? -9 : 9) : 0;
+      const ox = share ? (i === 0 ? -11 : 11) : 0;
+      const w = pl.el.offsetWidth, h = pl.el.offsetHeight;
       if(instant) pl.el.style.transition = 'none';
-      pl.el.style.transform = `translate(${(c.x - 11 + ox).toFixed(1)}px, ${(c.y - 22).toFixed(1)}px)`;
+      pl.el.style.transform = `translate(${(c.x - w / 2 + ox).toFixed(1)}px, ${(c.y - h * 0.62).toFixed(1)}px)`;
       if(instant){ void pl.el.offsetWidth; pl.el.style.transition = ''; }
     });
   }
@@ -1621,17 +2279,19 @@ const ladderGame = (() => {
     busy = false;
     status();
   }
-  function reset(days){
+  function reset(days, month, year){
     n = days || n;
+    if(month != null) useCharacters(setForMonth(month, year));
     players.forEach(pl => { pl.pos = 1; });
     turn = 0; winner = null; busy = false;
     showDie(1);
     status();
   }
+  useCharacters(setForMonth(new Date().getMonth(), new Date().getFullYear()));
   if(dieBtn) dieBtn.addEventListener('click', roll);
   const resetBtn = document.getElementById('ladder-reset');
   if(resetBtn) resetBtn.addEventListener('click', () => { reset(); place(true); });
-  return { reset, place };
+  return { reset, place, setFor: setForMonth };
 })();
 
 function renderCalEntries(){

@@ -727,6 +727,11 @@
   }
   .diff-btn:hover{ color:#fff; }
   .diff-btn.active{ background:var(--teal); color:var(--ink); font-weight:700; }
+  /* Umrechner-Kategorien: Bild neben dem Text */
+  #conv-cat-select .diff-btn{ display:flex; align-items:center; gap:7px; padding-left:8px; }
+  #conv-cat-select .cat-icon{ width:28px; height:28px; flex-shrink:0; transition: transform 0.3s ease; }
+  #conv-cat-select .diff-btn:hover .cat-icon{ transform:rotate(-8deg) scale(1.08); }
+  #conv-cat-select .diff-btn.active .cat-icon{ filter: drop-shadow(0 1px 1px rgba(0,0,0,0.35)); }
   .sudoku-controls .action-btn{
     background:var(--amber); color:var(--ink); border:none; border-radius:8px;
     padding:10px 18px; font-family:'JetBrains Mono'; font-weight:700; font-size:0.72rem;
@@ -985,6 +990,11 @@
   }
   .mode-btn:hover{ color:#fff; }
   .mode-btn.active{ background:var(--teal); color:var(--ink); font-weight:700; }
+  /* Umrechner: Bild neben dem Text */
+  #conv-mode-select .mode-btn{ display:flex; align-items:center; gap:8px; padding:6px 16px 6px 10px; }
+  #conv-mode-select .mode-icon{ width:34px; height:34px; flex-shrink:0; transition: transform 0.3s ease; text-transform:none; }
+  #conv-mode-select .mode-btn:hover .mode-icon{ transform:rotate(-8deg) scale(1.08); }
+  #conv-mode-select .mode-btn.active .mode-icon{ filter: drop-shadow(0 1px 1px rgba(0,0,0,0.35)); }
 
   .ttt-grid{
     display:grid; grid-template-columns:repeat(3, 88px); grid-auto-rows:88px;
@@ -1277,64 +1287,87 @@
     .c4-board{ grid-template-columns:repeat(7, 34px); grid-auto-rows:34px; }
   }
 
-  .calc-box{
-    max-width:320px;
-    background: linear-gradient(160deg, #322f2b 0%, #1c1a17 100%);
-    border-radius:20px; padding:18px 16px 20px;
-    box-shadow: 0 16px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+  /* Rechner als Nokia-Handy */
+  .calc-box.nokia{
+    position:relative; width:290px; max-width:100%; padding:22px 22px 30px;
+    background: linear-gradient(160deg, #3a5c9e 0%, #23407a 45%, #142a55 100%);
+    border-radius:46px 46px 70px 70px / 40px 40px 90px 90px;
+    box-shadow: 0 18px 36px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.25), inset 0 -6px 14px rgba(0,0,0,0.35);
   }
-  .calc-brand{
-    font-family:'JetBrains Mono'; font-size:0.6rem; letter-spacing:0.18em;
-    color:rgba(var(--fg),0.35); text-align:right; text-transform:uppercase;
-    margin-bottom:10px;
+  .nokia-ear{ width:60px; height:6px; margin:0 auto 10px; border-radius:4px; background:#0d1a36; box-shadow: inset 0 1px 2px rgba(0,0,0,0.8); }
+  .nokia-logo{
+    text-align:center; font-family:'Oswald', sans-serif; font-weight:700; font-size:0.95rem; letter-spacing:0.22em;
+    color:#d8e0ee; margin-bottom:8px; text-shadow:0 1px 0 rgba(0,0,0,0.4);
   }
-  .calc-display{
-    background: linear-gradient(180deg, #C7D3B7 0%, #B4C2A2 100%);
-    color:#16210f; border:2px solid #100f0d;
-    border-radius:6px; padding:14px 16px 16px;
-    margin-bottom:14px;
-    box-shadow: inset 0 3px 8px rgba(0,0,0,0.35), inset 0 -1px 0 rgba(255,255,255,0.2);
+  .nokia-bezel{
+    padding:12px; border-radius:16px 16px 26px 26px;
+    background: linear-gradient(180deg, #4a4f58, #2c3038); box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+    margin-bottom:16px;
   }
-  .calc-expr{
-    font-family:'JetBrains Mono'; font-size:0.85rem; font-weight:700;
-    text-align:left; min-height:1.2em; opacity:0.6; letter-spacing:0.02em;
-    overflow-x:auto; white-space:nowrap;
+  .nokia-lcd{
+    background: linear-gradient(180deg, #b9cf92 0%, #a6c07c 100%);
+    color:#1e2b14; border-radius:6px; padding:6px 8px 4px;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 0 14px rgba(150,220,110,0.35);
+    font-family:'VT323', monospace;
   }
-  .calc-current{
-    font-family:'JetBrains Mono'; font-size:2.1rem; font-weight:700;
-    letter-spacing:0.03em; text-align:right;
-    overflow-x:auto; white-space:nowrap;
+  .nokia-status{ display:flex; align-items:flex-end; justify-content:space-between; height:20px; }
+  .nokia-title{ font-size:1rem; letter-spacing:0.04em; }
+  .nokia-bars{ display:flex; align-items:flex-end; gap:2px; height:18px; }
+  .nokia-bars i{ display:block; width:4px; background:#1e2b14; }
+  .nokia-bars.signal i:nth-child(1){ height:5px; } .nokia-bars.signal i:nth-child(2){ height:9px; }
+  .nokia-bars.signal i:nth-child(3){ height:13px; } .nokia-bars.signal i:nth-child(4){ height:17px; }
+  .nokia-bars.battery{ flex-direction:column; gap:2px; width:14px; align-items:center; }
+  .nokia-bars.battery i{ width:12px; height:3px; }
+  .nokia-bars.battery i:first-child{ width:6px; }
+  .nokia-lcd .calc-expr{
+    font-family:'VT323', monospace; font-size:1.15rem; min-height:1.2em; opacity:0.7; text-align:right;
+    overflow-x:auto; white-space:nowrap; margin-top:4px;
   }
-  .calc-grid{
-    display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;
+  .nokia-lcd .calc-current{
+    font-family:'VT323', monospace; font-size:2.6rem; line-height:1; text-align:right;
+    overflow-x:auto; white-space:nowrap; margin-bottom:4px;
   }
-  .calc-btn{
-    background: linear-gradient(180deg, #F4F0E6 0%, #DAD3BF 100%);
-    color:#1b1810; border:none; border-radius:10px;
-    padding:16px 0; font-family:'JetBrains Mono'; font-size:1.1rem; font-weight:700;
-    cursor:pointer;
-    box-shadow: 0 3px 0 #a89e84, 0 6px 10px rgba(0,0,0,0.35);
-    transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+  /* Kaputter Bildschirm */
+  .nokia-bezel{ position:relative; overflow:hidden; }
+  .nokia-crack{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:2; }
+  .nokia-lcd{ animation: lcd-flicker 7s steps(1) infinite; }
+  @keyframes lcd-flicker{
+    0%, 61%, 63%, 64.5%, 100%{ filter:none; }
+    62%{ filter: brightness(0.75) contrast(1.3); }
+    64%{ filter: brightness(1.15) blur(0.4px); transform:translateX(1px); }
   }
-  .calc-btn:hover{ filter:brightness(1.04); }
-  .calc-btn:active{ transform:translateY(3px); box-shadow: 0 0 0 #a89e84, 0 2px 4px rgba(0,0,0,0.3); }
-  .calc-op{
-    background: linear-gradient(180deg, #F2A93B 0%, #D68C1E 100%); color:#2b1a00;
-    box-shadow: 0 3px 0 #a8690e, 0 6px 10px rgba(0,0,0,0.35);
+  .nokia-soft{ display:flex; justify-content:space-between; font-size:1rem; border-top:1px solid rgba(30,43,20,0.35); padding-top:2px; }
+
+  .calc-box.nokia .calc-btn{
+    border:none; cursor:pointer; font-family:'Inter', sans-serif; font-weight:600; color:#1c2433;
+    transition: transform 0.08s ease, filter 0.1s ease;
   }
-  .calc-op:active{ box-shadow: 0 0 0 #a8690e, 0 2px 4px rgba(0,0,0,0.3); }
-  .calc-clear{
-    background: linear-gradient(180deg, #E2584A 0%, #C1382B 100%); color:#fff;
-    box-shadow: 0 3px 0 #8a2119, 0 6px 10px rgba(0,0,0,0.35);
+  .calc-box.nokia .calc-btn:active{ transform:translateY(2px) scale(0.97); }
+  .calc-box.nokia .calc-btn:hover{ filter:brightness(1.07); }
+  .nokia-nav{ display:grid; grid-template-columns:1fr 1.7fr 1fr; align-items:center; gap:10px; margin-bottom:12px; }
+  .nokia-c, .nokia-back{
+    height:34px; border-radius:50% 50% 45% 45% / 60% 60% 40% 40%; font-size:0.95rem;
+    background: linear-gradient(180deg, #e4e8ee, #b9c0cb); box-shadow: 0 3px 0 #7d8594, 0 5px 8px rgba(0,0,0,0.35);
   }
-  .calc-clear:active{ box-shadow: 0 0 0 #8a2119, 0 2px 4px rgba(0,0,0,0.3); }
-  .calc-equals{
-    background: linear-gradient(180deg, #3FBF8F 0%, #279B6E 100%); color:#fff;
-    grid-column:span 3;
-    box-shadow: 0 3px 0 #167048, 0 6px 10px rgba(0,0,0,0.35);
+  .nokia-navi{
+    height:44px; border-radius:50%; font-size:1.3rem; color:#eaf0fa !important;
+    background: radial-gradient(ellipse at 50% 30%, #6f8fca, #3b5a96 60%, #253f73); 
+    box-shadow: 0 3px 0 #16294f, 0 6px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.35);
   }
-  .calc-equals:active{ box-shadow: 0 0 0 #167048, 0 2px 4px rgba(0,0,0,0.3); }
-  .calc-zero{ grid-column:span 3; }
+  .nokia-ops{ display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:12px; }
+  .nokia-op{
+    height:28px; border-radius:14px; font-size:1.05rem;
+    background: linear-gradient(180deg, #c9d3e3, #9eabc2); box-shadow: 0 2px 0 #6b778d, 0 4px 6px rgba(0,0,0,0.3);
+  }
+  .nokia-keys{ display:grid; grid-template-columns:repeat(3, 1fr); gap:9px 12px; }
+  .nokia-key{
+    height:40px; display:flex; align-items:center; justify-content:center; gap:5px;
+    border-radius:50% / 55%; font-size:1.15rem;
+    background: linear-gradient(180deg, #eef1f5 0%, #c9cfd8 100%);
+    box-shadow: 0 3px 0 #8b93a1, 0 5px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .nokia-key small{ font-size:0.55rem; font-weight:500; letter-spacing:0.04em; color:#4c5568; }
+  .nokia-mic{ width:6px; height:6px; margin:16px auto 0; border-radius:50%; background:#0d1a36; box-shadow: inset 0 1px 2px rgba(0,0,0,0.8); }
 
   .conv-wrap{ max-width:420px; }
   .conv-row{ display:flex; gap:10px; margin-bottom:10px; align-items:center; }
@@ -1349,12 +1382,45 @@
     border-radius:8px; padding:12px 10px; font-family:'JetBrains Mono'; font-size:0.85rem; cursor:pointer;
   }
   .conv-row select:focus{ outline:none; border-color:var(--teal); }
+  /* Währung als Flagge */
+  .conv-row select.flag-select-hidden{ display:none; }
+  .flag-picker{ position:relative; flex-shrink:0; }
+  .flag-btn{
+    display:flex; align-items:center; gap:8px; height:46px; padding:0 10px 0 8px; cursor:pointer;
+    background:var(--board-2); border:1px solid var(--line); border-radius:8px; color:rgba(var(--fg),0.6);
+  }
+  .flag-btn:hover, .flag-picker.open .flag-btn{ border-color:var(--teal); }
+  .flag-btn img{ width:40px; height:27px; object-fit:cover; border-radius:3px; display:block; box-shadow:0 0 0 1px rgba(0,0,0,0.25); }
+  .flag-caret{ font-size:0.75rem; }
+  .flag-menu{
+    display:none; position:absolute; right:0; top:calc(100% + 6px); z-index:20; width:276px;
+    grid-template-columns:repeat(5, 1fr); gap:6px; padding:10px;
+    background:var(--board-2); border:1px solid var(--line); border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,0.45);
+    max-height:260px; overflow-y:auto;
+  }
+  .flag-picker.open .flag-menu{ display:grid; }
+  .flag-opt{
+    padding:4px; border:2px solid transparent; border-radius:6px; background:transparent; cursor:pointer;
+    transition: transform 0.12s ease, border-color 0.12s ease;
+  }
+  .flag-opt img{ width:100%; aspect-ratio:3/2; object-fit:cover; border-radius:3px; display:block; box-shadow:0 0 0 1px rgba(0,0,0,0.25); }
+  .flag-opt:hover{ transform:scale(1.08); }
+  .flag-opt.active{ border-color:var(--teal); }
   .conv-swap-btn{
     width:38px; height:38px; border-radius:50%; background:var(--teal); color:var(--ink); border:none;
     font-size:1.05rem; cursor:pointer; margin:-2px auto 10px; display:block;
     transition: transform 0.2s ease, filter 0.15s ease;
   }
-  .conv-swap-btn:hover{ filter:brightness(1.08); transform:rotate(180deg); }
+  .conv-swap-btn:hover{ filter:brightness(1.08); }
+  /* Chevron-Up-Down von animate-ui: beim Drüberfahren gehen die Pfeile auseinander, beim Klick einmal hin und zurück */
+  .conv-swap-btn{ display:flex; align-items:center; justify-content:center; padding:0; }
+  .conv-swap-btn .chevron-up-down path{ transition: transform 0.3s ease-in-out; }
+  .conv-swap-btn:hover .chev-down{ transform:translateY(3px); }
+  .conv-swap-btn:hover .chev-up{ transform:translateY(-3px); }
+  .conv-swap-btn.swapping .chev-down{ animation: chev-down-loop 0.6s ease-in-out; }
+  .conv-swap-btn.swapping .chev-up{ animation: chev-up-loop 0.6s ease-in-out; }
+  @keyframes chev-down-loop{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(3px); } }
+  @keyframes chev-up-loop{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
 
   .timer-display{
     font-family:'JetBrains Mono'; font-weight:700; font-size:4rem; color:var(--amber);
@@ -1505,13 +1571,14 @@
   .ladder-controls::before{ top:6px; }
   .ladder-controls::after{ bottom:6px; }
   .ladder-die{
-    width:56px; height:56px; flex-shrink:0; border-radius:3px; border:none; cursor:pointer; padding:9px;
+    width:56px; height:56px; flex-shrink:0; border-radius:3px; border:none; cursor:pointer; padding:5px;
     background: linear-gradient(180deg, #ffffff, #e4e8ec);
     box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15), 0 0 0 3px #16171a, 0 0 0 4px rgba(255,255,255,0.12);
     display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); place-items:center;
   }
   .ladder-die:disabled{ cursor:default; }
-  .ladder-die span{ width:9px; height:9px; border-radius:50%; background:#16171a; }
+  .ladder-die span{ width:15px; height:15px; display:block; filter: drop-shadow(0 1.2px 0.8px rgba(110,60,0,0.45)); }
+  .ladder-die span svg{ display:block; width:100%; height:100%; }
   .ladder-die.rolling{ animation: die-roll 0.6s ease-in-out; }
   @keyframes die-roll{ 0%{ transform:rotate(0); } 30%{ transform:rotate(-25deg) translateY(-4px); } 60%{ transform:rotate(200deg) translateY(-2px); } 100%{ transform:rotate(360deg); } }
   .ladder-status{ flex:1; font-family:'Oswald'; font-weight:600; font-size:1.05rem; text-transform:uppercase; letter-spacing:0.02em; color:#f2f2f2; }
@@ -1519,6 +1586,45 @@
   .ladder-status .thor{ color:#ff5a5f; } .ladder-status .loki{ color:#4fc27a; }
   .ladder-status .tom{ color:#9fb3cc; } .ladder-status .jerry{ color:#e09a5a; }
   .ladder-status .spongebob{ color:#f6e04b; } .ladder-status .patrick{ color:#f59aa6; }
+  /* Popcorn-Maschine rund um den Würfel */
+  .popcorn-machine{ position:relative; flex-shrink:0; width:92px; display:flex; flex-direction:column; align-items:center; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+  .pm-roof{
+    position:relative; width:100%; height:22px; display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(180deg, #e83a3f, #b5161c);
+    clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+    border-bottom:3px solid #f2c230;
+  }
+  .pm-roof span{
+    font-family:'Oswald'; font-weight:700; font-size:0.62rem; letter-spacing:0.12em; color:#ffe27a;
+    text-shadow: 0 1px 0 #7a0a0e, 0 0 6px rgba(255,220,100,0.7);
+  }
+  .pm-glass{
+    position:relative; width:100%; height:90px; display:flex; align-items:flex-start; justify-content:center; padding-top:5px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(180,220,255,0.06) 40%, rgba(255,255,255,0.12));
+    border:4px solid #c8202a; border-top:none; box-shadow: inset 0 0 0 1.5px #f2c230, inset 0 -8px 14px rgba(255,200,80,0.25);
+    overflow:hidden;
+  }
+  .pm-glass::after{
+    content:''; position:absolute; top:-10px; left:10px; width:12px; height:110px; transform:rotate(18deg);
+    background: linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0)); pointer-events:none; z-index:3;
+  }
+  .pm-glass .ladder-die{ position:relative; z-index:2; }
+  .pm-pile{ position:absolute; left:4px; right:4px; bottom:2px; height:24px; z-index:1; pointer-events:none; }
+  .pm-pile span{ position:absolute; width:14px; height:14px; transform:rotate(var(--r)); }
+  .pm-pile span svg{ display:block; width:100%; height:100%; }
+  .popcorn-machine.popping .pm-pile span{ animation: pop-jump 0.6s ease-out var(--d) 2; }
+  @keyframes pop-jump{
+    0%{ transform:translateY(0) rotate(var(--r)); }
+    40%{ transform:translateY(-20px) rotate(calc(var(--r) + 120deg)); }
+    100%{ transform:translateY(0) rotate(calc(var(--r) + 240deg)); }
+  }
+  .pm-base{
+    position:relative; width:100%; height:16px;
+    background: linear-gradient(180deg, #d42a30, #8a0f14); border-top:3px solid #f2c230; border-radius:0 0 3px 3px;
+  }
+  .pm-base i{ position:absolute; bottom:-6px; width:8px; height:7px; background:#2a2b30; border-radius:0 0 2px 2px; }
+  .pm-base i:first-child{ left:8px; } .pm-base i:last-child{ right:8px; }
+
   /* Filmklappe */
   .ladder-reset{
     position:relative; flex-shrink:0; margin-top:10px; cursor:pointer;
@@ -1559,8 +1665,11 @@
     .cal-day{ font-size:0.95rem; margin:1px; }
     .cal-day.start::after, .cal-day.goal::after{ font-size:0.4rem; bottom:1px; }
     .ladder-controls{ gap:10px; padding:20px 10px; }
-    .ladder-die{ width:46px; height:46px; padding:7px; }
-    .ladder-die span{ width:7px; height:7px; }
+    .ladder-die{ width:46px; height:46px; padding:4px; }
+    .popcorn-machine{ width:76px; }
+    .pm-glass{ height:76px; }
+    .pm-roof span{ font-size:0.52rem; }
+    .ladder-die span{ width:12px; height:12px; }
     .ladder-status{ font-size:0.9rem; }
     .ladder-reset{ padding:4px 9px 0; font-size:0.62rem; }
     .cal-day .cal-wd{ display:none; }
@@ -1605,6 +1714,18 @@
     background: linear-gradient(180deg, #2b2d31 0%, #121316 50%, #24262a 100%);
     box-shadow: 0 8px 16px rgba(0,0,0,0.4);
     transform: perspective(600px) rotateY(-4deg) rotateZ(-1deg);
+  }
+  /* Beim Öffnen des Kalenders rollt sich der Filmstreifen von der Rolle ab (die Ansicht ist vorher ausgeblendet,
+     dadurch startet die Animation bei jedem Wechsel neu) */
+  .view.active .film-strip{ animation: film-unroll 1.1s cubic-bezier(.25,.8,.3,1) both; }
+  .view.active .film-reel{ animation: reel-unwind 1.1s cubic-bezier(.25,.8,.3,1) both; }
+  @keyframes film-unroll{
+    0%{ clip-path: inset(-20px 100% -20px 0); }
+    100%{ clip-path: inset(-20px -20px -20px 0); }
+  }
+  @keyframes reel-unwind{
+    0%{ rotate:0deg; }
+    100%{ rotate:720deg; }
   }
   .film-strip::before, .film-strip::after{
     content:''; position:absolute; left:8px; right:8px; height:7px;

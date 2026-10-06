@@ -1543,7 +1543,9 @@ function renderCalendar(){
   }
 
   // Passende Objekte zu den Figuren (werden in drawCalLinks auf die Lücken zwischen den Reihen verteilt)
-  calDecoNames = boardDecoSets[ladderGame.setFor(calViewMonth, calViewYear)] || [];
+  const themeSet = ladderGame.setFor(calViewMonth, calViewYear);
+  calDecoNames = boardDecoSets[themeSet] || [];
+  calLinkTheme = linkThemes[themeSet] || linkThemes.default;
 
   for(let day = 1; day <= daysInMonth; day++){
     const dateObj = new Date(calViewYear, calViewMonth, day);
@@ -1585,41 +1587,106 @@ function calCellCenter(day){
   if(!cell) return null;
   return { x: calGrid.offsetLeft + cell.offsetLeft + cell.offsetWidth / 2, y: calGrid.offsetTop + cell.offsetTop + cell.offsetHeight / 2, w: cell.offsetWidth, h: cell.offsetHeight };
 }
+// Leitern und Seile passend zu den Figuren des Monats
+const linkThemes = {
+  default:       { ladder: { rail: '#c48a4a', edge: '#5a3311', rung: '#7a4a1c' }, rope: { kind: 'rope', color: '#2a2a2a', accent: '#e0262b' } },
+  tomJerry:      { ladder: { rail: '#c48a4a', edge: '#5a3311', rung: '#7a4a1c' }, rope: { kind: 'wavy', color: '#d0508a', accent: '#f7a8c8', end: 'yarn' } },
+  thorLoki:      { ladder: { rail: '#c9d1d9', edge: '#4d545c', rung: '#d4a933' }, rope: { kind: 'zigzag', color: '#2e8a4c', accent: '#f6d43a', end: 'lightning' } },
+  spongePatrick: { ladder: { rail: '#f59aa6', edge: '#b0506a', rung: '#f6e04b' }, rope: { kind: 'wavy', color: '#c05aa0', accent: '#f2a5d6', end: 'jellyfish' } },
+  phineasFerb:   { ladder: { rail: '#f08a24', edge: '#8a4a0a', rung: '#2f5fae' }, rope: { kind: 'rope', color: '#2f5fae', accent: '#ffffff', end: 'wrench' } },
+  rickMorty:     { ladder: { rail: '#9aa3ad', edge: '#3d444c', rung: '#7cf06a', glow: '#7cf06a' }, rope: { kind: 'wavy', color: '#3fb83a', accent: '#b6ff9a', end: 'portal' } },
+  elsaAnna:      { ladder: { rail: '#d8f1fb', edge: '#5fa8d0', rung: '#ffffff', glow: '#bfe6f7' }, rope: { kind: 'rope', color: '#4aa8e0', accent: '#ffffff', end: 'snowflake' } },
+  mcqueenHook:   { ladder: { rail: '#e0262b', edge: '#6a0a0e', rung: '#ffffff', stripes: '#e0262b' }, rope: { kind: 'rope', color: '#4d545c', accent: '#c9d1d9', end: 'towhook' } },
+  gruMinion:     { ladder: { rail: '#3d63a8', edge: '#1b3266', rung: '#f7d84a' }, rope: { kind: 'rope', color: '#e0b820', accent: '#3d63a8', end: 'banana' } },
+  poShifu:       { ladder: { rail: '#9ccc58', edge: '#4a7a1c', rung: '#6aa83a', nodes: '#4a7a1c' }, rope: { kind: 'wavy', color: '#c8202a', accent: '#f6c21a', end: 'peach' } },
+  narutoSasuke:  { ladder: { rail: '#6b4428', edge: '#2a1a0e', rung: '#f08a24' }, rope: { kind: 'rope', color: '#3a3f55', accent: '#f08a24', end: 'kunai' } },
+  gonKillua:     { ladder: { rail: '#c48a4a', edge: '#5a3311', rung: '#3f9a4a' }, rope: { kind: 'zigzag', color: '#3a8fe0', accent: '#e8f4ff', end: 'lightning' } },
+  scoobyShaggy:  { ladder: { rail: '#7a5aa8', edge: '#3a2a5a', rung: '#a8d86a' }, rope: { kind: 'wavy', color: '#62b03a', accent: '#c4f08a', end: 'ghost' } },
+  ashPikachu:    { ladder: { rail: '#f7d33a', edge: '#8a6a0a', rung: '#2a2a2a' }, rope: { kind: 'zigzag', color: '#e0a810', accent: '#fff6b0', end: 'pokeball' } },
+  bibiTina:      { ladder: { rail: '#c48a4a', edge: '#5a3311', rung: '#7a4a1c' }, rope: { kind: 'rope', color: '#7a4a24', accent: '#f6d43a', end: 'star' } },
+  pippiNilsson:  { ladder: { rail: '#e0452a', edge: '#7a1f12', rung: '#f6d43a', rungs: ['#f6d43a', '#3fa64a', '#3a8fe0', '#e0609a'] }, rope: { kind: 'rope', color: '#e0262b', accent: '#ffffff', end: 'lollipop' } },
+  mickyMinnie:   { ladder: { rail: '#2a2a2a', edge: '#000000', rung: '#f6c21a' }, rope: { kind: 'dots', color: '#e0262b', accent: '#ffffff', end: 'bow' } }
+};
+// kleiner Abschlepphaken für Lightning McQueen & Hook
+boardDecoIcons.towhook = '<path d="M12 1 V12 C12 17 6 17 6 13" fill="none" stroke="#4d545c" stroke-width="3" stroke-linecap="round"/><path d="M6 13 L4 10.5 M6 13 L8.6 11.4" stroke="#4d545c" stroke-width="2.4" stroke-linecap="round"/><rect x="9" y="0.5" width="6" height="3" rx="1" fill="#9aa3ad" stroke="#4d545c" stroke-width="0.6"/>';
+let calLinkTheme = linkThemes.default;
+
 function drawCalLinks(){
   if(!ladderSvg || calGrid.offsetParent === null) return;
   let out = '';
   const f = (n) => n.toFixed(1);
+  const th = calLinkTheme;
   Object.entries(calLinks).forEach(([fromStr, to]) => {
     const from = +fromStr;
     const a = calCellCenter(from), b = calCellCenter(to);
     if(!a || !b) return;
     if(to > from){
-      // Holzleiter vom unteren zum oberen Tag
       // Leiter steht am oberen Rand des Starttags und reicht bis zum unteren Rand des Zieltags (Zahlen bleiben frei)
+      const L = th.ladder;
       const sx = a.x - a.w * 0.3, sy = a.y - a.h * 0.28, ex = b.x - b.w * 0.3, ey = b.y + b.h * 0.34;
       const dx = ex - sx, dy = ey - sy, len = Math.hypot(dx, dy);
       const nx = -dy / len * 6, ny = dx / len * 6;
       out += `<g class="ladder">`;
+      if(L.glow) out += `<line class="link-geo" x1="${f(sx)}" y1="${f(sy)}" x2="${f(ex)}" y2="${f(ey)}" stroke="${L.glow}" stroke-width="20" stroke-linecap="round" opacity="0.28"/>`;
       const rungs = Math.max(3, Math.round(len / 14));
       for(let k = 1; k < rungs; k++){
         const t = k / rungs, px = sx + (ex - sx) * t, py = sy + (ey - sy) * t;
-        out += `<line x1="${f(px - nx)}" y1="${f(py - ny)}" x2="${f(px + nx)}" y2="${f(py + ny)}" stroke="#7a4a1c" stroke-width="2.6" stroke-linecap="round"/>`;
+        const rc = L.rungs ? L.rungs[k % L.rungs.length] : L.rung;
+        out += `<line class="link-geo" x1="${f(px - nx)}" y1="${f(py - ny)}" x2="${f(px + nx)}" y2="${f(py + ny)}" stroke="${L.edge}" stroke-width="4" stroke-linecap="round"/>`;
+        out += `<line x1="${f(px - nx)}" y1="${f(py - ny)}" x2="${f(px + nx)}" y2="${f(py + ny)}" stroke="${rc}" stroke-width="2.4" stroke-linecap="round"/>`;
       }
       [-1, 1].forEach(side => {
-        out += `<line x1="${f(sx + nx * side)}" y1="${f(sy + ny * side)}" x2="${f(ex + nx * side)}" y2="${f(ey + ny * side)}" stroke="#5a3311" stroke-width="4.6" stroke-linecap="round"/>`;
-        out += `<line x1="${f(sx + nx * side)}" y1="${f(sy + ny * side)}" x2="${f(ex + nx * side)}" y2="${f(ey + ny * side)}" stroke="#c48a4a" stroke-width="2.6" stroke-linecap="round"/>`;
+        const x1 = sx + nx * side, y1 = sy + ny * side, x2 = ex + nx * side, y2 = ey + ny * side;
+        out += `<line class="link-geo" x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" stroke="${L.edge}" stroke-width="4.8" stroke-linecap="round"/>`;
+        out += `<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" stroke="${L.rail}" stroke-width="2.8" stroke-linecap="round"/>`;
+        // Rennstrecke: rot-weisse Randsteine, Bambus: Knoten
+        if(L.stripes) out += `<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" stroke="#ffffff" stroke-width="2.8" stroke-dasharray="5 5"/>`;
+        if(L.nodes){
+          for(let t = 0.15; t < 1; t += 0.22){
+            const px = x1 + (x2 - x1) * t, py = y1 + (y2 - y1) * t;
+            out += `<line x1="${f(px - nx * 0.45)}" y1="${f(py - ny * 0.45)}" x2="${f(px + nx * 0.45)}" y2="${f(py + ny * 0.45)}" stroke="${L.nodes}" stroke-width="1.4"/>`;
+          }
+        }
       });
       out += `</g>`;
     } else {
-      // Seil, das vom oberen Tag nach unten hängt
       // Seil hängt von der rechten unteren Ecke des Starttags zur rechten oberen Ecke des Zieltags
+      const R = th.rope;
       const ax = a.x + a.w * 0.3, ay = a.y + a.h * 0.3, bx = b.x + b.w * 0.3, by = b.y - b.h * 0.3;
       const mx = (ax + bx) / 2 + (bx > ax ? -1 : 1) * 14 + (bx === ax ? 14 : 0);
       const my = (ay + by) / 2 + 8;
-      const d = `M${f(ax)},${f(ay)} Q${f(mx)},${f(my)} ${f(bx)},${f(by)}`;
-      out += `<path d="${d}" fill="none" stroke="#2a2a2a" stroke-width="3.6" stroke-linecap="round" opacity="0.85"/>`;
-      out += `<path d="${d}" fill="none" stroke="#e0262b" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="4 4"/>`;
-      out += `<circle cx="${f(ax)}" cy="${f(ay)}" r="3.4" fill="#2a2a2a"/>`;
+      let d;
+      if(R.kind === 'wavy' || R.kind === 'zigzag'){
+        // Kurve abtasten und seitlich auslenken: Welle (Wolle, Tentakel, Schleim) oder Zickzack (Blitz)
+        const pts = [], steps = R.kind === 'zigzag' ? 9 : 36;
+        for(let i = 0; i <= steps; i++){
+          const t = i / steps, u = 1 - t;
+          const x = u * u * ax + 2 * u * t * mx + t * t * bx, y = u * u * ay + 2 * u * t * my + t * t * by;
+          const tx = 2 * u * (mx - ax) + 2 * t * (bx - mx), ty = 2 * u * (my - ay) + 2 * t * (by - my), tl = Math.hypot(tx, ty) || 1;
+          const off = (i === 0 || i === steps) ? 0 : R.kind === 'zigzag' ? (i % 2 ? 4.5 : -4.5) : Math.sin(t * Math.PI * 7) * 2.6;
+          pts.push([x - ty / tl * off, y + tx / tl * off]);
+        }
+        d = 'M' + pts.map(p => f(p[0]) + ',' + f(p[1])).join(' L');
+      } else {
+        d = `M${f(ax)},${f(ay)} Q${f(mx)},${f(my)} ${f(bx)},${f(by)}`;
+      }
+      const join = R.kind === 'zigzag' ? 'miter' : 'round';
+      out += `<path class="link-geo" d="${d}" fill="none" stroke="${R.kind === 'zigzag' ? '#1b1b1b' : R.color}" stroke-width="${R.kind === 'zigzag' ? 5.2 : 3.8}" stroke-linecap="round" stroke-linejoin="${join}" opacity="0.9"/>`;
+      if(R.kind === 'zigzag'){
+        out += `<path d="${d}" fill="none" stroke="${R.color}" stroke-width="3.4" stroke-linejoin="${join}"/>`;
+        out += `<path d="${d}" fill="none" stroke="${R.accent}" stroke-width="1.2" stroke-linejoin="${join}"/>`;
+      } else if(R.kind === 'dots'){
+        out += `<path d="${d}" fill="none" stroke="${R.accent}" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 6"/>`;
+      } else if(R.kind === 'wavy'){
+        out += `<path d="${d}" fill="none" stroke="${R.accent}" stroke-width="1.2" stroke-linecap="round" opacity="0.8"/>`;
+      } else {
+        out += `<path d="${d}" fill="none" stroke="${R.accent}" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="4 4"/>`;
+      }
+      if(R.end && boardDecoIcons[R.end]){
+        out += `<svg x="${f(ax - 9)}" y="${f(ay - 11)}" width="18" height="18" viewBox="0 0 24 24">${boardDecoIcons[R.end]}</svg>`;
+      } else {
+        out += `<circle cx="${f(ax)}" cy="${f(ay)}" r="3.4" fill="${R.color}"/>`;
+      }
     }
   });
   ladderSvg.innerHTML = out;
@@ -1638,7 +1705,7 @@ function placeCalDecos(){
   // Felder sammeln, die von gezeichneten Leitern/Seilen berührt werden
   const blocked = new Set([1, n, ...Object.keys(calLinks).map(Number), ...Object.values(calLinks)]);
   const rects = cells.map(c => ({ day: +c.dataset.day, x: calGrid.offsetLeft + c.offsetLeft, y: calGrid.offsetTop + c.offsetTop, w: c.offsetWidth, h: c.offsetHeight }));
-  ladderSvg.querySelectorAll('line, path').forEach(el => {
+  ladderSvg.querySelectorAll('.link-geo').forEach(el => {
     const len = el.getTotalLength();
     for(let t = 0; t <= len; t += 3){
       const pt = el.getPointAtLength(t);
@@ -2221,10 +2288,44 @@ const ladderGame = (() => {
     players = characterSets[setName].map(c => ({ ...c, pos: 1, el: null }));
   }
   let n = 31, turn = 0, busy = false, winner = null;
+  // Popcorn-Korn: unregelmässige, aufgepuffte Blasen mit Schattierung, Butterflecken und brauner Schale
+  const popcornSvg = `<svg viewBox="0 0 20 20" aria-hidden="true">
+    <defs>
+      <radialGradient id="pcPuff" cx="38%" cy="32%" r="72%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="55%" stop-color="#fbf1d8"/>
+        <stop offset="100%" stop-color="#e3c182"/>
+      </radialGradient>
+      <radialGradient id="pcButter" cx="40%" cy="35%" r="75%">
+        <stop offset="0%" stop-color="#fff6d6"/>
+        <stop offset="60%" stop-color="#f7dc8e"/>
+        <stop offset="100%" stop-color="#d9a640"/>
+      </radialGradient>
+      <linearGradient id="pcHull" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#e8952c"/>
+        <stop offset="100%" stop-color="#8a4508"/>
+      </linearGradient>
+    </defs>
+    <path d="M8.2 14.4 C8.6 17.8 12.2 18.8 14 15.8 C13 16.4 10.6 16.6 8.2 14.4 Z" fill="url(#pcHull)" stroke="#6b3606" stroke-width="0.35"/>
+    <path d="M9.4 15.6 C10.4 16.6 11.8 16.7 12.8 16.1" fill="none" stroke="#f6b860" stroke-width="0.45" stroke-linecap="round" opacity="0.8"/>
+    <path d="M2.5 10.5 C1.5 7.5 3.5 5 6.2 5.6 C7.5 4.2 9.8 5 9.6 7.2 C10.8 8.6 10 11.6 7.6 12.2 C5.6 13.6 3 12.8 2.5 10.5 Z" fill="url(#pcPuff)" stroke="#c9963a" stroke-width="0.45"/>
+    <path d="M9.5 6.5 C9.6 3.6 12.4 2.4 14.4 3.8 C16.8 3.6 18.2 6 17.2 8 C18 10.2 15.8 12 13.6 11.2 C11.6 12 9.4 10 9.5 6.5 Z" fill="url(#pcPuff)" stroke="#c9963a" stroke-width="0.45"/>
+    <path d="M6.5 5 C6 2.6 8.4 1 10.4 2 C12.4 1.4 13.8 3.4 12.8 5.2 C12.4 7.2 9.6 7.8 8.2 6.8 C7 7 6.4 6 6.5 5 Z" fill="url(#pcPuff)" stroke="#c9963a" stroke-width="0.45"/>
+    <path d="M6.4 12 C5.6 9.6 7.8 8 10 8.6 C12 7.6 14.8 9 14.4 11.6 C15.2 13.8 12.8 15.6 10.6 14.8 C8.6 15.6 6.6 14.2 6.4 12 Z" fill="url(#pcButter)" stroke="#c08a2a" stroke-width="0.45"/>
+    <path d="M4.2 8.4 Q5.4 9.6 5 11.4 M12.4 5.2 Q13.6 6.6 15.6 6.4 M8.6 3.6 Q9.6 4.8 11.4 4.2 M8.4 11.4 Q10.2 12.6 12.6 11.2" fill="none" stroke="#d6aa58" stroke-width="0.4" stroke-linecap="round" opacity="0.85"/>
+    <ellipse cx="13.4" cy="9.4" rx="1.3" ry="0.8" fill="#f2c650" opacity="0.55"/>
+    <ellipse cx="4.6" cy="11.4" rx="1" ry="0.6" fill="#f2c650" opacity="0.5"/>
+    <ellipse cx="5" cy="7.6" rx="1.2" ry="0.7" fill="#fff" opacity="0.95" transform="rotate(-30 5 7.6)"/>
+    <ellipse cx="9.3" cy="3" rx="1" ry="0.55" fill="#fff" opacity="0.95" transform="rotate(-20 9.3 3)"/>
+    <ellipse cx="13.6" cy="5" rx="1.1" ry="0.6" fill="#fff" opacity="0.9" transform="rotate(-25 13.6 5)"/>
+    <ellipse cx="9" cy="10.2" rx="0.9" ry="0.5" fill="#fff" opacity="0.8" transform="rotate(-20 9 10.2)"/>
+  </svg>`;
   const pips = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
   function showDie(v){
     if(!dieBtn) return;
-    dieBtn.innerHTML = Array.from({ length: 9 }, (_, i) => pips[v].includes(i + 1) ? '<span></span>' : '<i></i>').join('');
+    // Augen als Popcorn: jedes Korn leicht anders gedreht
+    dieBtn.innerHTML = Array.from({ length: 9 }, (_, i) => pips[v].includes(i + 1)
+      ? `<span style="transform:rotate(${(i * 47) % 360}deg)">${popcornSvg}</span>` : '<i></i>').join('');
   }
   function status(){
     if(!statusEl) return;
@@ -2253,6 +2354,8 @@ const ladderGame = (() => {
     if(busy || winner) return;
     busy = true; status();
     dieBtn.classList.add('rolling');
+    // Popcorn in der Maschine springt auf, solange der Würfel rollt
+    if(machine){ machine.classList.remove('popping'); void machine.offsetWidth; machine.classList.add('popping'); }
     for(let k = 0; k < 6; k++){ showDie(1 + Math.floor(Math.random() * 6)); await wait(90); }
     const v = 1 + Math.floor(Math.random() * 6);
     showDie(v);
@@ -2288,6 +2391,15 @@ const ladderGame = (() => {
     status();
   }
   useCharacters(setForMonth(new Date().getMonth(), new Date().getFullYear()));
+  // Popcorn-Maschine um den Würfel: ein Häufchen Popcorn am Boden des Glaskastens
+  const machine = document.getElementById('popcorn-machine');
+  const pile = document.getElementById('pm-pile');
+  if(pile){
+    const kernels = [[4, 0, 10], [14, 2, 200], [24, 0, 80], [34, 1, 300], [44, 0, 140], [54, 2, 30], [64, 0, 250], [9, 7, 120], [29, 8, 330], [49, 7, 60], [59, 6, 190], [19, 9, 280], [39, 10, 100]];
+    pile.innerHTML = kernels.map(([x, y, r], i) =>
+      `<span style="left:${x}%;bottom:${y}px;--r:${r}deg;--d:${(i % 5) * 0.06}s">${popcornSvg}</span>`).join('');
+  }
+  if(machine) machine.addEventListener('animationend', (e) => { if(e.target.closest('.pm-pile')) machine.classList.remove('popping'); });
   if(dieBtn) dieBtn.addEventListener('click', roll);
   const resetBtn = document.getElementById('ladder-reset');
   if(resetBtn) resetBtn.addEventListener('click', () => {
@@ -2621,7 +2733,7 @@ convPopulateUnitSelects();
 convUpdateUnitResult();
 
 // Umrechner — Währung
-const convCurrencies = ['CHF', 'EUR', 'USD', 'GBP', 'JPY', 'CNY', 'CAD', 'AUD', 'NZD', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF', 'TRY', 'INR', 'BRL', 'MXN', 'ZAR', 'SGD', 'HKD', 'KRW', 'THB', 'ILS', 'RON', 'IDR', 'MYR', 'PHP', 'ISK', 'BGN'];
+const convCurrencies = ['CHF', 'EUR', 'USD', 'GBP', 'JPY', 'CNY', 'CAD', 'AUD', 'NZD', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF', 'TRY', 'INR', 'BRL', 'MXN', 'ZAR', 'SGD', 'HKD', 'KRW', 'THB', 'ILS', 'RON', 'IDR', 'MYR', 'PHP', 'ISK', 'BGN', 'ARS', 'CLP', 'COP', 'PEN', 'UYU', 'PYG', 'BOB', 'CRC', 'GTQ', 'DOP', 'JMD', 'TTD', 'EGP', 'MAD', 'TND', 'DZD', 'NGN', 'GHS', 'KES', 'TZS', 'UGX', 'ETB', 'SAR', 'AED', 'QAR', 'KWD', 'BHD', 'OMR', 'JOD', 'PKR', 'BDT', 'LKR', 'NPR', 'VND', 'TWD', 'KHR', 'MNT', 'KZT', 'UAH', 'RSD', 'GEL', 'AMD', 'AZN', 'MDL', 'ALL', 'MKD', 'BAM', 'RUB', 'FJD'];
 const convCurFromValue = document.getElementById('conv-cur-from-value');
 const convCurFromUnit = document.getElementById('conv-cur-from-unit');
 const convCurToValue = document.getElementById('conv-cur-to-value');
@@ -2635,14 +2747,51 @@ const convCurStatusEl = document.getElementById('conv-cur-status');
 convCurFromUnit.value = 'CHF';
 convCurToUnit.value = 'EUR';
 
+// Statt Währungs-Kürzel eine Flagge: eigene Auswahl mit Flaggen-Bildern (Flaggen-Emojis gehen unter Windows nicht).
+// Das versteckte <select> bleibt die Quelle für die Umrechnung.
+const convCurFlagCode = { CHF: 'ch', EUR: 'eu', USD: 'us', GBP: 'gb', JPY: 'jp', CNY: 'cn', CAD: 'ca', AUD: 'au', NZD: 'nz', SEK: 'se', NOK: 'no', DKK: 'dk', PLN: 'pl', CZK: 'cz', HUF: 'hu', TRY: 'tr', INR: 'in', BRL: 'br', MXN: 'mx', ZAR: 'za', SGD: 'sg', HKD: 'hk', KRW: 'kr', THB: 'th', ILS: 'il', RON: 'ro', IDR: 'id', MYR: 'my', PHP: 'ph', ISK: 'is', BGN: 'bg', ARS: 'ar', CLP: 'cl', COP: 'co', PEN: 'pe', UYU: 'uy', PYG: 'py', BOB: 'bo', CRC: 'cr', GTQ: 'gt', DOP: 'do', JMD: 'jm', TTD: 'tt', EGP: 'eg', MAD: 'ma', TND: 'tn', DZD: 'dz', NGN: 'ng', GHS: 'gh', KES: 'ke', TZS: 'tz', UGX: 'ug', ETB: 'et', SAR: 'sa', AED: 'ae', QAR: 'qa', KWD: 'kw', BHD: 'bh', OMR: 'om', JOD: 'jo', PKR: 'pk', BDT: 'bd', LKR: 'lk', NPR: 'np', VND: 'vn', TWD: 'tw', KHR: 'kh', MNT: 'mn', KZT: 'kz', UAH: 'ua', RSD: 'rs', GEL: 'ge', AMD: 'am', AZN: 'az', MDL: 'md', ALL: 'al', MKD: 'mk', BAM: 'ba', RUB: 'ru', FJD: 'fj' };
+const flagImg = (cur) => `<img src="https://flagcdn.com/w80/${convCurFlagCode[cur]}.png" alt="${cur}" loading="lazy" />`;
+const convFlagPickers = [convCurFromUnit, convCurToUnit].map(sel => {
+  sel.classList.add('flag-select-hidden');
+  const picker = document.createElement('div');
+  picker.className = 'flag-picker';
+  picker.innerHTML = `<button type="button" class="flag-btn" aria-haspopup="listbox"></button>
+    <div class="flag-menu" role="listbox">${convCurrencies.map(c => `<button type="button" class="flag-opt" data-cur="${c}" title="${c}" aria-label="${c}">${flagImg(c)}</button>`).join('')}</div>`;
+  sel.insertAdjacentElement('afterend', picker);
+  const btn = picker.querySelector('.flag-btn');
+  const sync = () => {
+    btn.innerHTML = flagImg(sel.value) + '<span class="flag-caret">▾</span>';
+    btn.title = sel.value;
+    picker.querySelectorAll('.flag-opt').forEach(o => o.classList.toggle('active', o.dataset.cur === sel.value));
+  };
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = !picker.classList.contains('open');
+    document.querySelectorAll('.flag-picker.open').forEach(p => p.classList.remove('open'));
+    picker.classList.toggle('open', open);
+  });
+  picker.querySelectorAll('.flag-opt').forEach(o => o.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sel.value = o.dataset.cur;
+    picker.classList.remove('open');
+    sync();
+    sel.dispatchEvent(new Event('change'));
+  }));
+  sync();
+  return sync;
+});
+document.addEventListener('click', () => document.querySelectorAll('.flag-picker.open').forEach(p => p.classList.remove('open')));
+
 let convCurRatesCache = {};
 
 async function convFetchRates(base){
   if(convCurRatesCache[base]) return convCurRatesCache[base];
   convCurStatusEl.textContent = 'Kurse werden geladen …';
   try{
-    const res = await fetch(`https://api.frankfurter.app/latest?from=${base}`);
+    // open.er-api.com: kostenlos, rund 160 Währungen (Frankfurter hatte nur 31)
+    const res = await fetch(`https://open.er-api.com/v6/latest/${base}`);
     const data = await res.json();
+    if(data.result !== 'success') throw new Error('Kurse nicht verfügbar');
     convCurRatesCache[base] = data.rates;
     convCurStatusEl.textContent = '';
     return data.rates;
@@ -2670,7 +2819,14 @@ convCurSwapBtn.addEventListener('click', () => {
   const tmp = convCurFromUnit.value;
   convCurFromUnit.value = convCurToUnit.value;
   convCurToUnit.value = tmp;
+  convFlagPickers.forEach(sync => sync());
   convUpdateCurrencyResult();
+});
+
+// Tauschen-Knöpfe: Pfeile spielen beim Klick einmal die Loop-Animation
+document.querySelectorAll('.conv-swap-btn').forEach(btn => {
+  btn.addEventListener('click', () => { btn.classList.remove('swapping'); void btn.offsetWidth; btn.classList.add('swapping'); });
+  btn.addEventListener('animationend', () => btn.classList.remove('swapping'));
 });
 
 const convModeSelectEl = document.getElementById('conv-mode-select');

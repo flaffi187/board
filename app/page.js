@@ -172,7 +172,14 @@ export default function Page() {
     <div className="pawn-layer" id="pawn-layer"></div>
   </div>
   <div className="ladder-controls">
-    <button className="ladder-die" id="ladder-die" title="Würfeln" aria-label="Würfeln"></button>
+    <div className="popcorn-machine" id="popcorn-machine">
+      <div className="pm-roof"><span>POPCORN</span></div>
+      <div className="pm-glass">
+        <div className="pm-pile" id="pm-pile" aria-hidden="true"></div>
+        <button className="ladder-die" id="ladder-die" title="Würfeln" aria-label="Würfeln"></button>
+      </div>
+      <div className="pm-base"><i></i><i></i></div>
+    </div>
     <div className="ladder-status" id="ladder-status"></div>
     <button className="ladder-reset" id="ladder-reset">Neues Spiel</button>
   </div>
@@ -211,57 +218,168 @@ export default function Page() {
 
 <div className="view" id="calc-view">
   <div className="panel-label">Rechner</div>
-  <div className="calc-box">
-    <div className="calc-brand">Dash-100 · Solar</div>
-    <div className="calc-display">
-      <div className="calc-expr" id="calc-expr"></div>
-      <div className="calc-current" id="calc-display">0</div>
+  {/* Rechner im Stil eines alten Nokia-Handys */}
+  <div className="calc-box nokia">
+    <div className="nokia-ear"></div>
+    <div className="nokia-logo">NOKIA</div>
+    <div className="nokia-bezel">
+      <div className="calc-display nokia-lcd">
+        <div className="nokia-status">
+          <span className="nokia-bars signal"><i></i><i></i><i></i><i></i></span>
+          <span className="nokia-title">Rechner</span>
+          <span className="nokia-bars battery"><i></i><i></i><i></i><i></i></span>
+        </div>
+        <div className="calc-expr" id="calc-expr"></div>
+        <div className="calc-current" id="calc-display">0</div>
+        <div className="nokia-soft"><span>Löschen</span><span>Ergebnis</span></div>
+      </div>
+      {/* Kaputter Bildschirm: ausgelaufenes LCD, tote Pixel-Spalten und Risse im Glas */}
+      <svg className="nokia-crack" viewBox="0 0 220 160" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <radialGradient id="lcdInk" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#0d140a" stopOpacity="0.95" />
+            <stop offset="55%" stopColor="#1e2b14" stopOpacity="0.75" />
+            <stop offset="100%" stopColor="#3a5a2a" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <path d="M30 18 C44 10 62 16 66 30 C72 44 58 56 44 54 C30 60 16 50 18 36 C10 28 18 20 30 18 Z" fill="url(#lcdInk)" />
+        <path d="M58 40 C70 44 80 60 74 70 C66 64 62 54 58 40 Z" fill="#1e2b14" opacity="0.45" />
+        <rect x="88" y="12" width="2" height="136" fill="#1e2b14" opacity="0.35" />
+        <rect x="93" y="12" width="1" height="136" fill="#f2ffe0" opacity="0.25" />
+        <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+          <g stroke="rgba(0,0,0,0.45)" strokeWidth="2.6">
+            <path d="M40 34 L58 30 L80 36 L110 30 L150 40 L200 34 L220 38" />
+            <path d="M40 34 L52 56 L48 80 L64 110 L60 160" />
+            <path d="M40 34 L18 50 L0 46" />
+            <path d="M40 34 L30 10 L36 0" />
+            <path d="M40 34 L70 64 L100 74 L130 106 L170 116 L220 140" />
+            <path d="M80 36 L92 14 L118 6" />
+            <path d="M52 56 L28 76 L0 82" />
+          </g>
+          <g stroke="rgba(255,255,255,0.85)" strokeWidth="1.1">
+            <path d="M40 34 L58 30 L80 36 L110 30 L150 40 L200 34 L220 38" />
+            <path d="M40 34 L52 56 L48 80 L64 110 L60 160" />
+            <path d="M40 34 L18 50 L0 46" />
+            <path d="M40 34 L30 10 L36 0" />
+            <path d="M40 34 L70 64 L100 74 L130 106 L170 116 L220 140" />
+            <path d="M80 36 L92 14 L118 6" />
+            <path d="M52 56 L28 76 L0 82" />
+            <path d="M58 30 L66 18 M110 30 L118 46 M150 40 L156 24 M48 80 L36 92 M100 74 L104 92 M130 106 L126 126 M70 64 L82 52" strokeWidth="0.7" />
+          </g>
+          <circle cx="40" cy="34" r="7" stroke="rgba(255,255,255,0.7)" strokeWidth="0.8" />
+          <circle cx="40" cy="34" r="12" stroke="rgba(255,255,255,0.4)" strokeWidth="0.6" strokeDasharray="6 4" />
+        </g>
+        <path d="M58 30 L80 36 L70 64 L52 56 Z" fill="rgba(255,255,255,0.10)" />
+        <path d="M110 30 L150 40 L130 106 L100 74 Z" fill="rgba(255,255,255,0.05)" />
+        <circle cx="40" cy="34" r="2.4" fill="rgba(255,255,255,0.9)" />
+      </svg>
     </div>
-    <div className="calc-grid">
-      <button className="calc-btn calc-clear" data-key="C">C</button>
-      <button className="calc-btn calc-op" data-key="back">⌫</button>
-      <button className="calc-btn calc-op" data-key="%">%</button>
-      <button className="calc-btn calc-op" data-key="/">÷</button>
-
-      <button className="calc-btn" data-key="7">7</button>
-      <button className="calc-btn" data-key="8">8</button>
-      <button className="calc-btn" data-key="9">9</button>
-      <button className="calc-btn calc-op" data-key="*">×</button>
-
-      <button className="calc-btn" data-key="4">4</button>
-      <button className="calc-btn" data-key="5">5</button>
-      <button className="calc-btn" data-key="6">6</button>
-      <button className="calc-btn calc-op" data-key="-">−</button>
-
-      <button className="calc-btn" data-key="1">1</button>
-      <button className="calc-btn" data-key="2">2</button>
-      <button className="calc-btn" data-key="3">3</button>
-      <button className="calc-btn calc-op" data-key="+">+</button>
-
-      <button className="calc-btn calc-zero" data-key="0">0</button>
-      <button className="calc-btn" data-key=".">,</button>
-      <button className="calc-btn calc-equals" data-key="=">=</button>
+    <div className="nokia-nav">
+      <button className="calc-btn nokia-c" data-key="C">C</button>
+      <button className="calc-btn nokia-navi" data-key="=">=</button>
+      <button className="calc-btn nokia-back" data-key="back">⌫</button>
     </div>
+    <div className="nokia-ops">
+      <button className="calc-btn nokia-op" data-key="/">÷</button>
+      <button className="calc-btn nokia-op" data-key="*">×</button>
+      <button className="calc-btn nokia-op" data-key="-">−</button>
+      <button className="calc-btn nokia-op" data-key="+">+</button>
+    </div>
+    <div className="calc-grid nokia-keys">
+        <button className="calc-btn nokia-key" data-key="1">1<small></small></button>
+        <button className="calc-btn nokia-key" data-key="2">2<small>abc</small></button>
+        <button className="calc-btn nokia-key" data-key="3">3<small>def</small></button>
+        <button className="calc-btn nokia-key" data-key="4">4<small>ghi</small></button>
+        <button className="calc-btn nokia-key" data-key="5">5<small>jkl</small></button>
+        <button className="calc-btn nokia-key" data-key="6">6<small>mno</small></button>
+        <button className="calc-btn nokia-key" data-key="7">7<small>pqrs</small></button>
+        <button className="calc-btn nokia-key" data-key="8">8<small>tuv</small></button>
+        <button className="calc-btn nokia-key" data-key="9">9<small>wxyz</small></button>
+        <button className="calc-btn nokia-key" data-key=".">,<small>*</small></button>
+        <button className="calc-btn nokia-key" data-key="0">0<small>␣</small></button>
+        <button className="calc-btn nokia-key" data-key="%">%<small>#</small></button>
+    </div>
+    <div className="nokia-mic"></div>
   </div>
 
   <div className="panel-label" style={{ marginTop: "44px" }}>Umrechner</div>
   <div className="conv-wrap">
     <div className="mode-select" id="conv-mode-select">
-      <button className="mode-btn active" data-mode="unit">Einheiten</button>
-      <button className="mode-btn" data-mode="currency">Währung</button>
+      <button className="mode-btn active" data-mode="unit">
+        {/* Einheiten: Lineal mit m/ft und zwei Umrechnungs-Pfeilen */}
+        <svg className="mode-icon" viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M11 27 A22 22 0 0 1 50 17" fill="none" stroke="#c0392b" strokeWidth="5" strokeLinecap="round" />
+          <path d="M45 8 L56 19 L42 23 Z" fill="#c0392b" />
+          <path d="M53 37 A22 22 0 0 1 14 47" fill="none" stroke="#f2ecdd" strokeWidth="5" strokeLinecap="round" />
+          <path d="M19 56 L8 45 L22 41 Z" fill="#f2ecdd" />
+          <text x="32" y="24" textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontWeight="700" fontSize="9" fill="#f2ecdd">m</text>
+          <rect x="19" y="27" width="26" height="9" rx="2" fill="#f2ecdd" />
+          <path d="M22.5 27 v4 M26 27 v3 M29.5 27 v4 M33 27 v3 M36.5 27 v4 M40 27 v3 M43 27 v2.5" stroke="#1b1a17" strokeWidth="1.1" />
+          <text x="32" y="46" textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontWeight="700" fontSize="9" fill="#f2ecdd">ft</text>
+        </svg>
+        <span>Einheiten</span>
+      </button>
+      <button className="mode-btn" data-mode="currency">
+        {/* Währung: Dollarschein */}
+        <svg className="mode-icon" viewBox="0 0 64 64" aria-hidden="true">
+          <rect x="4" y="16" width="56" height="32" rx="3" fill="#6fae5a" stroke="#2f6b2a" strokeWidth="2" />
+          <rect x="8.5" y="20.5" width="47" height="23" rx="2" fill="none" stroke="#d9f0c8" strokeWidth="1.2" strokeDasharray="2 1.5" />
+          <ellipse cx="32" cy="32" rx="9" ry="10" fill="#d9f0c8" stroke="#2f6b2a" strokeWidth="1.4" />
+          <text x="32" y="37.5" textAnchor="middle" fontFamily="Oswald, sans-serif" fontWeight="700" fontSize="15" fill="#2f6b2a">$</text>
+          <circle cx="14" cy="32" r="4" fill="none" stroke="#2f6b2a" strokeWidth="1.4" />
+          <circle cx="50" cy="32" r="4" fill="none" stroke="#2f6b2a" strokeWidth="1.4" />
+          <text x="11" y="26" fontFamily="Oswald, sans-serif" fontWeight="700" fontSize="6" fill="#2f6b2a">1</text>
+          <text x="50" y="44" fontFamily="Oswald, sans-serif" fontWeight="700" fontSize="6" fill="#2f6b2a">1</text>
+        </svg>
+        <span>Währung</span>
+      </button>
     </div>
 
     <div id="conv-unit-panel">
       <div className="diff-select" id="conv-cat-select" style={{ marginBottom: "16px" }}>
-        <button className="diff-btn active" data-cat="length">Länge</button>
-        <button className="diff-btn" data-cat="weight">Gewicht</button>
-        <button className="diff-btn" data-cat="temp">Temperatur</button>
+        <button className="diff-btn active" data-cat="length">
+          {/* Länge: gelber Meterstab */}
+          <svg className="cat-icon" viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M6 44 L26 24 L32 30 L52 10 L58 16 L38 36 L32 30" fill="none" stroke="#7a5a10" strokeWidth="11" strokeLinejoin="round" strokeLinecap="round" />
+            <path d="M6 44 L26 24 L32 30 L52 10 L58 16 L38 36 L32 30" fill="none" stroke="#f2c230" strokeWidth="8" strokeLinejoin="round" strokeLinecap="round" />
+            <path d="M10 42 l-2 -2 M14 38 l-3 -3 M18 34 l-2 -2 M22 30 l-3 -3 M44 18 l-2 -2 M48 14 l-3 -3 M52 10 l-2 -2 M42 34 l-2 -2 M46 30 l-3 -3 M50 26 l-2 -2 M54 22 l-3 -3" stroke="#3a2a06" strokeWidth="1.2" />
+            <circle cx="26" cy="24" r="1.8" fill="#9aa3ad" stroke="#4d545c" strokeWidth="0.6" />
+            <circle cx="32" cy="30" r="1.8" fill="#9aa3ad" stroke="#4d545c" strokeWidth="0.6" />
+            <circle cx="52" cy="10" r="1.8" fill="#9aa3ad" stroke="#4d545c" strokeWidth="0.6" />
+            <circle cx="58" cy="16" r="1.8" fill="#9aa3ad" stroke="#4d545c" strokeWidth="0.6" />
+          </svg>
+          <span>Länge</span>
+        </button>
+        <button className="diff-btn" data-cat="weight">
+          {/* Gewicht: Hantel */}
+          <svg className="cat-icon" viewBox="0 0 64 64" aria-hidden="true">
+            <rect x="14" y="29" width="36" height="6" rx="2" fill="#b9c0cb" stroke="#4d545c" strokeWidth="1.2" />
+            <rect x="4" y="25" width="5" height="14" rx="1.5" fill="#6b737d" stroke="#2a2e35" strokeWidth="1" />
+            <rect x="8" y="18" width="7" height="28" rx="2" fill="#8a929e" stroke="#2a2e35" strokeWidth="1.2" />
+            <rect x="55" y="25" width="5" height="14" rx="1.5" fill="#6b737d" stroke="#2a2e35" strokeWidth="1" />
+            <rect x="49" y="18" width="7" height="28" rx="2" fill="#8a929e" stroke="#2a2e35" strokeWidth="1.2" />
+            <path d="M10 21 v8 M51 21 v8" stroke="#c9d1d9" strokeWidth="1.4" strokeLinecap="round" />
+            <path d="M24 29 v6 M28 29 v6 M32 29 v6 M36 29 v6 M40 29 v6" stroke="#8a929e" strokeWidth="0.8" />
+          </svg>
+          <span>Gewicht</span>
+        </button>
+        <button className="diff-btn" data-cat="temp">
+          {/* Temperatur: Thermometer */}
+          <svg className="cat-icon" viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M26 10 a6 6 0 0 1 12 0 V38 a11 11 0 1 1 -12 0 Z" fill="#f2ecdd" stroke="#4d545c" strokeWidth="2" />
+            <rect x="29.5" y="20" width="5" height="22" rx="2.5" fill="#e0262b" />
+            <circle cx="32" cy="47" r="7.5" fill="#e0262b" />
+            <circle cx="29.5" cy="44.5" r="2" fill="#ff8a8a" />
+            <path d="M40 14 h5 M40 20 h3 M40 26 h5 M40 32 h3" stroke="#f2ecdd" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          <span>Temperatur</span>
+        </button>
       </div>
       <div className="conv-row">
         <input type="number" id="conv-unit-from-value" defaultValue="1" />
         <select id="conv-unit-from-unit"></select>
       </div>
-      <button className="conv-swap-btn" id="conv-unit-swap" title="Tauschen">⇅</button>
+      <button className="conv-swap-btn" id="conv-unit-swap" title="Tauschen" aria-label="Tauschen"><svg className="chevron-up-down" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path className="chev-down" d="m7 15 5 5 5-5" /><path className="chev-up" d="m7 9 5-5 5 5" /></svg></button>
       <div className="conv-row">
         <input type="number" id="conv-unit-to-value" readOnly />
         <select id="conv-unit-to-unit"></select>
@@ -273,7 +391,7 @@ export default function Page() {
         <input type="number" id="conv-cur-from-value" defaultValue="1" />
         <select id="conv-cur-from-unit"></select>
       </div>
-      <button className="conv-swap-btn" id="conv-cur-swap" title="Tauschen">⇅</button>
+      <button className="conv-swap-btn" id="conv-cur-swap" title="Tauschen" aria-label="Tauschen"><svg className="chevron-up-down" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path className="chev-down" d="m7 15 5 5 5-5" /><path className="chev-up" d="m7 9 5-5 5 5" /></svg></button>
       <div className="conv-row">
         <input type="number" id="conv-cur-to-value" readOnly />
         <select id="conv-cur-to-unit"></select>

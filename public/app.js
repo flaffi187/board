@@ -29,72 +29,317 @@ function honeyCellBox(r, c){
   const top = r * honeyGeo.rowStep;
   return { left, top, cx: left + honeyGeo.W / 2, cy: top + honeyGeo.H / 2 };
 }
+// Pseudo-Zufall (deterministisch) für natürliche Variation je Zelle
+const honeySeeded = (n) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); };
+// Sechseck mit leicht abgerundeten Ecken (Wachs ist nie ganz spitz)
+function honeyHexPath(cx, cy, s, round){
+  const v = [];
+  for(let i = 0; i < 6; i++){
+    const a = Math.PI / 180 * (60 * i - 90);
+    v.push([cx + s * Math.cos(a), cy + s * Math.sin(a)]);
+  }
+  const f = (n) => n.toFixed(1);
+  let d = '';
+  for(let i = 0; i < 6; i++){
+    const p = v[(i + 5) % 6], q = v[i], n = v[(i + 1) % 6];
+    const t = round / s;
+    const a1 = [q[0] + (p[0] - q[0]) * t, q[1] + (p[1] - q[1]) * t];
+    const a2 = [q[0] + (n[0] - q[0]) * t, q[1] + (n[1] - q[1]) * t];
+    d += (i === 0 ? 'M' : 'L') + f(a1[0]) + ',' + f(a1[1]) + ' Q' + f(q[0]) + ',' + f(q[1]) + ' ' + f(a2[0]) + ',' + f(a2[1]) + ' ';
+  }
+  return d + 'Z';
+}
+// Eine Honigzelle. Typen: 'full' (voll), 'partial' (halb voll), 'capped' (verdeckelt), 'empty' (leer), 'crystal' (kristallisiert).
+// Jede Zelle bekommt zusätzlich eigene Honigsorte, Glanzposition, Bläschen und eine leicht andere Wachsfarbe.
+function honeyCellMarkup(cx, cy, idx, type, fill){
+  type = type || 'full';
+  const sOuter = honeyGeo.H / 2;
+  const sHoney = sOuter * (0.84 + honeySeeded(idx * 31 + 40) * 0.04);
+  const sd = (k) => honeySeeded(idx * 31 + k);
+  const variant = Math.floor(sd(0) * 6);
+  const wall = Math.floor(sd(5) * 3);
+  const f = (n) => n.toFixed(1);
+  const inner = honeyHexPath(cx, cy, sHoney, 9);
+  let m = '';
+  m += `<path d="${honeyHexPath(cx, cy, sOuter, 6)}" fill="url(#honeyWall${wall})" stroke="#a5761f" stroke-width="1.2"/>`;
+  m += `<path d="${honeyHexPath(cx, cy, sOuter - 2.5, 6)}" fill="none" stroke="rgba(255,246,210,0.55)" stroke-width="1.4"/>`;
+  m += `<path d="${honeyHexPath(cx, cy, sHoney + 2.5, 9)}" fill="url(#honeyWallInner)"/>`;
+
+  if(type === 'capped'){
+    // Wachsdeckel: matt, cremefarben, leicht gewölbt, mit feiner Struktur
+    m += `<path d="${inner}" fill="url(#honeyCap${Math.floor(sd(6) * 2)})" filter="url(#honeyCapTex)"/>`;
+    m += `<path d="${honeyHexPath(cx - 3, cy - 4, sHoney * 0.7, 12)}" fill="#fff8e2" opacity="0.14" filter="url(#honeySoft)"/>`;
+    m += `<path d="${honeyHexPath(cx, cy, sHoney - 3, 8)}" fill="none" stroke="rgba(255,250,232,0.45)" stroke-width="1.2" stroke-dasharray="${f(sHoney * 1.6)} ${f(sHoney * 4.4)}" stroke-dashoffset="${f(sHoney * 4.3)}"/>`;
+    m += `<path d="${honeyHexPath(cx, cy, sHoney - 1, 8)}" fill="none" stroke="rgba(120,80,20,0.35)" stroke-width="1.5"/>`;
+    return m;
+  }
+  if(type === 'eggs'){
+    // Brutzelle: leer, am Boden liegen kleine, perlweisse Bienen-Eier
+    m += `<path d="${inner}" fill="url(#honeyEmpty)" filter="url(#honeyDepth)"/>`;
+    m += `<path d="${honeyHexPath(cx + 2, cy + 4, sHoney * 0.42, 5)}" fill="#7a4e16" opacity="0.55" filter="url(#honeySoft)"/>`;
+    m += `<path d="${honeyHexPath(cx, cy, sHoney - 1.5, 8)}" fill="none" stroke="url(#honeyMeniscus)" stroke-width="1.6" opacity="0.6"/>`;
+    const eggs = [[0, 2, -8], [-11, 9, 34], [10, -7, -52], [8, 13, 72], [-9, -10, 18],
+      [-22, -2, -30], [21, 4, 40], [-3, -22, 84], [14, -24, -12], [-17, 21, -64],
+      [5, 25, 22], [26, -14, 58], [-27, -17, 6], [-30, 12, 48], [29, 19, -38],
+      [-12, -33, -24], [11, 36, 64], [-1, 14, -80]];
+    eggs.forEach(([dx, dy, rot]) => {
+      const ex = cx + dx, ey = cy + dy;
+      const t = `rotate(${rot} ${f(ex)} ${f(ey)})`;
+      m += `<ellipse cx="${f(ex + 1.2)}" cy="${f(ey + 1.6)}" rx="2.6" ry="6.4" fill="#2e1802" opacity="0.45" filter="url(#honeySoft)" transform="${t}"/>`;
+      m += `<path d="M${f(ex)},${f(ey - 6.4)} C${f(ex + 3.4)},${f(ey - 6)} ${f(ex + 3)},${f(ey + 6.2)} ${f(ex)},${f(ey + 6.4)} C${f(ex - 2.6)},${f(ey + 6.2)} ${f(ex - 2.9)},${f(ey - 6)} ${f(ex)},${f(ey - 6.4)} Z" fill="url(#beeEgg)" stroke="rgba(150,120,70,0.5)" stroke-width="0.4" transform="${t}"/>`;
+      m += `<ellipse cx="${f(ex - 0.8)}" cy="${f(ey - 2.6)}" rx="0.8" ry="2.2" fill="#ffffff" opacity="0.9" transform="${t}"/>`;
+    });
+    return m;
+  }
+  if(type === 'empty'){
+    // Leere Zelle: man sieht in die Tiefe auf den Wachsboden
+    m += `<path d="${inner}" fill="url(#honeyEmpty)" filter="url(#honeyDepth)"/>`;
+    m += `<path d="${honeyHexPath(cx + 2, cy + 4, sHoney * 0.42, 5)}" fill="#7a4e16" opacity="0.55" filter="url(#honeySoft)"/>`;
+    m += `<path d="${honeyHexPath(cx, cy, sHoney - 1.5, 8)}" fill="none" stroke="url(#honeyMeniscus)" stroke-width="1.6" opacity="0.6"/>`;
+    return m;
+  }
+  if(type === 'crystal'){
+    // Kristallisierter Honig: undurchsichtig, hell, körnig
+    m += `<path d="${inner}" fill="url(#honeyCrystal)" filter="url(#honeyGrain)"/>`;
+    m += `<path d="${inner}" fill="none" stroke="rgba(110,60,5,0.35)" stroke-width="3" filter="url(#honeySoft)"/>`;
+    const gx = cx - sHoney * 0.35, gy = cy - sHoney * 0.45;
+    m += `<ellipse cx="${f(gx)}" cy="${f(gy)}" rx="10" ry="4" fill="#fffbe6" opacity="0.3" filter="url(#honeySoft)" transform="rotate(-24 ${f(gx)} ${f(gy)})"/>`;
+    return m;
+  }
+
+  let clip = '';
+  let level = cy - sHoney;
+  if(type === 'partial'){
+    // Nur zum Teil gefüllt: oben leere Zelle, unten Honig mit waagrechter Oberfläche
+    level = fill != null ? cy + sHoney - fill * 2 * sHoney : cy - sHoney * 0.2 + sd(7) * sHoney * 0.75;
+    const id = 'honeyClip' + idx;
+    m += `<path d="${inner}" fill="url(#honeyEmpty)" filter="url(#honeyDepth)"/>`;
+    // Honig zieht sich an den Wänden hoch -> leicht nach oben gebogene Oberfläche
+    const surf = `M${f(cx - sOuter)},${f(level - 5)} Q${f(cx)},${f(level + 4)} ${f(cx + sOuter)},${f(level - 5)}`;
+    m += `<clipPath id="${id}"><path d="${surf} L${f(cx + sOuter)},${f(cy + sOuter)} L${f(cx - sOuter)},${f(cy + sOuter)} Z"/></clipPath>`;
+    clip = ` clip-path="url(#${id})"`;
+  }
+  m += `<g${clip}>`;
+  m += `<path d="${inner}" fill="url(#honeyBody${variant})" filter="url(#honeyDepth)"/>`;
+  m += `<ellipse cx="${f(cx + (sd(1) - 0.5) * 16)}" cy="${f(cy + sHoney * (0.32 + sd(8) * 0.18))}" rx="${f(sHoney * (0.5 + sd(9) * 0.2))}" ry="${f(sHoney * 0.32)}" fill="url(#honeyGlow)" opacity="${f(0.6 + sd(11) * 0.4)}"/>`;
+  m += `<path d="${honeyHexPath(cx, cy, sHoney - 1.5, 8)}" fill="none" stroke="url(#honeyMeniscus)" stroke-width="2.4"/>`;
+  const bubbles = Math.floor(sd(2) * 5);
+  for(let b = 0; b < bubbles; b++){
+    const bx = cx + (sd(10 + b) - 0.5) * sHoney * 1.0;
+    const by = Math.max(level + 4, cy + (sd(20 + b) - 0.2) * sHoney * 0.8);
+    const br = 0.8 + sd(30 + b) * 2.4;
+    m += `<circle cx="${f(bx)}" cy="${f(by)}" r="${f(br)}" fill="rgba(255,236,170,0.18)" stroke="rgba(255,244,205,0.6)" stroke-width="0.5"/>`;
+    m += `<circle cx="${f(bx - br * 0.35)}" cy="${f(by - br * 0.35)}" r="${f(br * 0.32)}" fill="#fffbea" opacity="0.9"/>`;
+  }
+  m += `</g>`;
+  if(type === 'partial'){
+    // Honigoberfläche mit hellem Rand
+    const surf = `M${f(cx - sOuter)},${f(level - 4.4)} Q${f(cx)},${f(level + 4.6)} ${f(cx + sOuter)},${f(level - 4.4)}`;
+    m += `<path d="${surf}" fill="none" stroke="rgba(255,232,150,0.8)" stroke-width="1.6" clip-path="url(#honeyClipLine${idx})"/>`;
+    m += `<path d="${surf}" fill="none" stroke="rgba(255,250,225,0.5)" stroke-width="4" filter="url(#honeySoft)" clip-path="url(#honeyClipLine${idx})"/>`;
+    m += `<clipPath id="honeyClipLine${idx}"><path d="${honeyHexPath(cx, cy, sHoney - 1, 9)}"/></clipPath>`;
+    return m;
+  }
+  // Spiegelung: Position, Grösse und Winkel je Zelle verschieden
+  const rot = -14 - sd(12) * 26;
+  const gx = cx - sHoney * (0.2 + sd(3) * 0.25), gy = cy - sHoney * (0.3 + sd(4) * 0.25);
+  if(sd(13) > 0.3){
+    m += `<path d="M${f(cx - sHoney * 0.72)},${f(cy - sHoney * 0.18)} Q${f(cx - sHoney * 0.55)},${f(cy - sHoney * 0.68)} ${f(cx - sHoney * (0.02 + sd(14) * 0.2))},${f(cy - sHoney * 0.8)}" fill="none" stroke="rgba(255,250,228,${f(0.3 + sd(15) * 0.35)})" stroke-width="3" stroke-linecap="round" filter="url(#honeySoft)"/>`;
+  }
+  const gr = 6 + sd(16) * 6;
+  m += `<ellipse cx="${f(gx)}" cy="${f(gy)}" rx="${f(gr)}" ry="${f(gr * 0.45)}" fill="#fffbe6" opacity="${f(0.45 + sd(17) * 0.25)}" filter="url(#honeySoft)" transform="rotate(${f(rot)} ${f(gx)} ${f(gy)})"/>`;
+  m += `<ellipse cx="${f(gx - 2)}" cy="${f(gy - 0.6)}" rx="${f(gr * 0.38)}" ry="${f(gr * 0.15)}" fill="#fffef6" opacity="0.95" transform="rotate(${f(rot)} ${f(gx)} ${f(gy)})"/>`;
+  return m;
+}
+const honeyDefs = `
+      ${[['#fbe7a6','#efcb6c','#cf9d3a'],['#f8e2a0','#e8bf5c','#c38f2e'],['#fdedb8','#f2d27a','#d6a848']].map((c, i) => `
+      <linearGradient id="honeyWall${i}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${c[0]}"/>
+        <stop offset="50%" stop-color="${c[1]}"/>
+        <stop offset="100%" stop-color="${c[2]}"/>
+      </linearGradient>`).join('')}
+      <linearGradient id="honeyWallInner" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#b07a20"/>
+        <stop offset="100%" stop-color="#f3d27e"/>
+      </linearGradient>
+      ${[
+        ['#6e2c02','#b85804','#e98a0c','#ffb02a'], // Blütenhonig
+        ['#7a3503','#c86c06','#f5a11a','#ffc444'], // goldgelb
+        ['#9a5a06','#d89a1c','#f5c445','#ffe48a'], // heller Akazienhonig
+        ['#3c1401','#7a3002','#b85206','#e58614'], // dunkler Waldhonig
+        ['#5a2001','#9c4403','#d26c08','#f79a22'], // Kastanie, rötlich
+        ['#8a4a04','#cf8410','#f2b030','#ffd25e']  // Raps, hell
+      ].map((c, i) => `
+      <linearGradient id="honeyBody${i}" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="${c[0]}"/>
+        <stop offset="30%" stop-color="${c[1]}"/>
+        <stop offset="68%" stop-color="${c[2]}"/>
+        <stop offset="100%" stop-color="${c[3]}"/>
+      </linearGradient>`).join('')}
+      <radialGradient id="honeyCap0" cx="42%" cy="38%" r="70%">
+        <stop offset="0%" stop-color="#fbf0cf"/>
+        <stop offset="60%" stop-color="#ecd49a"/>
+        <stop offset="100%" stop-color="#c9a256"/>
+      </radialGradient>
+      <radialGradient id="honeyCap1" cx="45%" cy="40%" r="70%">
+        <stop offset="0%" stop-color="#f7e3ad"/>
+        <stop offset="60%" stop-color="#e2c27a"/>
+        <stop offset="100%" stop-color="#b98e40"/>
+      </radialGradient>
+      <linearGradient id="beeEgg" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#fffdf6"/>
+        <stop offset="55%" stop-color="#f6efdc"/>
+        <stop offset="100%" stop-color="#d8cba8"/>
+      </linearGradient>
+      <radialGradient id="honeyEmpty" cx="52%" cy="58%" r="65%">
+        <stop offset="0%" stop-color="#a87428"/>
+        <stop offset="55%" stop-color="#7c4f15"/>
+        <stop offset="100%" stop-color="#4a2a08"/>
+      </radialGradient>
+      <linearGradient id="honeyCrystal" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#e2aa3e"/>
+        <stop offset="100%" stop-color="#f7d272"/>
+      </linearGradient>
+      <filter id="honeyCapTex" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.18" numOctaves="2" seed="4" result="n"/>
+        <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.45  0 0 0 0 0.3  0 0 0 0 0.08  0 0 0 0.5 -0.12" result="spots"/>
+        <feComposite in="spots" in2="SourceAlpha" operator="in" result="spotsIn"/>
+        <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="spotsIn"/></feMerge>
+      </filter>
+      <filter id="honeyGrain" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="1" seed="9" result="n"/>
+        <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 0.95  0 0 0 0 0.75  0 0 0 0.7 -0.2" result="grain"/>
+        <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainIn"/>
+        <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="grainIn"/></feMerge>
+      </filter>
+      <radialGradient id="honeyGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#ffd970" stop-opacity="0.75"/>
+        <stop offset="60%" stop-color="#ffc03a" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="#ffb020" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="honeyMeniscus" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#3a1400" stop-opacity="0.55"/>
+        <stop offset="45%" stop-color="#8a4004" stop-opacity="0.2"/>
+        <stop offset="75%" stop-color="#ffd46a" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="#fff0b8" stop-opacity="0.9"/>
+      </linearGradient>
+      <filter id="honeySoft" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="1.4"/>
+      </filter>
+      <filter id="honeyDepth" x="-10%" y="-10%" width="120%" height="120%">
+        <!-- Die Wachswand wirft oben einen Schatten in den Honig -->
+        <feOffset in="SourceAlpha" dx="0" dy="9" result="off"/>
+        <feGaussianBlur in="off" stdDeviation="5" result="offB"/>
+        <feComposite in="SourceAlpha" in2="offB" operator="out" result="rim"/>
+        <feFlood flood-color="#250c00" flood-opacity="0.75"/>
+        <feComposite in2="rim" operator="in" result="shadow"/>
+        <feMerge>
+          <feMergeNode in="SourceGraphic"/>
+          <feMergeNode in="shadow"/>
+        </feMerge>
+      </filter>`;
+// Feste Mischung für die 16 Hintergrund-Zellen (Reihe für Reihe): meist Honig, ein Deckel-Fleck, Rest gemischt
+const honeyBgTypes = ['full', 'capped', 'empty', 'partial',
+  'full', 'eggs', 'capped', 'partial',
+  'crystal', 'full', 'empty', 'partial',
+  'partial', 'empty', 'capped', 'full'];
+// Zustand der Hintergrund-Zellen, damit die Bienen sie füllen können
+const honeyCells = [];
+function renderHoneyCell(cell){
+  if(!cell.el) return;
+  // Leer und halb voll sind dasselbe, nur mit anderem Füllstand
+  const shown = (cell.type === 'empty' || cell.type === 'partial') ? (cell.fill <= 0.01 ? 'empty' : 'partial') : cell.type;
+  cell.el.innerHTML = honeyCellMarkup(cell.cx, cell.cy, cell.idx, shown, cell.fill);
+}
 function buildHoneycombBg(){
   const el = document.getElementById('honeycomb-bg');
   if(!el) return;
-  const { W, H, cols, rows } = honeyGeo;
-  const hexPoints = (cx, cy, s) => {
-    const pts = [];
-    for(let i = 0; i < 6; i++){
-      const angle = Math.PI / 180 * (60 * i - 90);
-      pts.push((cx + s * Math.cos(angle)).toFixed(1) + ',' + (cy + s * Math.sin(angle)).toFixed(1));
-    }
-    return pts.join(' ');
-  };
-  // Pseudo-Zufall (deterministisch) für natürliche Variation je Zelle
-  const seeded = (n) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); };
+  const { cols, rows } = honeyGeo;
   let hexes = '';
-  let idx = 0;
+  let idx = 0, bgIdx = 0;
+  honeyCells.length = 0;
   for(let r = 0; r < rows; r++){
     for(let c = 0; c < cols; c++){
-      if(honeyOccupied.has(r + ',' + c)) continue;
       idx++;
+      if(honeyOccupied.has(r + ',' + c)) continue;
       const { cx, cy } = honeyCellBox(r, c);
-      const sOuter = H / 2;
-      const sInner = sOuter * 0.8;
-      const variant = idx % 4;
-      const glossCx = cx - sInner * 0.45 + (seeded(idx + 100) - 0.5) * sInner * 0.3;
-      const glossCy = cy - sInner * 0.5 + (seeded(idx + 200) - 0.5) * sInner * 0.3;
-      const glossR = sInner * (0.16 + seeded(idx + 300) * 0.08);
-      hexes += `<g class="honey-cell" data-cx="${cx}" data-cy="${cy}" data-r="${r}" data-c="${c}" style="transition:transform .35s ease">`;
-      hexes += `<polygon points="${hexPoints(cx, cy, sOuter)}" fill="url(#honeyWall)" stroke="#8a601a" stroke-width="1.5"/>`;
-      hexes += `<polygon points="${hexPoints(cx, cy, sInner)}" fill="url(#honeyCell${variant})" stroke="#5c3a0f" stroke-width="1.5"/>`;
-      hexes += `<ellipse cx="${glossCx.toFixed(1)}" cy="${glossCy.toFixed(1)}" rx="${glossR.toFixed(1)}" ry="${(glossR * 0.65).toFixed(1)}" fill="#fff3c4" opacity="${(0.35 + seeded(idx + 400) * 0.25).toFixed(2)}" transform="rotate(${(-20 - seeded(idx + 500) * 25).toFixed(0)} ${glossCx.toFixed(1)} ${glossCy.toFixed(1)})"/>`;
-      hexes += `</g>`;
+      // Verteilung wie in einer echten Wabe: meist Honig, einige verdeckelt, wenige halb voll, leer oder kristallisiert
+      const type = honeyBgTypes[bgIdx++ % honeyBgTypes.length];
+      const fill = type === 'empty' ? 0 : type === 'partial' ? 0.3 + honeySeeded(idx * 31 + 7) * 0.35 : 1;
+      honeyCells.push({ r, c, idx, cx, cy, type, fill, el: null });
+      hexes += `<g class="honey-cell" data-cx="${cx}" data-cy="${cy}" data-r="${r}" data-c="${c}" style="transition:transform .35s ease"></g>`;
     }
   }
   el.innerHTML = `<svg viewBox="0 0 950 546" preserveAspectRatio="none">
-    <defs>
-      <linearGradient id="honeyWall" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#f3c767"/>
-        <stop offset="50%" stop-color="#d9a63a"/>
-        <stop offset="100%" stop-color="#b98420"/>
-      </linearGradient>
-      <radialGradient id="honeyCell0" cx="30%" cy="25%" r="85%">
-        <stop offset="0%" stop-color="#e8a73a"/>
-        <stop offset="45%" stop-color="#c17812"/>
-        <stop offset="100%" stop-color="#733f08"/>
-      </radialGradient>
-      <radialGradient id="honeyCell1" cx="65%" cy="22%" r="85%">
-        <stop offset="0%" stop-color="#eeb24a"/>
-        <stop offset="45%" stop-color="#b86a10"/>
-        <stop offset="100%" stop-color="#6b3806"/>
-      </radialGradient>
-      <radialGradient id="honeyCell2" cx="25%" cy="60%" r="85%">
-        <stop offset="0%" stop-color="#e49c2e"/>
-        <stop offset="45%" stop-color="#a8640e"/>
-        <stop offset="100%" stop-color="#5e3005"/>
-      </radialGradient>
-      <radialGradient id="honeyCell3" cx="55%" cy="70%" r="85%">
-        <stop offset="0%" stop-color="#f0b24e"/>
-        <stop offset="45%" stop-color="#bd7212"/>
-        <stop offset="100%" stop-color="#703d08"/>
-      </radialGradient>
-    </defs>
+    <defs>${honeyDefs}</defs>
     ${hexes}
   </svg>`;
+  honeyCells.forEach(cell => {
+    cell.el = el.querySelector(`.honey-cell[data-r="${cell.r}"][data-c="${cell.c}"]`);
+    renderHoneyCell(cell);
+  });
+  // Die echten Kacheln bekommen dieselbe Zelle als eigenes SVG, damit alles gleich aussieht
+  document.querySelectorAll('.overview-card').forEach((card, i) => {
+    if(card.querySelector('.ov-cell-svg')) return;
+    const svg = `<svg class="ov-cell-svg" viewBox="0 0 ${honeyGeo.W} ${honeyGeo.H}" aria-hidden="true">${honeyCellMarkup(honeyGeo.W / 2, honeyGeo.H / 2, 100 + i * 7)}</svg>`;
+    card.insertAdjacentHTML('afterbegin', svg);
+  });
 }
 buildHoneycombBg();
+
+const honeyIsOpen = (cell) => cell.type === 'empty' || cell.type === 'partial';
+// Welche Wabe gerade von welcher Biene angeflogen/besetzt ist ("r,c" -> Biene), damit nie zwei auf derselben landen
+const honeyReserved = new Map();
+function releaseHoneyCell(bee){
+  for(const [key, b] of honeyReserved) if(b === bee) honeyReserved.delete(key);
+}
+function reserveHoneyCell(bee, r, c){
+  releaseHoneyCell(bee);
+  honeyReserved.set(r + ',' + c, bee);
+}
+// Freie Wabe zum Landen: meistens eine, die man füllen kann, sonst irgendeine, die keine andere Biene besetzt
+function pickHoneyLandingCell(){
+  const fillable = honeyCells.filter(h => honeyIsOpen(h) && !h.draining && !honeyReserved.has(h.r + ',' + h.c));
+  if(fillable.length && Math.random() < 0.75) return fillable[Math.floor(Math.random() * fillable.length)];
+  const free = [];
+  for(let r = 0; r < honeyGeo.rows; r++)
+    for(let c = 0; c < honeyGeo.cols; c++)
+      if(!honeyReserved.has(r + ',' + c)) free.push({ r, c });
+  return free.length ? free[Math.floor(Math.random() * free.length)] : null;
+}
+// Füllstand einer Zelle sanft von from nach to bewegen
+function animateHoneyFill(cell, to, dur, done){
+  const from = cell.fill, start = performance.now();
+  cell.animating = true;
+  (function frame(now){
+    const t = Math.min(1, (now - start) / dur);
+    const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    cell.fill = from + (to - from) * e;
+    renderHoneyCell(cell);
+    if(t < 1){ requestAnimationFrame(frame); return; }
+    cell.animating = false;
+    if(done) done();
+  })(start);
+}
+// Eine Biene hat Nektar gebracht: Füllstand steigt. Ist die Zelle voll, bleibt sie kurz so und läuft dann wieder leer.
+function beeFillsHoneyCell(r, c){
+  const cell = honeyCells.find(h => h.r === r && h.c === c);
+  if(!cell || !honeyIsOpen(cell) || cell.animating || cell.draining) return;
+  cell.type = 'partial';
+  animateHoneyFill(cell, Math.min(1, cell.fill + 0.18 + Math.random() * 0.12), 1400, () => {
+    if(cell.fill < 0.999) return;
+    cell.fill = 1;
+    cell.draining = true;
+    setTimeout(() => {
+      animateHoneyFill(cell, 0, 2600, () => {
+        cell.fill = 0;
+        cell.type = 'empty';
+        cell.draining = false;
+        renderHoneyCell(cell);
+      });
+    }, 3000);
+  });
+}
 
 function setupHoneycombInteraction(){
   const wrap = document.querySelector('.overview-wrap');
@@ -135,24 +380,6 @@ function setupHoneycombInteraction(){
     document.querySelectorAll('.honey-cell').forEach(cell => { cell.style.transform = ''; });
     cards.forEach(c => { c.style.removeProperty('--push-x'); c.style.removeProperty('--push-y'); });
   }
-  // Honig läuft an der Wabenwand herunter, wenn man drübergeht
-  const dripLayer = document.getElementById('drip-layer');
-  function spawnDrip(cx, bottomY){
-    if(!dripLayer) return;
-    const count = 3 + Math.floor(Math.random() * 2); // 3-4 Honigfäden pro Hover
-    for(let i = 0; i < count; i++){
-      setTimeout(() => {
-        const drip = document.createElement('div');
-        drip.className = 'honey-drip';
-        drip.style.left = (cx + (Math.random() - 0.5) * (honeyGeo.W * 0.55)) + 'px';
-        drip.style.top = bottomY + 'px';
-        const dur = (2.1 + Math.random() * 0.7).toFixed(2);
-        drip.style.animationDuration = dur + 's';
-        dripLayer.appendChild(drip);
-        setTimeout(() => drip.remove(), dur * 1000 + 150);
-      }, i * 130 + Math.random() * 80);
-    }
-  }
   // Auch die rein dekorativen Wabenzellen reagieren auf Hover, nicht nur die 8 echten Kacheln – sie tauschen aber nicht den Platz
   const bgEl = document.getElementById('honeycomb-bg');
   if(bgEl){
@@ -161,14 +388,12 @@ function setupHoneycombInteraction(){
       if(!g) return;
       const cx = parseFloat(g.dataset.cx), cy = parseFloat(g.dataset.cy);
       pushCells(cx, cy, null);
-      spawnDrip(cx, cy + honeyGeo.H / 2);
     });
   }
   cards.forEach(card => {
     card.addEventListener('mouseenter', () => {
       const box = honeyCellBox(+card.dataset.row, +card.dataset.col);
       pushCells(box.cx, box.cy, card);
-      spawnDrip(box.cx, box.cy + honeyGeo.H / 2);
     });
   });
   wrap.addEventListener('mouseleave', resetCells);
@@ -331,15 +556,52 @@ setupNest();
 let beeEls = [];
 const baseBeeCount = 5, lightModeBeeCount = 11;
 
-function honeyCellViewportPoint(){
+// Landepunkt einer Wabe in Bildschirm-Koordinaten (ohne r/c: eine zufällige freie Wabe)
+function honeyCellViewportPoint(r, c){
+  const wrap = document.querySelector('.overview-wrap');
+  if(!wrap) return null;
+  if(r == null){
+    const free = pickHoneyLandingCell();
+    r = free ? free.r : Math.floor(Math.random() * honeyGeo.rows);
+    c = free ? free.c : Math.floor(Math.random() * honeyGeo.cols);
+  }
+  const rect = wrap.getBoundingClientRect();
+  const box = honeyCellBox(r, c);
+  return {
+    x: rect.left + box.cx * (rect.width / 950),
+    y: rect.top + (box.cy - honeyGeo.H * 0.3) * (rect.height / 546),
+    r, c
+  };
+}
+// Welche Wabe liegt unter dem Punkt (nächste, oder null ausserhalb der Wabe)?
+function honeyCellAt(px, py){
   const wrap = document.querySelector('.overview-wrap');
   if(!wrap) return null;
   const rect = wrap.getBoundingClientRect();
-  const box = honeyCellBox(Math.floor(Math.random() * honeyGeo.rows), Math.floor(Math.random() * honeyGeo.cols));
-  return {
-    x: rect.left + box.cx * (rect.width / 950),
-    y: rect.top + (box.cy - honeyGeo.H * 0.3) * (rect.height / 546)
-  };
+  const sx = rect.width / 950, sy = rect.height / 546;
+  let best = null, bestD = honeyGeo.H * 0.55;
+  for(let r = 0; r < honeyGeo.rows; r++)
+    for(let c = 0; c < honeyGeo.cols; c++){
+      const box = honeyCellBox(r, c);
+      const d = Math.hypot((px - (rect.left + box.cx * sx)) / sx, (py - (rect.top + box.cy * sy)) / sy);
+      if(d < bestD){ bestD = d; best = { r, c }; }
+    }
+  return best;
+}
+// Liegt der Punkt auf einer Wabe, die schon eine andere Biene besetzt?
+function nearOccupiedHoneyCell(px, py, bee){
+  const wrap = document.querySelector('.overview-wrap');
+  if(!wrap) return false;
+  const rect = wrap.getBoundingClientRect();
+  const sx = rect.width / 950, sy = rect.height / 546;
+  for(const [key, b] of honeyReserved){
+    if(b === bee) continue;
+    const [r, c] = key.split(',').map(Number);
+    const box = honeyCellBox(r, c);
+    const dx = (px - (rect.left + box.cx * sx)) / sx, dy = (py - (rect.top + box.cy * sy)) / sy;
+    if(Math.hypot(dx, dy) < honeyGeo.H * 0.55) return true;
+  }
+  return false;
 }
 
 function createBee(isQueen, fromCell){
@@ -358,12 +620,13 @@ function createBee(isQueen, fromCell){
   layer.appendChild(bee);
   beeEls.push(bee);
   const start = fromCell ? honeyCellViewportPoint() : null;
+  if(start) reserveHoneyCell(bee, start.r, start.c);
   let x = start ? start.x : 40 + Math.random() * (window.innerWidth - 80);
   let y = start ? start.y : 40 + Math.random() * (window.innerHeight - 80);
   bee.style.left = x + 'px';
   bee.style.top = y + 'px';
 
-  function moveTo(nx, ny, duration){
+  function moveTo(nx, ny, duration, easing){
     // Blickrichtung: spiegeln statt auf dem Kopf zu fliegen, leichte Neigung je nach Flugwinkel
     const dx = nx - x, dy = ny - y;
     let angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
@@ -376,6 +639,8 @@ function createBee(isQueen, fromCell){
     bee.style.setProperty('--bee-facing', facing);
     bee.style.setProperty('--bee-tilt', tilt.toFixed(1) + 'deg');
     bee.style.transitionDuration = duration + 'ms';
+    // In der Luft gleichmässig weiterfliegen, nur beim Landen abbremsen
+    bee.style.transitionTimingFunction = easing || 'linear';
     bee.style.left = nx + 'px';
     bee.style.top = ny + 'px';
     x = nx; y = ny;
@@ -388,26 +653,37 @@ function createBee(isQueen, fromCell){
   function step(){
     if(!bee.isConnected || bee.dataset.retiring) return;
     bee.classList.remove('landed');
-    const landOnCell = Math.random() < 0.3;
+    releaseHoneyCell(bee);
+    const target = Math.random() < 0.8 ? pickHoneyLandingCell() : null;
+    const landOnCell = !!target;
     let nx, ny;
     if(landOnCell){
       const rect = wrap.getBoundingClientRect();
-      const r = Math.floor(Math.random() * honeyGeo.rows);
-      const c = Math.floor(Math.random() * honeyGeo.cols);
-      const box = honeyCellBox(r, c);
+      reserveHoneyCell(bee, target.r, target.c);
+      const box = honeyCellBox(target.r, target.c);
       const landY = box.cy - honeyGeo.H * 0.3;
       nx = rect.left + box.cx * (rect.width / 950);
       ny = rect.top + landY * (rect.height / 546);
     } else {
-      nx = 30 + Math.random() * (window.innerWidth - 60);
-      ny = 25 + Math.random() * (window.innerHeight - 50);
+      // Freier Flug: kein Ziel auf einer Wabe, an der schon eine andere Biene sitzt
+      for(let tries = 0; tries < 20; tries++){
+        nx = 30 + Math.random() * (window.innerWidth - 60);
+        ny = 25 + Math.random() * (window.innerHeight - 50);
+        if(!nearOccupiedHoneyCell(nx, ny, bee)) break;
+      }
+      // Endet der Flug über einer Wabe, ist diese Wabe für andere Bienen tabu, bis die Biene weiterfliegt
+      const over = honeyCellAt(nx, ny);
+      if(over && !honeyReserved.has(over.r + ',' + over.c)) reserveHoneyCell(bee, over.r, over.c);
     }
     const duration = 900 + Math.hypot(nx - x, ny - y) * 3.8;
-    moveTo(nx, ny, duration);
+    moveTo(nx, ny, duration, landOnCell ? 'ease-out' : 'linear');
     if(landOnCell){
       pendingTimer = setTimeout(() => {
         bee.classList.add('landed');
-        pendingTimer = setTimeout(step, 1600 + Math.random() * 2600);
+        // Landet sie auf einer Wabe, die man füllen kann, füllt sie sie gleich weiter auf
+        const here = honeyCells.find(h => h.r === target.r && h.c === target.c);
+        if(here && honeyIsOpen(here)) setTimeout(() => { if(bee.isConnected) beeFillsHoneyCell(here.r, here.c); }, 500);
+        pendingTimer = setTimeout(step, 900 + Math.random() * 1300);
       }, duration);
     } else {
       // kein Zwischenstopp in der Luft, gleich weiterfliegen
@@ -416,39 +692,102 @@ function createBee(isQueen, fromCell){
   }
   // Wird alle ~1 Minute aufgerufen, damit die Biene gezielt auf einer Blume landet
   bee.landOnFlower = function(tx, ty){
-    if(!bee.isConnected) return;
+    if(!bee.isConnected || bee.dataset.mission) return;
     clearTimeout(pendingTimer);
+    releaseHoneyCell(bee);
     bee.classList.remove('landed');
     const duration = 900 + Math.hypot(tx - x, ty - y) * 3.8;
-    moveTo(tx, ty, duration);
+    moveTo(tx, ty, duration, 'ease-out');
     pendingTimer = setTimeout(() => {
       bee.classList.add('landed');
       pendingTimer = setTimeout(step, 2200 + Math.random() * 1800);
+    }, duration);
+  };
+  // Auftrag: gezielt zu einer Wabe fliegen und sie mit Nektar auffüllen
+  // Auftrag: erst Nektar an einer Blume holen, dann zur Wabe fliegen und sie auffüllen
+  bee.goFillCell = function(cell){
+    if(!bee.isConnected) return;
+    clearTimeout(pendingTimer);
+    bee.classList.remove('landed');
+    bee.dataset.mission = '1';
+    // Die Wabe ist ab jetzt für diese Biene reserviert, auch während sie bei der Blume ist
+    reserveHoneyCell(bee, cell.r, cell.c);
+    const flyToCell = () => {
+      if(!bee.isConnected){ return; }
+      bee.classList.remove('landed');
+      const rect = wrap.getBoundingClientRect();
+      const box = honeyCellBox(cell.r, cell.c);
+      const tx = rect.left + box.cx * (rect.width / 950);
+      const ty = rect.top + (box.cy - honeyGeo.H * 0.3) * (rect.height / 546);
+      const duration = 900 + Math.hypot(tx - x, ty - y) * 3.8;
+      moveTo(tx, ty, duration, 'ease-out');
+      pendingTimer = setTimeout(() => {
+        bee.classList.add('landed');
+        pendingTimer = setTimeout(() => {
+          beeFillsHoneyCell(cell.r, cell.c);
+          pendingTimer = setTimeout(() => { delete bee.dataset.mission; step(); }, 800);
+        }, 600);
+      }, duration);
+    };
+    const flowers = Array.from(document.querySelectorAll('#meadow .flower'));
+    if(!flowers.length){ flyToCell(); return; }
+    const fr = flowers[Math.floor(Math.random() * flowers.length)].getBoundingClientRect();
+    const fx = fr.left + fr.width / 2, fy = fr.top + fr.height * 0.35;
+    const duration = 900 + Math.hypot(fx - x, fy - y) * 3.8;
+    moveTo(fx, fy, duration, 'ease-out');
+    pendingTimer = setTimeout(() => {
+      bee.classList.add('landed');
+      pendingTimer = setTimeout(flyToCell, 1500 + Math.random() * 800);
     }, duration);
   };
   pendingTimer = setTimeout(step, 300 + Math.random() * 900);
   return bee;
 }
 
+// Alle 30 Sekunden fliegt genau eine Biene los und füllt eine offene Wabe, die keine andere Biene besetzt
+setInterval(() => {
+  const open = honeyCells.filter(c => honeyIsOpen(c) && !c.draining && !c.animating && !honeyReserved.has(c.r + ',' + c.c));
+  const workers = beeEls.filter(b => b.isConnected && !b.dataset.retiring && !b.dataset.mission && b.goFillCell);
+  if(!open.length || !workers.length) return;
+  const cell = open[Math.floor(Math.random() * open.length)];
+  workers[Math.floor(Math.random() * workers.length)].goFillCell(cell);
+}, 30000);
+
 function setupBees(){
   for(let i = 0; i < baseBeeCount; i++) createBee(i === 0);
 }
 setupBees();
 
+// Falls die Bienen-Ebene neu gerendert wurde (z.B. Hot Reload), verlorene Bienen wieder ersetzen
+setInterval(() => {
+  if(!document.getElementById('bee-layer')) return;
+  const alive = beeEls.filter(b => b.isConnected);
+  if(alive.length === beeEls.length) return;
+  for(const [key, b] of honeyReserved) if(!b.isConnected) honeyReserved.delete(key);
+  const hadQueen = alive.some(b => b.classList.contains('queen'));
+  beeEls = alive;
+  if(!hadQueen && beeEls.length < beeTarget) createBee(true);
+  setBeeCount(beeTarget);
+}, 2000);
+
 // Hellmodus: Bienen kommen aus den Waben. Dunkelmodus: sie fliegen zurück in eine Wabe und verschwinden
 function retireBee(bee){
   bee.dataset.retiring = '1';
+  releaseHoneyCell(bee);
   const p = honeyCellViewportPoint();
+  if(p) reserveHoneyCell(bee, p.r, p.c);
   if(p){
     bee.classList.add('retire');
     bee.style.transitionDuration = '1300ms';
     bee.style.left = p.x + 'px';
     bee.style.top = p.y + 'px';
   }
-  setTimeout(() => bee.remove(), 1400);
+  setTimeout(() => { releaseHoneyCell(bee); bee.remove(); }, 1400);
 }
 
+let beeTarget = baseBeeCount;
 function setBeeCount(target){
+  beeTarget = target;
   while(beeEls.length < target) createBee(false, true);
   while(beeEls.length > target){
     retireBee(beeEls.pop());
@@ -764,9 +1103,31 @@ function renderFlaps(container, timeStr){
 // Hell/Dunkel-Umschalter
 const themeToggleBtn = document.getElementById('theme-toggle-btn');
 
+// Mond-Icon von animate-ui (Moon, Animation "default"), ohne React nachgebaut
+const moonIconSvg = `<svg class="moon-icon theme-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>`;
+// Sonnen-Icon von animate-ui (SunMedium, Animation "default"): Strahlen zeichnen sich nacheinander
+const sunRays = [[12, 4, 12, 3], [17.7, 6.3, 18.4, 5.6], [20, 12, 21, 12], [17.7, 17.7, 18.4, 18.4], [12, 20, 12, 21], [6.3, 17.7, 5.6, 18.4], [4, 12, 3, 12], [6.3, 6.3, 5.6, 5.6]];
+const sunIconSvg = `<svg class="sun-icon theme-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/>${sunRays.map(([x1, y1, x2, y2], i) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" pathLength="1" style="animation-delay:${(i * 0.15).toFixed(2)}s"/>`).join('')}</svg>`;
+function playThemeIconAnimation(){
+  const icon = themeToggleBtn.querySelector('.theme-icon');
+  if(!icon) return;
+  icon.classList.remove('animate');
+  void icon.getBoundingClientRect(); // Neustart der Animation erzwingen
+  icon.classList.add('animate');
+}
+
 function applyTheme(theme){
+  const wasLight = document.documentElement.getAttribute('data-theme') === 'light';
   document.documentElement.setAttribute('data-theme', theme);
-  themeToggleBtn.textContent = theme === 'light' ? '☀️' : '🌙';
+  if(theme === 'light'){
+    if(!themeToggleBtn.querySelector('.sun-icon')) themeToggleBtn.innerHTML = sunIconSvg;
+    // Beim Umschalten in den Hellmodus zeichnen sich die Sonnenstrahlen
+    if(!wasLight) playThemeIconAnimation();
+  } else {
+    if(!themeToggleBtn.querySelector('.moon-icon')) themeToggleBtn.innerHTML = moonIconSvg;
+    // Beim Umschalten in den Dunkelmodus dreht sich der Mond einmal
+    if(wasLight) playThemeIconAnimation();
+  }
   try{ localStorage.setItem('weltuhr_theme', theme); } catch(err){}
   // Im Hellmodus schwärmen mehr Bienen aus
   if(typeof setBeeCount === 'function'){
@@ -780,6 +1141,12 @@ try{
 } catch(err){}
 applyTheme(savedTheme);
 
+themeToggleBtn.addEventListener('mouseenter', playThemeIconAnimation);
+themeToggleBtn.addEventListener('animationend', (e) => {
+  // Erst entfernen, wenn alle Teile fertig sind (bei der Sonne der letzte Strahl)
+  const icon = e.target.closest('.theme-icon');
+  if(icon && (!icon.classList.contains('sun-icon') || e.target === icon.querySelector('line:last-of-type'))) icon.classList.remove('animate');
+});
 themeToggleBtn.addEventListener('click', () => {
   const current = document.documentElement.getAttribute('data-theme');
   applyTheme(current === 'light' ? 'dark' : 'light');

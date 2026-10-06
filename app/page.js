@@ -11,7 +11,9 @@ export default function Page() {
     <h1 id="greeting-title">ufl home</h1>
   </div>
   <div className="header-controls">
-    <button id="theme-toggle-btn" className="theme-toggle-btn" title="Hell/Dunkel umschalten" aria-label="Hell/Dunkel umschalten">🌙</button>
+    <button id="theme-toggle-btn" className="theme-toggle-btn" title="Hell/Dunkel umschalten" aria-label="Hell/Dunkel umschalten">
+      <svg className="moon-icon theme-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+    </button>
     <label className="accent-swatch" title="Hintergrundfarbe ändern" aria-label="Hintergrundfarbe ändern">
       <input type="color" id="accent-color-input" defaultValue="#1A1918" />
     </label>
@@ -34,8 +36,6 @@ export default function Page() {
   <div className="panel-label">Register</div>
   <div className="overview-wrap">
     <div className="honeycomb-bg" id="honeycomb-bg"></div>
-    <div className="drip-layer" id="drip-layer"></div>
-    <div className="bee-layer" id="bee-layer"></div>
     <div className="overview-grid">
       <button className="overview-card ov-clock" data-jump="time-view">
         <span className="ov-name">Uhrzeit</span>
@@ -64,6 +64,7 @@ export default function Page() {
     </div>
   </div>
   <div className="meadow" id="meadow"></div>
+  <div className="bee-layer" id="bee-layer"></div>
 </div>
 
 <div className="view" id="time-view">

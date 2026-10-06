@@ -99,6 +99,22 @@
   }
   .theme-toggle-btn:hover{ filter:brightness(1.2); transform:scale(1.06); }
   .theme-toggle-btn:active{ transform:scale(0.95); }
+  .theme-toggle-btn .moon-icon{ color:#F5C445; display:block; }
+  .theme-toggle-btn .moon-icon path{ transform-box:fill-box; transform-origin:center; }
+  .theme-toggle-btn .moon-icon.animate path{ animation: moon-turn 1.2s ease-in-out; }
+  .theme-toggle-btn .sun-icon{ color:#E39A12; display:block; }
+  .theme-toggle-btn .sun-icon line{ stroke-dasharray:1; stroke-dashoffset:0; }
+  .theme-toggle-btn .sun-icon.animate line{ animation: sun-ray 0.6s ease-in-out; }
+  @keyframes sun-ray{
+    from{ opacity:0; stroke-dashoffset:1; }
+    to{ opacity:1; stroke-dashoffset:0; }
+  }
+  @keyframes moon-turn{
+    0%{ transform:rotate(0deg); }
+    25%{ transform:rotate(-30deg); }
+    75%{ transform:rotate(400deg); }
+    100%{ transform:rotate(360deg); }
+  }
 
   .header-controls{ display:flex; align-items:center; gap:10px; flex-shrink:0; }
   .accent-swatch{
@@ -1176,32 +1192,14 @@
     50%{ transform: rotate(5deg); }
   }
   .flower-honey{
-    position:absolute; left:62%; top:38%; width:6px; height:5px; z-index:3;
-    background: radial-gradient(circle at 32% 28%, #ffe9b0, #c9820f 75%);
-    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-    box-shadow: inset -1px -1px 1px rgba(0,0,0,0.25), inset 1px 1px 1px rgba(255,255,255,0.45);
+    position:absolute; left:62%; top:38%; width:6px; height:6px; z-index:3;
+    background: radial-gradient(circle at 34% 30%, #fff6d6 0%, #ffc848 22%, #e48a0d 58%, #8f4202 100%);
+    border-radius: 50% 50% 50% 50% / 42% 42% 58% 58%;
+    box-shadow: 0 1px 1px rgba(60,25,0,0.35), inset 0 -1px 1px rgba(255,220,120,0.6);
   }
 
-  .drip-layer{ position:absolute; inset:0; z-index:6; pointer-events:none; overflow:visible; }
-  .honey-drip{
-    position:absolute; top:0; left:0; width:3px; margin-left:-1.5px; height:0;
-    background: linear-gradient(180deg, rgba(255,214,110,0.96) 0%, rgba(230,150,30,0.95) 60%, rgba(170,95,8,0.95) 100%);
-    border-radius: 0 0 50% 50% / 0 0 80% 80%;
-    box-shadow: inset -1px 0 1px rgba(255,255,255,0.5), inset 1px 0 1px rgba(110,60,0,0.4), 0 2px 3px rgba(90,50,0,0.25);
-    animation: drip-flow 2.4s cubic-bezier(.35,0,.6,1) forwards;
-  }
-  .honey-drip::after{
-    content:''; position:absolute; left:20%; top:6%; width:28%; height:40%;
-    background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0));
-    border-radius:50%; opacity:0.8;
-  }
-  @keyframes drip-flow{
-    0%{ height:0; width:4px; margin-left:-2px; opacity:0.95; }
-    35%{ height:38px; width:5px; margin-left:-2.5px; }
-    70%{ height:62px; width:5px; margin-left:-2.5px; opacity:0.95; }
-    100%{ height:70px; width:4px; margin-left:-2px; opacity:0; }
-  }
-  .bee-layer{ position:fixed; inset:0; z-index:9999; pointer-events:none; overflow:visible; }
+  /* Eigene GPU-Ebene, damit die Bienen nie unter den Kacheln (clip-path + transform) verschwinden */
+  .bee-layer{ position:fixed; inset:0; z-index:9999; pointer-events:none; overflow:visible; transform:translateZ(0); will-change:transform; isolation:isolate; }
   .bee{
     position:absolute; left:0; top:0; width:26px; height:16px;
     --bee-facing: 1; --bee-tilt: 0deg;
@@ -1254,37 +1252,25 @@
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
     display:flex; align-items:center; justify-content:center; text-align:center;
     padding:0 24px; border:none; cursor:pointer; z-index:1; overflow:hidden; pointer-events:auto;
-    background: linear-gradient(135deg, #f3c767 0%, #d9a63a 50%, #b98420 100%);
-    box-shadow: 0 0 0 1.5px #8a601a;
+    background:none;
     color:#fff;
     transform: translate(var(--push-x), var(--push-y));
     transition: transform 0.15s ease, filter 0.15s ease, z-index 0s, left 0.45s ease, top 0.45s ease;
   }
   .overview-card:hover{ transform: translate(var(--push-x), var(--push-y)) scale(1.06); filter:brightness(1.07); z-index:5; }
-  .overview-card.ov-clock{ left:0px; top:0px; --cell-grad: radial-gradient(circle at 30% 25%, #e8a73a 0%, #c17812 45%, #733f08 100%); }
-  .overview-card.ov-weather{ left:438px; top:0px; --cell-grad: radial-gradient(circle at 65% 22%, #eeb24a 0%, #b86a10 45%, #6b3806 100%); }
-  .overview-card.ov-todo{ left:219px; top:126px; --cell-grad: radial-gradient(circle at 25% 60%, #e49c2e 0%, #a8640e 45%, #5e3005 100%); }
-  .overview-card.ov-kalender{ left:657px; top:126px; --cell-grad: radial-gradient(circle at 55% 70%, #f0b24e 0%, #bd7212 45%, #703d08 100%); }
-  .overview-card.ov-rechner{ left:0px; top:252px; --cell-grad: radial-gradient(circle at 30% 25%, #e8a73a 0%, #c17812 45%, #733f08 100%); }
-  .overview-card.ov-timer{ left:438px; top:252px; --cell-grad: radial-gradient(circle at 65% 22%, #eeb24a 0%, #b86a10 45%, #6b3806 100%); }
-  .overview-card.ov-apps{ left:219px; top:378px; --cell-grad: radial-gradient(circle at 25% 60%, #e49c2e 0%, #a8640e 45%, #5e3005 100%); }
-  .overview-card.ov-games{ left:657px; top:378px; --cell-grad: radial-gradient(circle at 55% 70%, #f0b24e 0%, #bd7212 45%, #703d08 100%); }
+  .overview-card.ov-clock{ left:0px; top:0px; }
+  .overview-card.ov-weather{ left:438px; top:0px; }
+  .overview-card.ov-todo{ left:219px; top:126px; }
+  .overview-card.ov-kalender{ left:657px; top:126px; }
+  .overview-card.ov-rechner{ left:0px; top:252px; }
+  .overview-card.ov-timer{ left:438px; top:252px; }
+  .overview-card.ov-apps{ left:219px; top:378px; }
+  .overview-card.ov-games{ left:657px; top:378px; }
   .overview-card .ov-name{
     font-family:'Oswald'; font-weight:700; text-transform:uppercase; font-size:0.92rem;
     line-height:1.3; position:relative; z-index:2; color:#F2ECDD; text-shadow:0 2px 6px rgba(0,0,0,0.85);
   }
-  .overview-card::before{
-    content:''; position:absolute; z-index:0; top:9%; left:9%; right:9%; bottom:9%;
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    background: var(--cell-grad);
-    box-shadow: 0 0 0 1.5px #5c3a0f;
-  }
-  .overview-card::after{
-    content:''; position:absolute; z-index:1; pointer-events:none;
-    width:30%; height:18%; top:20%; left:24%; border-radius:50%;
-    background: radial-gradient(ellipse at center, rgba(255,243,196,0.75), rgba(255,243,196,0) 72%);
-    transform: rotate(-22deg);
-  }
+  .ov-cell-svg{ position:absolute; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
   @media (max-width:420px){
     .ttt-grid{ grid-template-columns:repeat(3, 70px); grid-auto-rows:70px; }
     .ttt-cell{ font-size:1.9rem; }

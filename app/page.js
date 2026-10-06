@@ -8,7 +8,7 @@ export default function Page() {
 <header>
   <div className="title-block">
     <span className="kicker">Persönliches Board</span>
-    <h1 id="greeting-title">Meins</h1>
+    <h1 id="greeting-title">ufl home</h1>
   </div>
   <div className="header-controls">
     <button id="theme-toggle-btn" className="theme-toggle-btn" title="Hell/Dunkel umschalten" aria-label="Hell/Dunkel umschalten">🌙</button>

@@ -179,9 +179,31 @@ export default function Page() {
 
   <div className="cal-day-panel">
     <div className="panel-label" id="cal-selected-label">Eintrag hinzufügen</div>
-    <div className="todo-input-row">
-      <input type="text" id="cal-entry-input" placeholder="Was ist an diesem Tag? …" />
-      <button id="cal-entry-add-btn">Hinzufügen</button>
+    <div className="film-input-row">
+      <svg className="film-reel" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <radialGradient id="reelMetal" cx="38%" cy="32%" r="75%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="45%" stopColor="#c9d1d9" />
+            <stop offset="100%" stopColor="#6b737b" />
+          </radialGradient>
+        </defs>
+        <circle cx="32" cy="32" r="30" fill="url(#reelMetal)" stroke="#4d545c" strokeWidth="1.2" />
+        <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.8" />
+        <g fill="#1d1f24">
+          <ellipse cx="32" cy="14.5" rx="6.5" ry="7.5" />
+          <ellipse cx="48.6" cy="26.6" rx="6.5" ry="7.5" transform="rotate(72 48.6 26.6)" />
+          <ellipse cx="42.3" cy="46.2" rx="6.5" ry="7.5" transform="rotate(144 42.3 46.2)" />
+          <ellipse cx="21.7" cy="46.2" rx="6.5" ry="7.5" transform="rotate(216 21.7 46.2)" />
+          <ellipse cx="15.4" cy="26.6" rx="6.5" ry="7.5" transform="rotate(288 15.4 26.6)" />
+        </g>
+        <circle cx="32" cy="32" r="6" fill="#9aa3ad" stroke="#4d545c" strokeWidth="1" />
+        <circle cx="32" cy="32" r="2.2" fill="#1d1f24" />
+      </svg>
+      <div className="film-strip">
+        <input type="text" id="cal-entry-input" placeholder="Dieser Tag. Diese Mission." />
+        <button id="cal-entry-add-btn">Action</button>
+      </div>
     </div>
     <ul className="todo-list" id="cal-entry-list"></ul>
   </div>

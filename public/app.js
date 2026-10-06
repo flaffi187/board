@@ -2290,7 +2290,11 @@ const ladderGame = (() => {
   useCharacters(setForMonth(new Date().getMonth(), new Date().getFullYear()));
   if(dieBtn) dieBtn.addEventListener('click', roll);
   const resetBtn = document.getElementById('ladder-reset');
-  if(resetBtn) resetBtn.addEventListener('click', () => { reset(); place(true); });
+  if(resetBtn) resetBtn.addEventListener('click', () => {
+    // Filmklappe schlägt zu
+    resetBtn.classList.remove('clap'); void resetBtn.offsetWidth; resetBtn.classList.add('clap');
+    reset(); place(true);
+  });
   return { reset, place, setFor: setForMonth };
 })();
 
@@ -2304,9 +2308,9 @@ function renderCalEntries(){
     return;
   }
   calEntryList.innerHTML = entries.map((text, i) => `
-    <li class="todo-item">
+    <li class="todo-item film-frame">
       <div class="todo-top">
-        <span class="todo-pin">📌</span>
+        <span class="todo-pin">🎬 Szene ${i + 1}</span>
         <button class="todo-del" data-idx="${i}">✕</button>
       </div>
       <span class="todo-text">${text}</span>
@@ -2328,6 +2332,7 @@ function addCalEntry(){
   if(!calEvents[calSelectedDate]) calEvents[calSelectedDate] = [];
   calEvents[calSelectedDate].push(val);
   calEntryInput.value = '';
+  filmReelLen = 0; // Feld ist leer, Filmrolle zählt von vorne
   renderCalEntries();
   renderCalendar();
 }
@@ -2348,6 +2353,15 @@ document.getElementById('cal-today-btn').addEventListener('click', () => {
   calSelectedDate = fmtDate(today);
   renderCalendar();
   renderCalEntries();
+});
+// Filmrolle: dreht sich bei jedem getippten Buchstaben ein Stück weiter (beim Löschen zurück)
+const filmReel = document.querySelector('.film-reel');
+let filmReelAngle = 0, filmReelLen = calEntryInput.value.length;
+calEntryInput.addEventListener('input', () => {
+  const len = calEntryInput.value.length;
+  filmReelAngle += (len - filmReelLen) * 30;
+  filmReelLen = len;
+  if(filmReel) filmReel.style.transform = `rotate(${filmReelAngle}deg)`;
 });
 calEntryAddBtn.addEventListener('click', addCalEntry);
 calEntryInput.addEventListener('keydown', e => {

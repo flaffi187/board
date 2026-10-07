@@ -525,20 +525,100 @@ export default function Page() {
   </div>
 
   <div className="panel-label" id="game-label-sudoku">Sudoku</div>
+  {/* Sudoku im Fortnite-Stil */}
+  <div className="fn-sudoku">
+  <div className="fn-banner"><span>Sudoku</span><small>Battle Royale</small></div>
+  <div className="fn-bus" id="fn-bus" aria-hidden="true">
+    {/* Battle Bus: blauer Bus unter einem gestreiften Heissluftballon */}
+    <svg viewBox="0 0 160 120">
+      <defs>
+        <linearGradient id="busBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#5fb4ff" /><stop offset="60%" stopColor="#2a78d6" /><stop offset="100%" stopColor="#1a4f9c" />
+        </linearGradient>
+        <linearGradient id="busBalloon" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#1a4f9c" /><stop offset="50%" stopColor="#3f9bff" /><stop offset="100%" stopColor="#1a4f9c" />
+        </linearGradient>
+      </defs>
+      <path d="M80 4 C56 4 46 22 50 38 C53 50 66 58 72 62 L88 62 C94 58 107 50 110 38 C114 22 104 4 80 4 Z" fill="url(#busBalloon)" stroke="#0e2f66" strokeWidth="1.5" />
+      <path d="M66 7 C60 20 61 44 72 62 M80 4 L80 62 M94 7 C100 20 99 44 88 62" fill="none" stroke="#ffffff" strokeWidth="4" opacity="0.85" />
+      <path d="M64 12 C60 18 59 26 60 32" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
+      <rect x="72" y="61" width="16" height="6" rx="1.5" fill="#8a5a2b" stroke="#4a2f16" strokeWidth="1" />
+      <path d="M73 67 L40 82 M87 67 L122 82 M76 67 L64 82 M84 67 L98 82" stroke="#3a3a3a" strokeWidth="1.1" />
+      <path d="M120 70 L120 82 M120 70 L132 73 L120 76" fill="#e0262b" stroke="#3a3a3a" strokeWidth="1" />
+      <rect x="22" y="81" width="118" height="28" rx="7" fill="url(#busBody)" stroke="#0e2f66" strokeWidth="1.8" />
+      <rect x="22" y="78" width="118" height="6" rx="3" fill="#7cc4ff" stroke="#0e2f66" strokeWidth="1.2" />
+      <rect x="30" y="86" width="16" height="11" rx="2" fill="#d6efff" stroke="#0e2f66" strokeWidth="1" />
+      <rect x="50" y="86" width="16" height="11" rx="2" fill="#d6efff" stroke="#0e2f66" strokeWidth="1" />
+      <rect x="70" y="86" width="16" height="11" rx="2" fill="#d6efff" stroke="#0e2f66" strokeWidth="1" />
+      <rect x="90" y="86" width="16" height="11" rx="2" fill="#d6efff" stroke="#0e2f66" strokeWidth="1" />
+      <path d="M112 86 H128 Q134 86 135 92 V97 H112 Z" fill="#d6efff" stroke="#0e2f66" strokeWidth="1" />
+      <path d="M32 88 L38 88 M52 88 L58 88 M72 88 L78 88 M92 88 L98 88" stroke="#ffffff" strokeWidth="1.4" strokeLinecap="round" />
+      <rect x="22" y="100" width="118" height="4" fill="#ffd21a" />
+      <circle cx="137" cy="103" r="2.6" fill="#fff6b0" stroke="#b58a0f" strokeWidth="0.8" />
+      <rect x="20" y="99" width="4" height="6" rx="1" fill="#e0262b" />
+      <circle cx="44" cy="110" r="7" fill="#1b1b1b" /><circle cx="44" cy="110" r="3" fill="#b9c0cb" />
+      <circle cx="118" cy="110" r="7" fill="#1b1b1b" /><circle cx="118" cy="110" r="3" fill="#b9c0cb" />
+    </svg>
+  </div>
+  <div className="fn-jumper" id="fn-jumper" aria-hidden="true">
+    {/* Spieler, der aus dem Bus springt: erst Freifall, dann Gleiter */}
+    <svg viewBox="0 0 60 70">
+      <g className="fn-glider">
+        <path d="M4 22 Q30 -2 56 22 Q50 18 43 20 Q37 14 30 18 Q23 14 17 20 Q10 18 4 22 Z" fill="#ff5ab0" stroke="#8a1f5a" strokeWidth="1.2" />
+        <path d="M17 20 Q23 12 30 18 Q37 12 43 20" fill="#ffe94a" opacity="0.85" />
+        <path d="M6 21 L26 44 M54 21 L34 44 M30 18 L30 42" stroke="#3a3a3a" strokeWidth="0.8" />
+      </g>
+      <circle cx="30" cy="40" r="5" fill="#f2c9a0" stroke="#7a4a24" strokeWidth="0.8" />
+      <path d="M25 37 Q30 31 35 37 Z" fill="#7a4a24" />
+      <rect x="26" y="44" width="8" height="12" rx="3" fill="#3fa64a" stroke="#1d5a24" strokeWidth="0.8" />
+      <path d="M26 46 L19 41 M34 46 L41 41" stroke="#3fa64a" strokeWidth="3" strokeLinecap="round" />
+      <path d="M28 56 L25 65 M32 56 L35 65" stroke="#2a3a6a" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  </div>
   <div className="sudoku-controls">
     <div className="diff-select" id="diff-select">
-      <button className="diff-btn active" data-diff="easy">Einfach</button>
-      <button className="diff-btn" data-diff="medium">Mittel</button>
-      <button className="diff-btn" data-diff="hard">Schwer</button>
+      <button className="diff-btn active fn-wood" data-diff="easy"><span>Holz</span></button>
+      <button className="diff-btn fn-stone" data-diff="medium"><span>Stein</span></button>
+      <button className="diff-btn fn-metal" data-diff="hard"><span>Metall</span></button>
     </div>
-    <button className="action-btn" id="sudoku-new-btn">Neues Spiel</button>
-    <button className="action-btn" id="sudoku-check-btn">Prüfen</button>
-    <button className="action-btn" id="sudoku-solve-btn">Lösung zeigen</button>
+    <button className="action-btn" id="sudoku-new-btn"><span>Neue Runde</span></button>
+    <span className="fn-break" aria-hidden="true"></span>
+    <button className="action-btn" id="sudoku-check-btn"><span>Inventar checken</span></button>
+    <button className="action-btn fn-secondary" id="sudoku-solve-btn"><span>Spectator-Modus</span></button>
+  </div>
+  <div className="fn-hud">
+    <div className="fn-hud-item fn-hud-storm"><i>🌀</i><b id="fn-storm">30:00</b><small>Sturm</small></div>
+    <div className="fn-hud-item"><i>👥</i><b id="fn-left">0</b><small>Übrig</small></div>
+    <div className="fn-hud-item"><i>🎯</i><b id="fn-elims">0</b><small>Elims</small></div>
   </div>
   <div className="game-resize-wrap"><div className="sudoku-grid" id="sudoku-grid"></div><div className="game-resize-handle"></div></div>
   <div className="todo-empty" id="sudoku-status" style={{ marginTop: "16px" }}></div>
+  </div>
 
   <div className="panel-label" id="game-label-crossword" style={{ marginTop: "44px" }}>Kreuzworträtsel</div>
+  {/* Kreuzworträtsel im Mario-Kart-Stil */}
+  <div className="mk-crossword">
+  <div className="mk-banner">
+    <span className="mk-title">Kreuzwort Grand Prix</span>
+    <span className="mk-track" id="mk-track-name"></span>
+  </div>
+  <div className="mk-kart-template" aria-hidden="true">
+    <div className="mk-kart" id="mk-kart">
+      <svg viewBox="0 0 64 40">
+        <ellipse cx="32" cy="37" rx="24" ry="3" fill="rgba(0,0,0,0.35)" />
+        <rect x="8" y="22" width="44" height="10" rx="4" fill="#e0262b" stroke="#7a0a0e" strokeWidth="1.5" />
+        <path d="M44 22 L58 26 L58 30 L50 32 Z" fill="#e0262b" stroke="#7a0a0e" strokeWidth="1.5" />
+        <rect x="4" y="16" width="6" height="12" rx="1.5" fill="#3a3a44" />
+        <circle cx="30" cy="12" r="7" fill="#f2c9a0" stroke="#7a4a24" strokeWidth="1" />
+        <path d="M22 11 Q30 0 38 11 L40 12 Q30 9 22 11 Z" fill="#e0262b" stroke="#7a0a0e" strokeWidth="1" />
+        <path d="M27 15 Q30 17 34 15" stroke="#3a2410" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+        <rect x="24" y="18" width="12" height="6" rx="2" fill="#2f5fae" />
+        <circle cx="16" cy="33" r="6" fill="#1b1b1b" /><circle cx="16" cy="33" r="2.5" fill="#f6c21a" />
+        <circle cx="48" cy="33" r="6" fill="#1b1b1b" /><circle cx="48" cy="33" r="2.5" fill="#f6c21a" />
+        <path d="M2 24 h-4 M2 28 h-6 M2 32 h-4" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+      </svg>
+    </div>
+  </div>
   <div className="crossword-wrap">
     <div className="game-resize-wrap"><div className="crossword-grid" id="crossword-grid"></div><div className="game-resize-handle"></div></div>
     <div className="crossword-clues">
@@ -553,16 +633,25 @@ export default function Page() {
     </div>
   </div>
   <div className="sudoku-controls" style={{ marginTop: "16px" }}>
-    <button className="action-btn" id="crossword-new-btn">Neues Spiel</button>
-    <button className="action-btn" id="crossword-check-btn">Prüfen</button>
+    <button className="action-btn" id="crossword-new-btn">Neues Rennen</button>
+    <button className="action-btn" id="crossword-check-btn">Münzen zählen</button>
     <button className="action-btn" id="crossword-solve-btn">Lösung zeigen</button>
   </div>
   <div className="todo-empty" id="crossword-status" style={{ marginTop: "10px" }}></div>
+  </div>
 
   <div className="panel-label" id="game-label-wotd" style={{ marginTop: "44px" }}>Wort des Tages</div>
-  <div className="wotd-wrap">
-    <div className="panel-label" style={{ marginBottom: "8px" }}>Wortlänge</div>
-    <div className="diff-select" id="wotd-length-select" style={{ marginBottom: "16px", flexWrap: "wrap" }}>
+  {/* Wort des Tages im Clash-Royale-Stil, Wortlänge als Elixier */}
+  <div className="wotd-wrap cr-wotd">
+    <div className="cr-banner">
+      <span className="cr-crown" aria-hidden="true"></span>
+      <span className="cr-title">Wort des Tages</span>
+      <span className="cr-crown" aria-hidden="true"></span>
+    </div>
+    {/* Elixierleiste wie im Spiel: Wortlänge 2 bis 9 */}
+    <div className="cr-elixir-bar">
+      <div className="cr-elixir-label">Elixier</div>
+      <div className="diff-select" id="wotd-length-select">
       <button className="diff-btn" data-len="2">2</button>
       <button className="diff-btn" data-len="3">3</button>
       <button className="diff-btn" data-len="4">4</button>
@@ -571,21 +660,24 @@ export default function Page() {
       <button className="diff-btn" data-len="7">7</button>
       <button className="diff-btn" data-len="8">8</button>
       <button className="diff-btn" data-len="9">9</button>
-      <button className="diff-btn" data-len="10">10</button>
-      <button className="diff-btn" data-len="11">11</button>
-      <button className="diff-btn" data-len="12">12</button>
-      <button className="diff-btn" data-len="13">13</button>
-      <button className="diff-btn" data-len="14">14</button>
-      <button className="diff-btn" data-len="15">15</button>
+      </div>
     </div>
+    {/* Arena: blaue Türme oben, Spielfeld in der Mitte, rote Türme unten */}
+    <div className="cr-arena">
+    <div className="cr-towers cr-top" id="cr-towers-top" aria-hidden="true"></div>
     <div className="game-resize-wrap" style={{ display: "block", width: "100%" }}><div className="wotd-grid" id="wotd-grid"></div><div className="game-resize-handle"></div></div>
-    <div className="wotd-keyboard" id="wotd-keyboard"></div>
-    <div className="wotd-input-row">
-      <input type="text" id="wotd-input" maxLength="5" placeholder="5 Buchstaben" autoComplete="off" />
-      <button className="action-btn" id="wotd-guess-btn">Raten</button>
+    <div className="cr-towers cr-bottom" id="cr-towers-bottom" aria-hidden="true"></div>
     </div>
-    <div className="todo-empty" id="wotd-status"></div>
-    <button className="action-btn" id="wotd-next-btn" style={{ display: "none", marginTop: "14px" }}>Nächstes Wort</button>
+    <div className="todo-empty cr-status" id="wotd-status"></div>
+    <button className="action-btn" id="wotd-next-btn" style={{ display: "none", margin: "0 auto 14px" }}>Nächstes Wort</button>
+    {/* Steuerung im Spiel-Panel */}
+    <div className="cr-panel">
+      <div className="wotd-keyboard" id="wotd-keyboard"></div>
+      <div className="wotd-input-row">
+        <input type="text" id="wotd-input" maxLength="5" placeholder="5 Buchstaben" autoComplete="off" />
+        <button className="action-btn" id="wotd-guess-btn">Raten</button>
+      </div>
+    </div>
   </div>
 
   <div className="panel-label" id="game-label-ttt" style={{ marginTop: "44px" }}>Tic Tac Toe</div>

@@ -3136,7 +3136,7 @@ function sudokuMakePuzzle(solution, givens){
 }
 
 function sudokuNewGame(){
-  sudokuStatus.textContent = '';
+  sudokuStatus.textContent = 'Der Bus ist gestartet – viel Glück!';
   sudokuSolution = sudokuGenerateSolved();
   const givens = sudokuGivensByDiff[sudokuDifficulty];
   const { puzzle, mask } = sudokuMakePuzzle(sudokuSolution, givens);
@@ -3205,11 +3205,12 @@ function sudokuCheck(){
     }
   });
   if(filled < 81){
-    sudokuStatus.textContent = `Noch ${81 - filled} Felder offen.`;
+    sudokuStatus.textContent = `Noch ${81 - filled} Gegner übrig.`;
   } else if(correct === 81){
-    sudokuStatus.textContent = '🎉 Gelöst! Gut gemacht.';
+    // Fortnite-Stil: Victory Royale statt einfachem Text
+    sudokuStatus.innerHTML = '<span class="fn-victory"><b>#1</b><strong>Victory Royale</strong></span>';
   } else {
-    sudokuStatus.textContent = `${81 - correct} Fehler markiert.`;
+    sudokuStatus.textContent = `Sturmschaden! ${81 - correct} Fehler markiert.`;
   }
 }
 
@@ -3217,12 +3218,12 @@ function sudokuShowSolution(){
   sudokuRender(sudokuSolution);
   const cells = sudokuGrid.querySelectorAll('.sudoku-cell');
   cells.forEach(cell => { cell.readOnly = true; cell.classList.add('given'); });
-  sudokuStatus.textContent = 'Lösung angezeigt.';
+  sudokuStatus.textContent = 'Du schaust jetzt zu.';
 }
 
-document.querySelectorAll('.diff-btn').forEach(btn => {
+document.querySelectorAll('#diff-select .diff-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#diff-select .diff-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     sudokuDifficulty = btn.dataset.diff;
     sudokuNewGame();
@@ -3234,70 +3235,651 @@ document.getElementById('sudoku-solve-btn').addEventListener('click', sudokuShow
 
 sudokuNewGame();
 
-// Kreuzworträtsel (eigene, selbst erstellte Wörter & Hinweise)
+// Fortnite-Modus: HUD (Sturm, Übrig, Elims), Sturm am Spielfeldrand, Battle Bus und Schadenszahlen
+const fnRoot = document.querySelector('.fn-sudoku');
+const fnStormEl = document.getElementById('fn-storm');
+const fnLeftEl = document.getElementById('fn-left');
+const fnElimsEl = document.getElementById('fn-elims');
+// Sturmzeit je Material: Holz 30, Stein 45, Metall 60 Minuten
+const fnStormMinutes = { easy: 30, medium: 45, hard: 60 };
+let fnStormMs = fnStormMinutes[sudokuDifficulty] * 60 * 1000;
+let fnStormEnd = Date.now() + fnStormMs;
+function fnUpdateHud(){
+  if(!fnRoot) return;
+  const cells = [...sudokuGrid.querySelectorAll('.sudoku-cell')];
+  fnLeftEl.textContent = cells.filter(c => c.value === '').length;
+  fnElimsEl.textContent = cells.filter(c => !c.classList.contains('given') && c.value !== '').length;
+}
+// Der Sturm läuft erst, wenn man ins Sudoku geklickt hat
+let fnStormRunning = false;
+function fnTickStorm(){
+  if(!fnRoot) return;
+  const left = fnStormRunning ? Math.max(0, fnStormEnd - Date.now()) : fnStormMs;
+  const sec = Math.ceil(left / 1000);
+  fnStormEl.textContent = left > 0 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : 'IM STURM!';
+  fnRoot.classList.toggle('in-storm', left === 0);
+  fnRoot.style.setProperty('--storm', (1 - left / fnStormMs).toFixed(3));
+}
+function fnStartRound(){
+  if(!fnRoot) return;
+  fnStormMs = (fnStormMinutes[sudokuDifficulty] || 30) * 60 * 1000;
+  fnStormRunning = false;
+  fnTickStorm();
+  fnUpdateHud();
+  const bus = document.getElementById('fn-bus');
+  if(bus){
+    bus.classList.remove('flying'); void bus.offsetWidth; bus.classList.add('flying');
+    // Nach dem Überflug ist der Bus wieder weg
+    bus.onanimationend = (e) => { if(e.target === bus) bus.classList.remove('flying'); };
+  }
+  // Nach gut einer Sekunde springt jemand aus dem Bus und gleitet auf ein Feld
+  // Drei Spieler springen kurz nacheinander ab
+  fnJumpTimers.forEach(clearTimeout);
+  fnJumpTimers = fnJumpers().map((jumper, i) => setTimeout(() => fnJump(jumper), 1300 + i * 550));
+}
+let fnJumpTimers = [];
+// Den Springer zweimal kopieren, jeder bekommt ein anderes Outfit (Farbton)
+function fnJumpers(){
+  const base = document.getElementById('fn-jumper');
+  if(!base) return [];
+  if(!base.dataset.cloned){
+    base.dataset.cloned = '1';
+    ['150deg', '260deg'].forEach(hue => {
+      const c = base.cloneNode(true);
+      c.removeAttribute('id');
+      c.style.filter = `hue-rotate(${hue})`;
+      base.parentNode.insertBefore(c, base.nextSibling);
+    });
+  }
+  return [...document.querySelectorAll('.fn-jumper')];
+}
+function fnJump(jumper){
+  const bus = document.getElementById('fn-bus');
+  if(!jumper || !bus || !jumper.animate) return;
+  const rr = fnRoot.getBoundingClientRect(), br = bus.getBoundingClientRect();
+  const cells = [...sudokuGrid.querySelectorAll('.sudoku-cell')];
+  const target = cells[Math.floor(Math.random() * cells.length)].getBoundingClientRect();
+  const sx = br.left - rr.left + br.width * 0.45, sy = br.top - rr.top + br.height * 0.75;
+  const tx = target.left - rr.left + target.width / 2 - 29, ty = target.top - rr.top - 58;
+  const fx = sx + (tx - sx) * 0.25, fy = sy + 70;
+  // Alte Sprünge stoppen (ihr eingefrorenes Ende würde den neuen Springer unsichtbar machen)
+  jumper.getAnimations().forEach(a => a.cancel());
+  jumper.classList.remove('gliding');
+  jumper.style.opacity = '1';
+  // Freifall mit Drehung …
+  const fall = jumper.animate([
+    { transform: `translate(${sx}px, ${sy}px) rotate(0deg) scale(0.7)`, opacity: 1 },
+    { transform: `translate(${fx}px, ${fy}px) rotate(320deg) scale(1)`, opacity: 1 }
+  ], { duration: 900, easing: 'cubic-bezier(.4,0,.9,.6)', fill: 'forwards' });
+  fall.onfinish = () => {
+    // … dann Gleiter auf und sanft aufs Feld schweben
+    jumper.classList.add('gliding');
+    const glide = jumper.animate([
+      { transform: `translate(${fx}px, ${fy}px) rotate(0deg)`, opacity: 1 },
+      { transform: `translate(${(fx + tx) / 2 + 30}px, ${(fy + ty) / 2}px) rotate(-8deg)`, opacity: 1, offset: 0.5 },
+      { transform: `translate(${tx}px, ${ty}px) rotate(4deg)`, opacity: 1, offset: 0.9 },
+      { transform: `translate(${tx}px, ${ty + 10}px) rotate(0deg)`, opacity: 0 }
+    ], { duration: 3200, easing: 'ease-in-out', fill: 'forwards' });
+    glide.onfinish = () => { jumper.getAnimations().forEach(a => a.cancel()); jumper.style.opacity = '0'; jumper.classList.remove('gliding'); };
+  };
+}
+if(fnRoot){
+  // Neue Runde: Schwierigkeit oder „Neue Runde“ (läuft nach dem eigentlichen Neustart)
+  ['#sudoku-new-btn', '#diff-select .diff-btn'].forEach(sel => document.querySelectorAll(sel).forEach(btn =>
+    btn.addEventListener('click', () => setTimeout(fnStartRound, 0))));
+  document.getElementById('sudoku-solve-btn').addEventListener('click', () => setTimeout(fnUpdateHud, 0));
+  // Erster Klick ins Spielfeld startet den Sturm-Timer
+  sudokuGrid.addEventListener('pointerdown', () => {
+    if(fnStormRunning) return;
+    fnStormRunning = true;
+    fnStormEnd = Date.now() + fnStormMs;
+    fnTickStorm();
+  });
+  sudokuGrid.addEventListener('focusin', () => sudokuGrid.dispatchEvent(new Event('pointerdown')));
+  sudokuGrid.addEventListener('input', (e) => {
+    const cell = e.target;
+    fnUpdateHud();
+    if(!cell.value) return;
+    // Schadenszahl über dem Feld (verrät nicht, ob es richtig ist)
+    const rr = fnRoot.getBoundingClientRect(), cr = cell.getBoundingClientRect();
+    const dmg = document.createElement('span');
+    dmg.className = 'fn-dmg';
+    dmg.textContent = cell.value;
+    dmg.style.left = (cr.left - rr.left + cr.width * 0.35) + 'px';
+    dmg.style.top = (cr.top - rr.top - 6) + 'px';
+    fnRoot.appendChild(dmg);
+    setTimeout(() => dmg.remove(), 950);
+  });
+  setInterval(fnTickStorm, 1000);
+  fnStartRound();
+}
+
+// Loot: auf jedem leeren Feld liegt ein Fortnite-Gegenstand; wird eine Zahl eingetragen, ist er weg
+const fnLootSvgs = [
+  // Truhe
+  '<rect x="6" y="20" width="36" height="20" rx="2" fill="#c98a2a" stroke="#6b4210" stroke-width="2"/><path d="M6 20 Q6 8 24 8 Q42 8 42 20 Z" fill="#e0a640" stroke="#6b4210" stroke-width="2"/><rect x="6" y="18" width="36" height="5" fill="#f6d43a" stroke="#6b4210" stroke-width="1.5"/><rect x="20" y="18" width="8" height="10" rx="1" fill="#f6d43a" stroke="#6b4210" stroke-width="1.5"/><path d="M14 10 L16 6 M34 10 L32 6 M24 7 L24 3" stroke="#fff6b0" stroke-width="2" stroke-linecap="round"/>',
+  // Schildtrank
+  '<rect x="19" y="4" width="10" height="6" rx="1" fill="#9aa3ad" stroke="#3a3f48" stroke-width="1.5"/><path d="M18 10 H30 V16 Q40 20 40 32 Q40 44 24 44 Q8 44 8 32 Q8 20 18 16 Z" fill="#cfeaff" stroke="#1a4f9c" stroke-width="2"/><path d="M10 30 Q24 25 38 30 Q38 42 24 42 Q10 42 10 30 Z" fill="#3aa0ff"/><circle cx="17" cy="34" r="2" fill="#fff" opacity="0.8"/>',
+  // Medikit
+  '<rect x="6" y="12" width="36" height="28" rx="4" fill="#f4f4f4" stroke="#8a8f99" stroke-width="2"/><rect x="18" y="6" width="12" height="7" rx="2" fill="none" stroke="#8a8f99" stroke-width="2.5"/><path d="M21 18 H27 V23 H32 V29 H27 V34 H21 V29 H16 V23 H21 Z" fill="#e0262b"/>',
+  // Slurp-Saft
+  '<rect x="16" y="3" width="16" height="6" rx="2" fill="#3fa64a" stroke="#1d5a24" stroke-width="1.5"/><path d="M14 9 H34 V40 Q34 45 24 45 Q14 45 14 40 Z" fill="#c359ff" stroke="#5a1488" stroke-width="2"/><path d="M14 22 H34" stroke="#ffffff" stroke-width="3" opacity="0.7"/><circle cx="20" cy="31" r="2.2" fill="#f2c4ff"/><circle cx="27" cy="36" r="1.6" fill="#f2c4ff"/>',
+  // Lama
+  '<path d="M14 44 V30 Q14 24 20 24 H30 V10 Q30 5 34 5 Q38 5 38 10 V34 Q38 38 34 40 V44 M20 44 V38" fill="#c359ff" stroke="#5a1488" stroke-width="2.5" stroke-linejoin="round"/><path d="M33 5 L31 1 M37 6 L39 2" stroke="#5a1488" stroke-width="2" stroke-linecap="round"/><circle cx="35" cy="11" r="1.6" fill="#1b1b1b"/><path d="M14 30 H30" stroke="#f6d43a" stroke-width="3"/><path d="M20 24 Q22 20 26 24" fill="#3aa0ff"/>',
+  // Spitzhacke
+  '<path d="M10 42 L32 16" stroke="#8a5a2b" stroke-width="5" stroke-linecap="round"/><path d="M18 10 Q32 4 44 14 Q36 12 30 18 Q26 12 18 10 Z" fill="#c9d1d9" stroke="#3a3f48" stroke-width="2" stroke-linejoin="round"/>',
+  // Verband
+  '<rect x="8" y="18" width="32" height="12" rx="6" fill="#f2dcc0" stroke="#a8825a" stroke-width="2" transform="rotate(-30 24 24)"/><rect x="20" y="18" width="8" height="12" fill="#e8c9a0" transform="rotate(-30 24 24)"/><circle cx="23" cy="23" r="1" fill="#a8825a"/><circle cx="26" cy="25" r="1" fill="#a8825a"/>',
+  // Mini-Schild
+  '<path d="M16 8 H32 V14 Q38 18 38 28 Q38 40 24 42 Q10 40 10 28 Q10 18 16 14 Z" fill="#cfeaff" stroke="#1a4f9c" stroke-width="2"/><path d="M12 28 Q24 24 36 28 Q36 38 24 40 Q12 38 12 28 Z" fill="#5fc0ff"/><rect x="18" y="4" width="12" height="5" rx="1" fill="#2a78d6" stroke="#1a4f9c" stroke-width="1.5"/>'
+].map(svg => `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">' + svg + '</svg>')}")`);
+function fnUpdateLoot(cell){
+  const empty = cell.value === '' && !cell.classList.contains('given');
+  cell.classList.toggle('loot', empty && cell.dataset.loot === '1');
+}
+// Jeder Gegenstand liegt nur einmal auf dem Feld, auf zufälligen leeren Feldern
+function fnAssignLoot(){
+  if(!fnRoot) return;
+  const cells = [...sudokuGrid.querySelectorAll('.sudoku-cell')];
+  cells.forEach(cell => { delete cell.dataset.loot; cell.style.removeProperty('--loot'); });
+  const empty = cells.filter(c => c.value === '' && !c.classList.contains('given'));
+  for(let i = empty.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [empty[i], empty[j]] = [empty[j], empty[i]]; }
+  empty.slice(0, fnLootSvgs.length).forEach((cell, i) => {
+    cell.dataset.loot = '1';
+    cell.style.setProperty('--loot', fnLootSvgs[i]);
+  });
+  cells.forEach(fnUpdateLoot);
+}
+if(fnRoot){
+  // Nach jedem Aufbau des Spielfelds (neue Runde, Spectator-Modus) Loot neu verteilen
+  const sudokuRenderBase = sudokuRender;
+  sudokuRender = function(puzzle){ sudokuRenderBase(puzzle); fnAssignLoot(); };
+  sudokuGrid.addEventListener('input', (e) => { if(e.target.classList.contains('sudoku-cell')) fnUpdateLoot(e.target); });
+  fnAssignLoot();
+}
+
+// Kreuzworträtsel: 50 Rätsel (eigene Wörter & Hinweise). Das Gitter jedes Rätsels wurde automatisch
+// aus einer Wortliste gebaut und geprüft (keine zufälligen Buchstabenfolgen, alles zusammenhängend).
 const crosswordPuzzles = [
-  [
-    { id: 1,  dir: 'across', row: 0, col: 3, answer: 'UHR',    clue: 'Zeigt an, wie spät es ist' },
-    { id: 2,  dir: 'down',   row: 1, col: 4, answer: 'ZEIT',   clue: 'Das, was auf der Uhr vergeht' },
-    { id: 3,  dir: 'down',   row: 1, col: 6, answer: 'MOND',   clue: 'Umkreist die Erde, nachts am Himmel sichtbar' },
-    { id: 4,  dir: 'down',   row: 2, col: 0, answer: 'SONNE',  clue: 'Stern in der Mitte unseres Sonnensystems' },
-    { id: 5,  dir: 'down',   row: 2, col: 3, answer: 'JAHR',   clue: 'Zeitraum von 365 Tagen' },
-    { id: 6,  dir: 'down',   row: 3, col: 1, answer: 'TAG',    clue: 'Gegenteil von Nacht' },
-    { id: 7,  dir: 'down',   row: 3, col: 2, answer: 'SCHNEE', clue: 'Weisse Flocken, die im Winter fallen' },
-    { id: 8,  dir: 'across', row: 4, col: 0, answer: 'NACHT',  clue: 'Zeitraum von Sonnenuntergang bis Sonnenaufgang' },
-    { id: 9,  dir: 'down',   row: 5, col: 5, answer: 'WIND',   clue: 'Bewegte Luft' },
-    { id: 10, dir: 'across', row: 7, col: 1, answer: 'REGEN',  clue: 'Nässe, die vom Himmel fällt' },
-  ],
-  [
-    { id: 1, dir: 'across', row: 1, col: 1, answer: 'HUND',  clue: 'Bester Freund des Menschen' },
-    { id: 1, dir: 'down',   row: 1, col: 1, answer: 'HAHN',  clue: 'Männliches Huhn, kräht am Morgen' },
-    { id: 2, dir: 'down',   row: 1, col: 3, answer: 'NEST',  clue: 'Zuhause vieler Vögel' },
-    { id: 3, dir: 'across', row: 6, col: 1, answer: 'VOGEL', clue: 'Tier, das fliegen kann' },
-    { id: 4, dir: 'down',   row: 6, col: 3, answer: 'GNU',   clue: 'Afrikanisches Steppentier, auch Wildebeest genannt' },
-    { id: 5, dir: 'across', row: 8, col: 2, answer: 'EULE',  clue: 'Nachtaktiver Vogel mit grossen Augen' },
-  ],
-  [
-    { id: 1, dir: 'across', row: 0, col: 0, answer: 'APFEL',  clue: 'Rundes Obst, oft rot oder grün' },
-    { id: 1, dir: 'down',   row: 0, col: 0, answer: 'ANANAS', clue: 'Stachelige tropische Frucht' },
-    { id: 2, dir: 'down',   row: 0, col: 2, answer: 'FISCH',  clue: 'Lebt im Wasser, wird auch gegessen' },
-    { id: 3, dir: 'across', row: 5, col: 0, answer: 'SALZ',   clue: 'Weisses Gewürz, macht Suppen herzhaft' },
-    { id: 4, dir: 'across', row: 7, col: 1, answer: 'BROT',   clue: 'Wird aus Mehl gebacken, oft mit Butter bestrichen' },
-  ],
-  [
-    { id: 1, dir: 'across', row: 0, col: 0, answer: 'GELB',  clue: 'Farbe der Sonne oder einer Zitrone' },
-    { id: 1, dir: 'down',   row: 0, col: 0, answer: 'GRÜN',  clue: 'Farbe von Gras und Blättern' },
-    { id: 2, dir: 'down',   row: 0, col: 3, answer: 'BLAU',  clue: 'Farbe des Himmels an einem klaren Tag' },
-    { id: 3, dir: 'across', row: 2, col: 1, answer: 'GRAU',  clue: 'Farbe zwischen Schwarz und Weiss' },
-    { id: 4, dir: 'across', row: 5, col: 0, answer: 'WEISS', clue: 'Farbe von frischem Schnee' },
-  ],
-  [
-    { id: 1, dir: 'across', row: 0, col: 0, answer: 'ZWEI',  clue: 'Zahl nach eins' },
-    { id: 1, dir: 'down',   row: 0, col: 0, answer: 'ZEHN',  clue: 'Anzahl der Finger an beiden Händen' },
-    { id: 2, dir: 'down',   row: 0, col: 5, answer: 'NEUN',  clue: 'Zahl vor zehn' },
-    { id: 3, dir: 'across', row: 3, col: 1, answer: 'DREI',  clue: 'Zahl nach zwei' },
-    { id: 4, dir: 'across', row: 5, col: 0, answer: 'SECHS', clue: 'Zahl nach fünf' },
-  ],
-  [
-    { id: 1, dir: 'across', row: 0, col: 0, answer: 'AUGE',  clue: 'Damit sieht man' },
-    { id: 1, dir: 'down',   row: 0, col: 0, answer: 'ARM',   clue: 'Verbindet Schulter und Hand' },
-    { id: 2, dir: 'down',   row: 0, col: 5, answer: 'OHR',   clue: 'Damit hört man' },
-    { id: 3, dir: 'across', row: 3, col: 1, answer: 'HAND',  clue: 'Hat fünf Finger' },
-    { id: 4, dir: 'down',   row: 2, col: 2, answer: 'NASE',  clue: 'Damit riecht man' },
-    { id: 5, dir: 'across', row: 4, col: 0, answer: 'FUSS',  clue: 'Steht am Ende des Beins' },
-  ],
-  [
-    { id: 1, dir: 'across', row: 0, col: 0, answer: 'KAFFEE', clue: 'Koffeinhaltiges heisses Getränk, oft am Morgen' },
-    { id: 2, dir: 'down',   row: 0, col: 6, answer: 'WASSER', clue: 'Wichtigstes Getränk zum Überleben' },
-    { id: 3, dir: 'down',   row: 2, col: 0, answer: 'TEE',    clue: 'Heissgetränk aus aufgegossenen Blättern' },
-    { id: 4, dir: 'across', row: 3, col: 2, answer: 'SAFT',   clue: 'Gepresstes Getränk aus Früchten' },
-    { id: 5, dir: 'across', row: 5, col: 0, answer: 'MILCH',  clue: 'Weisses Getränk, kommt von der Kuh' },
-  ],
+  { theme: "Wetter", rows: 9, cols: 7, words: [
+    { id: 1, dir: 'down', row: 0, col: 4, answer: 'REGEN', clue: "Nässe, die vom Himmel fällt" },
+    { id: 2, dir: 'down', row: 0, col: 6, answer: 'WOLKE', clue: "Schwebt grau oder weiss am Himmel" },
+    { id: 3, dir: 'across', row: 1, col: 0, answer: 'SONNE', clue: "Stern in der Mitte unseres Sonnensystems" },
+    { id: 4, dir: 'across', row: 4, col: 1, answer: 'SCHNEE', clue: "Weisse Flocken im Winter" },
+    { id: 5, dir: 'down', row: 4, col: 3, answer: 'HAGEL', clue: "Eiskörner, die vom Himmel fallen" },
+    { id: 6, dir: 'down', row: 5, col: 0, answer: 'WIND', clue: "Bewegte Luft" },
+    { id: 7, dir: 'across', row: 7, col: 0, answer: 'NEBEL', clue: "Dichte Wolke direkt am Boden" }
+  ] },
+  { theme: "Tiere", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 2, answer: 'HUND', clue: "Bester Freund des Menschen" },
+    { id: 2, dir: 'across', row: 1, col: 0, answer: 'MAUS', clue: "Kleines Nagetier mit langem Schwanz" },
+    { id: 3, dir: 'down', row: 2, col: 4, answer: 'ZEBRA', clue: "Schwarz-weiss gestreiftes Pferd Afrikas" },
+    { id: 4, dir: 'across', row: 3, col: 1, answer: 'ADLER', clue: "Grosser Greifvogel" },
+    { id: 5, dir: 'down', row: 4, col: 0, answer: 'PFERD', clue: "Tier zum Reiten" },
+    { id: 6, dir: 'down', row: 4, col: 6, answer: 'KATZE', clue: "Schnurrt und fängt Mäuse" },
+    { id: 7, dir: 'across', row: 6, col: 0, answer: 'ELEFANT', clue: "Grösstes Landtier mit Rüssel" },
+    { id: 8, dir: 'across', row: 8, col: 3, answer: 'TIGER', clue: "Gestreifte Raubkatze" }
+  ] },
+  { theme: "Obst", rows: 9, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 1, answer: 'APFEL', clue: "Rundes Obst, oft rot oder grün" },
+    { id: 2, dir: 'down', row: 0, col: 6, answer: 'KIRSCHE', clue: "Kleine rote Frucht mit Stein" },
+    { id: 3, dir: 'across', row: 1, col: 1, answer: 'PFIRSICH', clue: "Pelzige Frucht mit grossem Kern" },
+    { id: 4, dir: 'down', row: 3, col: 4, answer: 'MELONE', clue: "Grosse saftige Sommerfrucht" },
+    { id: 5, dir: 'across', row: 6, col: 0, answer: 'ZITRONE', clue: "Saure gelbe Frucht" },
+    { id: 6, dir: 'across', row: 8, col: 0, answer: 'BIRNE', clue: "Obst mit schmaler Spitze" }
+  ] },
+  { theme: "Gemüse", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'across', row: 0, col: 2, answer: 'ERBSE', clue: "Kleine grüne Kugel in einer Schote" },
+    { id: 2, dir: 'down', row: 0, col: 5, answer: 'SPINAT', clue: "Grünes Blattgemüse" },
+    { id: 3, dir: 'down', row: 2, col: 1, answer: 'GURKE', clue: "Grünes Gemüse, wird oft eingelegt" },
+    { id: 4, dir: 'down', row: 2, col: 3, answer: 'PAPRIKA', clue: "Gibt es rot, gelb und grün" },
+    { id: 5, dir: 'down', row: 2, col: 7, answer: 'ZWIEBEL', clue: "Lässt einen beim Schneiden weinen" },
+    { id: 6, dir: 'across', row: 5, col: 1, answer: 'KAROTTE', clue: "Orange Wurzel, Hasen mögen sie" },
+    { id: 7, dir: 'across', row: 8, col: 0, answer: 'TOMATE', clue: "Rotes Gemüse für Ketchup" }
+  ] },
+  { theme: "Farben", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 0, answer: 'WEISS', clue: "Farbe von frischem Schnee" },
+    { id: 2, dir: 'across', row: 1, col: 3, answer: 'ROT', clue: "Farbe der Erdbeere" },
+    { id: 3, dir: 'down', row: 1, col: 4, answer: 'ORANGE', clue: "Mischung aus Rot und Gelb" },
+    { id: 4, dir: 'across', row: 3, col: 0, answer: 'SCHWARZ', clue: "Farbe der Nacht" },
+    { id: 5, dir: 'across', row: 5, col: 4, answer: 'GELB', clue: "Farbe der Zitrone" },
+    { id: 6, dir: 'down', row: 5, col: 6, answer: 'LILA', clue: "Mischung aus Rot und Blau" },
+    { id: 7, dir: 'across', row: 8, col: 4, answer: 'BLAU', clue: "Farbe des Himmels" }
+  ] },
+  { theme: "Zahlen", rows: 7, cols: 9, words: [
+    { id: 1, dir: 'across', row: 0, col: 1, answer: 'VIER', clue: "Anzahl Jahreszeiten" },
+    { id: 2, dir: 'down', row: 0, col: 3, answer: 'EINS', clue: "Kleinste ganze Zahl über null" },
+    { id: 3, dir: 'down', row: 1, col: 7, answer: 'DREI', clue: "Anzahl Seiten eines Dreiecks" },
+    { id: 4, dir: 'across', row: 2, col: 0, answer: 'ZEHN', clue: "Anzahl Finger an zwei Händen" },
+    { id: 4, dir: 'down', row: 2, col: 0, answer: 'ZWEI', clue: "Zahl nach eins" },
+    { id: 5, dir: 'down', row: 2, col: 5, answer: 'SECHS', clue: "Augen auf der höchsten Würfelseite" },
+    { id: 6, dir: 'across', row: 3, col: 3, answer: 'SIEBEN', clue: "Anzahl Tage einer Woche" },
+    { id: 7, dir: 'across', row: 5, col: 3, answer: 'ACHT', clue: "Anzahl Beine einer Spinne" }
+  ] },
+  { theme: "Körper", rows: 9, cols: 7, words: [
+    { id: 1, dir: 'across', row: 0, col: 0, answer: 'OHR', clue: "Damit hört man" },
+    { id: 2, dir: 'down', row: 0, col: 1, answer: 'HERZ', clue: "Pumpt das Blut durch den Körper" },
+    { id: 3, dir: 'down', row: 0, col: 5, answer: 'KNIE', clue: "Gelenk in der Mitte des Beins" },
+    { id: 4, dir: 'across', row: 1, col: 3, answer: 'HAND', clue: "Hat fünf Finger" },
+    { id: 5, dir: 'across', row: 3, col: 1, answer: 'ZUNGE', clue: "Damit schmeckt man" },
+    { id: 6, dir: 'down', row: 3, col: 3, answer: 'NASE', clue: "Damit riecht man" },
+    { id: 7, dir: 'down', row: 5, col: 1, answer: 'FUSS', clue: "Steht am Ende des Beins" },
+    { id: 8, dir: 'across', row: 6, col: 0, answer: 'AUGE', clue: "Damit sieht man" }
+  ] },
+  { theme: "Getränke", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 3, answer: 'KAKAO', clue: "Schokoladengetränk" },
+    { id: 2, dir: 'down', row: 0, col: 7, answer: 'WASSER', clue: "Wichtigstes Getränk zum Überleben" },
+    { id: 3, dir: 'across', row: 1, col: 2, answer: 'SAFT', clue: "Gepresst aus Früchten" },
+    { id: 4, dir: 'down', row: 3, col: 5, answer: 'KAFFEE', clue: "Heisses Getränk am Morgen" },
+    { id: 5, dir: 'across', row: 4, col: 0, answer: 'LIMONADE', clue: "Süsses Getränk mit Kohlensäure" },
+    { id: 6, dir: 'down', row: 4, col: 2, answer: 'MILCH', clue: "Weisses Getränk von der Kuh" },
+    { id: 7, dir: 'across', row: 7, col: 4, answer: 'TEE', clue: "Aufgegossene Blätter" }
+  ] },
+  { theme: "Schule", rows: 9, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 5, answer: 'PAUSE', clue: "Freie Zeit zwischen den Lektionen" },
+    { id: 2, dir: 'across', row: 1, col: 4, answer: 'TAFEL', clue: "Daran schreibt die Lehrerin" },
+    { id: 3, dir: 'down', row: 2, col: 3, answer: 'STIFT', clue: "Damit schreibt man" },
+    { id: 4, dir: 'down', row: 3, col: 0, answer: 'BUCH', clue: "Hat viele Seiten zum Lesen" },
+    { id: 5, dir: 'down', row: 3, col: 7, answer: 'KLASSE', clue: "Gruppe von Schülern" },
+    { id: 6, dir: 'across', row: 4, col: 2, answer: 'LINEAL', clue: "Zum Messen und gerade Linien ziehen" },
+    { id: 7, dir: 'across', row: 6, col: 0, answer: 'HEFT', clue: "Darin schreibt man Aufgaben" },
+    { id: 8, dir: 'across', row: 8, col: 4, answer: 'NOTE', clue: "Bewertung einer Prüfung" }
+  ] },
+  { theme: "Küche", rows: 8, cols: 9, words: [
+    { id: 1, dir: 'across', row: 0, col: 1, answer: 'TOPF', clue: "Darin kocht man Suppe" },
+    { id: 2, dir: 'down', row: 0, col: 2, answer: 'OFEN', clue: "Darin backt man Kuchen" },
+    { id: 3, dir: 'down', row: 0, col: 6, answer: 'HERD', clue: "Darauf wird gekocht" },
+    { id: 4, dir: 'down', row: 1, col: 8, answer: 'MESSER', clue: "Zum Schneiden" },
+    { id: 5, dir: 'across', row: 2, col: 1, answer: 'TELLER', clue: "Darauf liegt das Essen" },
+    { id: 6, dir: 'down', row: 2, col: 4, answer: 'LÖFFEL', clue: "Besteck für Suppe" },
+    { id: 7, dir: 'across', row: 5, col: 3, answer: 'PFANNE', clue: "Zum Braten von Eiern" },
+    { id: 8, dir: 'across', row: 7, col: 0, answer: 'GABEL', clue: "Besteck mit Zinken" }
+  ] },
+  { theme: "Weltraum", rows: 9, cols: 9, words: [
+    { id: 1, dir: 'across', row: 0, col: 1, answer: 'MOND', clue: "Umkreist die Erde" },
+    { id: 1, dir: 'down', row: 0, col: 1, answer: 'MARS', clue: "Der rote Planet" },
+    { id: 2, dir: 'down', row: 1, col: 6, answer: 'PLANET', clue: "Kreist um eine Sonne" },
+    { id: 3, dir: 'across', row: 3, col: 0, answer: 'ASTRONAUT', clue: "Raumfahrer" },
+    { id: 4, dir: 'down', row: 3, col: 3, answer: 'RAKETE', clue: "Fliegt ins All" },
+    { id: 5, dir: 'across', row: 5, col: 3, answer: 'KOMET', clue: "Himmelskörper mit Schweif" },
+    { id: 6, dir: 'across', row: 6, col: 0, answer: 'ERDE', clue: "Unser Heimatplanet" },
+    { id: 7, dir: 'across', row: 8, col: 1, answer: 'STERN', clue: "Leuchtet nachts am Himmel" }
+  ] },
+  { theme: "Meer", rows: 7, cols: 9, words: [
+    { id: 1, dir: 'across', row: 0, col: 1, answer: 'HAI', clue: "Gefährlicher Raubfisch" },
+    { id: 2, dir: 'down', row: 0, col: 3, answer: 'INSEL', clue: "Land, ganz von Wasser umgeben" },
+    { id: 3, dir: 'down', row: 1, col: 5, answer: 'KRABBE', clue: "Läuft seitwärts" },
+    { id: 4, dir: 'down', row: 1, col: 7, answer: 'ANKER', clue: "Hält das Schiff fest" },
+    { id: 5, dir: 'across', row: 2, col: 3, answer: 'STRAND', clue: "Sandiger Rand am Meer" },
+    { id: 6, dir: 'across', row: 4, col: 1, answer: 'WAL', clue: "Grösstes Tier im Meer" },
+    { id: 7, dir: 'across', row: 6, col: 0, answer: 'MUSCHEL', clue: "Liegt am Strand, hat eine Schale" }
+  ] },
+  { theme: "Fahrzeuge", rows: 6, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 0, answer: 'SCHIFF', clue: "Fährt auf dem Wasser" },
+    { id: 2, dir: 'down', row: 0, col: 3, answer: 'ZUG', clue: "Fährt auf Schienen" },
+    { id: 3, dir: 'down', row: 0, col: 5, answer: 'ROLLER', clue: "Hat zwei kleine Räder und einen Lenker" },
+    { id: 4, dir: 'across', row: 1, col: 2, answer: 'AUTO', clue: "Hat vier Räder und einen Motor" },
+    { id: 5, dir: 'down', row: 3, col: 2, answer: 'BUS', clue: "Bringt viele Leute zur Arbeit" },
+    { id: 6, dir: 'across', row: 4, col: 0, answer: 'FLUGZEUG', clue: "Fliegt mit Passagieren" }
+  ] },
+  { theme: "Berufe", rows: 8, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 6, answer: 'FÖRSTER', clue: "Kümmert sich um den Wald" },
+    { id: 2, dir: 'down', row: 1, col: 2, answer: 'MALER', clue: "Streicht Wände" },
+    { id: 3, dir: 'down', row: 1, col: 4, answer: 'ARZT', clue: "Hilft kranken Menschen" },
+    { id: 4, dir: 'across', row: 3, col: 0, answer: 'POLIZIST', clue: "Sorgt für Ordnung" },
+    { id: 4, dir: 'down', row: 3, col: 0, answer: 'PILOT', clue: "Fliegt ein Flugzeug" },
+    { id: 5, dir: 'across', row: 6, col: 3, answer: 'LEHRER', clue: "Unterrichtet in der Schule" }
+  ] },
+  { theme: "Sport", rows: 8, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 0, answer: 'FUSSBALL', clue: "Elf gegen elf mit einem Ball" },
+    { id: 2, dir: 'across', row: 0, col: 2, answer: 'TOR', clue: "Dort soll der Ball hinein" },
+    { id: 3, dir: 'down', row: 0, col: 4, answer: 'REITEN', clue: "Sport auf dem Pferd" },
+    { id: 4, dir: 'down', row: 0, col: 8, answer: 'TENNIS', clue: "Mit Schläger und gelbem Ball" },
+    { id: 5, dir: 'across', row: 2, col: 0, answer: 'SCHWIMMEN', clue: "Sport im Wasser" },
+    { id: 6, dir: 'across', row: 4, col: 6, answer: 'SKI', clue: "Damit fährt man den Berg hinunter" },
+    { id: 7, dir: 'across', row: 7, col: 0, answer: 'LAUFEN', clue: "Schnell zu Fuss unterwegs" }
+  ] },
+  { theme: "Musik", rows: 9, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 4, answer: 'NOTE', clue: "Zeichen für einen Ton" },
+    { id: 2, dir: 'across', row: 1, col: 2, answer: 'CHOR', clue: "Singende Gruppe" },
+    { id: 3, dir: 'down', row: 2, col: 1, answer: 'KLAVIER', clue: "Hat schwarze und weisse Tasten" },
+    { id: 4, dir: 'down', row: 2, col: 6, answer: 'GEIGE', clue: "Wird mit einem Bogen gespielt" },
+    { id: 5, dir: 'across', row: 3, col: 0, answer: 'FLÖTE', clue: "Blasinstrument aus Holz" },
+    { id: 6, dir: 'across', row: 4, col: 5, answer: 'LIED', clue: "Wird gesungen" },
+    { id: 7, dir: 'across', row: 6, col: 0, answer: 'GITARRE', clue: "Saiteninstrument" },
+    { id: 8, dir: 'across', row: 8, col: 0, answer: 'TROMMEL', clue: "Wird geschlagen" }
+  ] },
+  { theme: "Kleidung", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 4, answer: 'SOCKE', clue: "Wird im Schuh getragen" },
+    { id: 2, dir: 'down', row: 0, col: 6, answer: 'JACKE', clue: "Wärmt im Herbst" },
+    { id: 3, dir: 'down', row: 1, col: 2, answer: 'GURT', clue: "Hält die Hose oben" },
+    { id: 4, dir: 'across', row: 4, col: 1, answer: 'STIEFEL', clue: "Hoher Schuh" },
+    { id: 4, dir: 'down', row: 4, col: 1, answer: 'SCHAL', clue: "Wird um den Hals gewickelt" },
+    { id: 5, dir: 'across', row: 6, col: 1, answer: 'HOSE', clue: "Hat zwei Beine" },
+    { id: 6, dir: 'across', row: 8, col: 0, answer: 'KLEID', clue: "Einteiliges Kleidungsstück" }
+  ] },
+  { theme: "Haus", rows: 9, cols: 7, words: [
+    { id: 1, dir: 'down', row: 0, col: 6, answer: 'BODEN', clue: "Darauf läuft man" },
+    { id: 2, dir: 'down', row: 1, col: 4, answer: 'GARTEN', clue: "Grünfläche beim Haus" },
+    { id: 3, dir: 'across', row: 2, col: 3, answer: 'WAND', clue: "Trennt zwei Zimmer" },
+    { id: 4, dir: 'down', row: 3, col: 1, answer: 'TREPPE', clue: "Führt nach oben" },
+    { id: 5, dir: 'across', row: 5, col: 0, answer: 'KELLER', clue: "Raum unter der Erde" },
+    { id: 6, dir: 'down', row: 6, col: 6, answer: 'TÜR', clue: "Dadurch geht man hinein" },
+    { id: 7, dir: 'across', row: 8, col: 0, answer: 'FENSTER', clue: "Lässt Licht herein" }
+  ] },
+  { theme: "Wald", rows: 6, cols: 8, words: [
+    { id: 1, dir: 'across', row: 0, col: 0, answer: 'PILZ', clue: "Wächst auf dem Waldboden" },
+    { id: 2, dir: 'down', row: 0, col: 3, answer: 'ZAPFEN', clue: "Fällt von der Tanne" },
+    { id: 3, dir: 'down', row: 0, col: 5, answer: 'FUCHS', clue: "Schlauer roter Waldbewohner" },
+    { id: 4, dir: 'across', row: 2, col: 2, answer: 'SPECHT', clue: "Klopft an Baumstämme" },
+    { id: 5, dir: 'down', row: 3, col: 0, answer: 'REH', clue: "Scheues Waldtier" },
+    { id: 6, dir: 'across', row: 4, col: 0, answer: 'EULE', clue: "Ruft nachts im Wald" }
+  ] },
+  { theme: "Wochentage", rows: 8, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 3, answer: 'DIENSTAG', clue: "Zweiter Tag der Woche" },
+    { id: 2, dir: 'across', row: 1, col: 0, answer: 'FREITAG', clue: "Letzter Arbeitstag" },
+    { id: 3, dir: 'down', row: 2, col: 8, answer: 'WOCHE', clue: "Sieben Tage" },
+    { id: 4, dir: 'across', row: 3, col: 0, answer: 'SONNTAG', clue: "Ruhetag" },
+    { id: 5, dir: 'across', row: 5, col: 1, answer: 'MITTWOCH', clue: "Mitte der Woche" },
+    { id: 6, dir: 'across', row: 7, col: 1, answer: 'TAG', clue: "Gegenteil von Nacht" }
+  ] },
+  { theme: "Monate", rows: 7, cols: 9, words: [
+    { id: 1, dir: 'across', row: 0, col: 0, answer: 'JANUAR', clue: "Erster Monat" },
+    { id: 2, dir: 'down', row: 0, col: 1, answer: 'APRIL', clue: "Macht, was er will" },
+    { id: 3, dir: 'down', row: 0, col: 4, answer: 'AUGUST', clue: "Achter Monat, Nationalfeiertag in der Schweiz" },
+    { id: 4, dir: 'down', row: 1, col: 6, answer: 'MAI', clue: "Wonnemonat" },
+    { id: 5, dir: 'across', row: 3, col: 3, answer: 'JULI', clue: "Siebter Monat" },
+    { id: 6, dir: 'down', row: 3, col: 8, answer: 'MÄRZ', clue: "Dritter Monat" },
+    { id: 7, dir: 'across', row: 5, col: 2, answer: 'OKTOBER', clue: "Zehnter Monat" }
+  ] },
+  { theme: "Jahreszeiten", rows: 7, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 5, answer: 'HITZE', clue: "Grosse Wärme" },
+    { id: 2, dir: 'across', row: 1, col: 0, answer: 'FRÜHLING', clue: "Jahreszeit, in der alles blüht" },
+    { id: 3, dir: 'down', row: 1, col: 3, answer: 'HERBST', clue: "Blätter fallen von den Bäumen" },
+    { id: 4, dir: 'across', row: 4, col: 0, answer: 'LAUB', clue: "Gefallene Blätter" },
+    { id: 5, dir: 'across', row: 4, col: 5, answer: 'EIS', clue: "Gefrorenes Wasser" },
+    { id: 6, dir: 'across', row: 6, col: 0, answer: 'WINTER', clue: "Kälteste Jahreszeit" }
+  ] },
+  { theme: "Schweiz", rows: 8, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 5, answer: 'UHR', clue: "Berühmtes Schweizer Produkt" },
+    { id: 2, dir: 'across', row: 1, col: 0, answer: 'ZÜRICH', clue: "Grösste Stadt der Schweiz" },
+    { id: 3, dir: 'down', row: 1, col: 2, answer: 'RHEIN', clue: "Grosser Fluss bei Basel" },
+    { id: 4, dir: 'across', row: 3, col: 1, answer: 'BERN', clue: "Bundesstadt der Schweiz" },
+    { id: 5, dir: 'down', row: 4, col: 5, answer: 'TELL', clue: "Schweizer Held mit der Armbrust" },
+    { id: 6, dir: 'down', row: 4, col: 7, answer: 'KÄSE', clue: "Emmentaler oder Gruyère" },
+    { id: 7, dir: 'across', row: 5, col: 0, answer: 'FONDUE', clue: "Geschmolzener Käse im Caquelon" },
+    { id: 8, dir: 'across', row: 7, col: 4, answer: 'ALPEN', clue: "Grosses Gebirge" }
+  ] },
+  { theme: "Länder", rows: 8, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 2, answer: 'KANADA', clue: "Land mit dem Ahornblatt" },
+    { id: 2, dir: 'down', row: 0, col: 6, answer: 'INDIEN', clue: "Land des Taj Mahal" },
+    { id: 3, dir: 'down', row: 1, col: 0, answer: 'SPANIEN', clue: "Land des Flamenco" },
+    { id: 4, dir: 'down', row: 2, col: 8, answer: 'JAPAN', clue: "Land der aufgehenden Sonne" },
+    { id: 5, dir: 'across', row: 3, col: 4, answer: 'CHINA', clue: "Land mit der grossen Mauer" },
+    { id: 5, dir: 'down', row: 3, col: 4, answer: 'CHILE', clue: "Langes, schmales Land in Südamerika" },
+    { id: 6, dir: 'across', row: 5, col: 0, answer: 'ITALIEN', clue: "Land der Pizza" },
+    { id: 7, dir: 'across', row: 7, col: 3, answer: 'PERU', clue: "Land der Inka" }
+  ] },
+  { theme: "Städte", rows: 8, cols: 9, words: [
+    { id: 1, dir: 'across', row: 0, col: 1, answer: 'PARIS', clue: "Stadt des Eiffelturms" },
+    { id: 1, dir: 'down', row: 0, col: 1, answer: 'PRAG', clue: "Goldene Stadt an der Moldau" },
+    { id: 2, dir: 'down', row: 1, col: 6, answer: 'BERLIN', clue: "Hauptstadt Deutschlands" },
+    { id: 3, dir: 'across', row: 2, col: 0, answer: 'BASEL', clue: "Schweizer Stadt am Rhein" },
+    { id: 4, dir: 'down', row: 2, col: 4, answer: 'LONDON', clue: "Stadt des Big Ben" },
+    { id: 5, dir: 'across', row: 3, col: 6, answer: 'ROM', clue: "Hauptstadt Italiens" },
+    { id: 6, dir: 'across', row: 5, col: 2, answer: 'MADRID', clue: "Hauptstadt Spaniens" },
+    { id: 7, dir: 'across', row: 7, col: 1, answer: 'WIEN', clue: "Hauptstadt Österreichs" }
+  ] },
+  { theme: "Spielzeug", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 0, answer: 'DRACHEN', clue: "Fliegt im Herbstwind" },
+    { id: 2, dir: 'down', row: 0, col: 6, answer: 'KREISEL', clue: "Dreht sich auf einer Spitze" },
+    { id: 3, dir: 'across', row: 1, col: 0, answer: 'ROBOTER', clue: "Spielzeugmaschine" },
+    { id: 4, dir: 'down', row: 4, col: 2, answer: 'PUPPE', clue: "Spielzeug in Menschengestalt" },
+    { id: 5, dir: 'across', row: 6, col: 2, answer: 'PUZZLE', clue: "Bild aus vielen Teilen" },
+    { id: 6, dir: 'across', row: 8, col: 1, answer: 'TEDDY', clue: "Kuscheliger Bär" }
+  ] },
+  { theme: "Bauernhof", rows: 9, cols: 7, words: [
+    { id: 1, dir: 'down', row: 0, col: 2, answer: 'SCHAF', clue: "Gibt Wolle" },
+    { id: 2, dir: 'down', row: 1, col: 5, answer: 'ZIEGE', clue: "Meckert und klettert" },
+    { id: 3, dir: 'across', row: 2, col: 0, answer: 'SCHWEIN', clue: "Rosa Tier, quiekt" },
+    { id: 3, dir: 'down', row: 2, col: 0, answer: 'STALL', clue: "Haus der Tiere" },
+    { id: 4, dir: 'across', row: 5, col: 4, answer: 'HEU', clue: "Getrocknetes Gras" },
+    { id: 4, dir: 'down', row: 5, col: 4, answer: 'HUHN', clue: "Legt Eier" },
+    { id: 5, dir: 'across', row: 7, col: 2, answer: 'KUH', clue: "Gibt Milch" }
+  ] },
+  { theme: "Insekten", rows: 9, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 2, answer: 'WESPE', clue: "Gelb-schwarz und sticht" },
+    { id: 2, dir: 'down', row: 0, col: 4, answer: 'MÜCKE', clue: "Sticht und juckt" },
+    { id: 3, dir: 'across', row: 3, col: 4, answer: 'KÄFER', clue: "Hat einen harten Panzer" },
+    { id: 4, dir: 'down', row: 3, col: 6, answer: 'FLIEGE', clue: "Summt um das Essen" },
+    { id: 5, dir: 'down', row: 3, col: 8, answer: 'RAUPE', clue: "Wird zum Schmetterling" },
+    { id: 6, dir: 'across', row: 4, col: 0, answer: 'BIENE', clue: "Macht Honig" },
+    { id: 7, dir: 'across', row: 6, col: 0, answer: 'LIBELLE', clue: "Fliegt über dem Teich" },
+    { id: 8, dir: 'across', row: 8, col: 1, answer: 'AMEISE', clue: "Sehr fleissiges kleines Insekt" }
+  ] },
+  { theme: "Vögel", rows: 9, cols: 7, words: [
+    { id: 1, dir: 'across', row: 0, col: 2, answer: 'SPATZ', clue: "Kleiner brauner Vogel" },
+    { id: 2, dir: 'down', row: 0, col: 4, answer: 'AMSEL', clue: "Schwarzer Singvogel" },
+    { id: 3, dir: 'down', row: 2, col: 1, answer: 'PAPAGEI', clue: "Bunter Vogel, der sprechen lernt" },
+    { id: 4, dir: 'across', row: 3, col: 0, answer: 'TAUBE', clue: "Gurrt auf dem Platz" },
+    { id: 5, dir: 'down', row: 3, col: 6, answer: 'SCHWAN', clue: "Weisser Vogel mit langem Hals" },
+    { id: 6, dir: 'across', row: 5, col: 0, answer: 'RABE', clue: "Grosser schwarzer Vogel" },
+    { id: 7, dir: 'across', row: 8, col: 0, answer: 'PINGUIN', clue: "Vogel, der nicht fliegen kann" }
+  ] },
+  { theme: "Werkzeug", rows: 8, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 0, answer: 'ZANGE', clue: "Zum Greifen und Kneifen" },
+    { id: 2, dir: 'down', row: 0, col: 2, answer: 'SÄGE', clue: "Damit schneidet man Holz" },
+    { id: 3, dir: 'down', row: 0, col: 7, answer: 'HAMMER', clue: "Damit schlägt man Nägel ein" },
+    { id: 4, dir: 'across', row: 2, col: 0, answer: 'NAGEL', clue: "Wird in die Wand geschlagen" },
+    { id: 5, dir: 'down', row: 2, col: 4, answer: 'LEITER', clue: "Damit klettert man hoch" },
+    { id: 6, dir: 'across', row: 4, col: 3, answer: 'PINSEL', clue: "Zum Malen" },
+    { id: 7, dir: 'across', row: 7, col: 1, answer: 'SCHRAUBE', clue: "Wird eingedreht" }
+  ] },
+  { theme: "Geburtstag", rows: 9, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 2, answer: 'KERZE', clue: "Wird ausgeblasen" },
+    { id: 2, dir: 'down', row: 0, col: 6, answer: 'FEST', clue: "Grosse Feier" },
+    { id: 3, dir: 'across', row: 1, col: 1, answer: 'GESCHENK', clue: "Verpacktes Überraschungspaket" },
+    { id: 4, dir: 'down', row: 1, col: 8, answer: 'KUCHEN', clue: "Süsses mit Kerzen" },
+    { id: 5, dir: 'across', row: 4, col: 0, answer: 'LIED', clue: "Happy Birthday ist eins" },
+    { id: 6, dir: 'down', row: 5, col: 4, answer: 'GAST', clue: "Besucher der Party" },
+    { id: 7, dir: 'across', row: 6, col: 3, answer: 'BALLON', clue: "Mit Luft gefüllt" },
+    { id: 8, dir: 'across', row: 8, col: 4, answer: 'TORTE', clue: "Kuchen mit Creme" }
+  ] },
+  { theme: "Weihnachten", rows: 9, cols: 9, words: [
+    { id: 1, dir: 'across', row: 0, col: 3, answer: 'KRIPPE', clue: "Futterkrippe mit dem Kind" },
+    { id: 1, dir: 'down', row: 0, col: 3, answer: 'KUGEL', clue: "Glänzender Baumschmuck" },
+    { id: 2, dir: 'across', row: 2, col: 1, answer: 'ENGEL', clue: "Hat Flügel und einen Heiligenschein" },
+    { id: 3, dir: 'down', row: 2, col: 8, answer: 'RENTIER', clue: "Tier mit Geweih aus dem Norden" },
+    { id: 4, dir: 'across', row: 4, col: 0, answer: 'SCHLITTEN', clue: "Wird von Rentieren gezogen" },
+    { id: 4, dir: 'down', row: 4, col: 0, answer: 'STERN', clue: "Leuchtet oben auf dem Baum" },
+    { id: 5, dir: 'across', row: 7, col: 3, answer: 'GLOCKE', clue: "Läutet zur Feier" }
+  ] },
+  { theme: "Märchen", rows: 9, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 0, answer: 'PRINZ', clue: "Sohn eines Königs" },
+    { id: 2, dir: 'down', row: 3, col: 3, answer: 'DRACHE', clue: "Speit Feuer" },
+    { id: 3, dir: 'down', row: 3, col: 8, answer: 'RIESE', clue: "Sehr grosse Gestalt" },
+    { id: 4, dir: 'across', row: 4, col: 0, answer: 'ZWERG', clue: "Einer von sieben" },
+    { id: 5, dir: 'down', row: 4, col: 6, answer: 'KRONE', clue: "Trägt der König auf dem Kopf" },
+    { id: 6, dir: 'across', row: 6, col: 2, answer: 'SCHLOSS', clue: "Dort wohnt der König" },
+    { id: 7, dir: 'across', row: 8, col: 0, answer: 'HEXE', clue: "Wohnt im Lebkuchenhaus" },
+    { id: 8, dir: 'across', row: 8, col: 5, answer: 'FEE', clue: "Erfüllt Wünsche" }
+  ] },
+  { theme: "Computer", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'across', row: 0, col: 2, answer: 'MAUS', clue: "Damit bewegt man den Zeiger" },
+    { id: 2, dir: 'down', row: 0, col: 5, answer: 'SPIEL', clue: "Macht am Computer Spass" },
+    { id: 3, dir: 'down', row: 0, col: 7, answer: 'DRUCKER', clue: "Bringt Text auf Papier" },
+    { id: 4, dir: 'down', row: 2, col: 3, answer: 'MONITOR', clue: "Zeigt das Bild am Computer an" },
+    { id: 5, dir: 'across', row: 3, col: 2, answer: 'CODE', clue: "Programmtext" },
+    { id: 6, dir: 'across', row: 6, col: 0, answer: 'TASTATUR', clue: "Damit tippt man" },
+    { id: 7, dir: 'across', row: 8, col: 2, answer: 'ORDNER', clue: "Darin liegen Dateien" }
+  ] },
+  { theme: "Zirkus", rows: 8, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 2, answer: 'ZELT', clue: "Grosses Dach für die Vorstellung" },
+    { id: 2, dir: 'down', row: 0, col: 5, answer: 'JONGLEUR', clue: "Wirft Bälle in die Luft" },
+    { id: 3, dir: 'across', row: 2, col: 1, answer: 'CLOWN', clue: "Hat eine rote Nase" },
+    { id: 4, dir: 'down', row: 3, col: 8, answer: 'SEIL', clue: "Darauf balanciert man" },
+    { id: 5, dir: 'across', row: 4, col: 5, answer: 'LÖWE', clue: "Brüllt in der Manege" },
+    { id: 6, dir: 'across', row: 5, col: 0, answer: 'MANEGE', clue: "Runde Bühne im Zirkus" },
+    { id: 7, dir: 'across', row: 7, col: 0, answer: 'ZAUBERER', clue: "Zieht Hasen aus dem Hut" }
+  ] },
+  { theme: "Garten", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 1, answer: 'TEICH', clue: "Kleines Gewässer" },
+    { id: 2, dir: 'across', row: 0, col: 4, answer: 'WURM', clue: "Lebt in der Erde" },
+    { id: 3, dir: 'down', row: 0, col: 6, answer: 'ROSE', clue: "Blume mit Dornen" },
+    { id: 4, dir: 'across', row: 1, col: 0, answer: 'BEET', clue: "Hier wachsen Blumen" },
+    { id: 5, dir: 'down', row: 2, col: 4, answer: 'TULPE', clue: "Frühlingsblume aus Holland" },
+    { id: 6, dir: 'across', row: 3, col: 0, answer: 'SCHAUFEL', clue: "Zum Graben" },
+    { id: 7, dir: 'down', row: 5, col: 2, answer: 'ZAUN', clue: "Grenzt den Garten ab" },
+    { id: 8, dir: 'across', row: 6, col: 1, answer: 'RASEN', clue: "Grünes Gras zum Mähen" }
+  ] },
+  { theme: "Gefühle", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 0, answer: 'STOLZ', clue: "Gefühl nach einem Erfolg" },
+    { id: 2, dir: 'down', row: 0, col: 3, answer: 'MUT', clue: "Gegenteil von Angst" },
+    { id: 3, dir: 'down', row: 0, col: 5, answer: 'FREUDE', clue: "Man lacht dabei" },
+    { id: 4, dir: 'across', row: 1, col: 0, answer: 'TRAUER', clue: "Gefühl bei Verlust" },
+    { id: 5, dir: 'across', row: 3, col: 4, answer: 'WUT', clue: "Starker Ärger" },
+    { id: 6, dir: 'down', row: 4, col: 3, answer: 'GLÜCK', clue: "Hat man beim Kleeblatt" },
+    { id: 7, dir: 'across', row: 5, col: 3, answer: 'LIEBE', clue: "Tiefes Gefühl für jemanden" }
+  ] },
+  { theme: "Wüste", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 7, answer: 'SONNE', clue: "Brennt heiss vom Himmel" },
+    { id: 2, dir: 'across', row: 1, col: 1, answer: 'KAMEL', clue: "Hat Höcker" },
+    { id: 2, dir: 'down', row: 1, col: 1, answer: 'KAKTUS', clue: "Stachelige Pflanze" },
+    { id: 3, dir: 'across', row: 3, col: 0, answer: 'SKORPION', clue: "Hat einen Giftstachel" },
+    { id: 4, dir: 'across', row: 5, col: 0, answer: 'DURST', clue: "Will man trinken" },
+    { id: 5, dir: 'down', row: 5, col: 3, answer: 'SAND', clue: "Davon gibt es in der Wüste viel" },
+    { id: 6, dir: 'down', row: 5, col: 6, answer: 'OASE', clue: "Wasserstelle in der Wüste" },
+    { id: 7, dir: 'across', row: 8, col: 3, answer: 'DÜNE', clue: "Sandhügel" }
+  ] },
+  { theme: "Berge", rows: 9, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 2, answer: 'STEINBOCK', clue: "Hat grosse Hörner" },
+    { id: 2, dir: 'down', row: 1, col: 7, answer: 'SEILBAHN', clue: "Fährt den Berg hinauf" },
+    { id: 3, dir: 'across', row: 2, col: 0, answer: 'GLETSCHER', clue: "Eisstrom in den Bergen" },
+    { id: 3, dir: 'down', row: 2, col: 0, answer: 'GIPFEL', clue: "Höchster Punkt eines Berges" },
+    { id: 4, dir: 'across', row: 4, col: 5, answer: 'FELS', clue: "Grosser Stein" },
+    { id: 5, dir: 'across', row: 6, col: 6, answer: 'TAL', clue: "Liegt zwischen zwei Bergen" }
+  ] },
+  { theme: "Ritter", rows: 7, cols: 9, words: [
+    { id: 1, dir: 'across', row: 0, col: 0, answer: 'SCHWERT', clue: "Waffe des Ritters" },
+    { id: 1, dir: 'down', row: 0, col: 0, answer: 'SCHILD', clue: "Schützt im Kampf" },
+    { id: 2, dir: 'down', row: 0, col: 5, answer: 'RÜSTUNG', clue: "Metallschutz am Körper" },
+    { id: 3, dir: 'down', row: 1, col: 7, answer: 'BURG', clue: "Festung des Ritters" },
+    { id: 4, dir: 'across', row: 2, col: 0, answer: 'HELM', clue: "Schützt den Kopf" },
+    { id: 5, dir: 'across', row: 3, col: 5, answer: 'TURM', clue: "Hoher Teil der Burg" },
+    { id: 6, dir: 'across', row: 6, col: 1, answer: 'KÖNIG', clue: "Herrscher des Landes" }
+  ] },
+  { theme: "Piraten", rows: 9, cols: 7, words: [
+    { id: 1, dir: 'down', row: 0, col: 5, answer: 'KARTE', clue: "Zeigt den Weg zum X" },
+    { id: 2, dir: 'down', row: 1, col: 3, answer: 'SCHATZ', clue: "Gold in der Truhe" },
+    { id: 3, dir: 'down', row: 2, col: 0, answer: 'KAPITÄN', clue: "Chef des Schiffes" },
+    { id: 4, dir: 'across', row: 4, col: 0, answer: 'PAPAGEI', clue: "Sitzt auf der Schulter" },
+    { id: 5, dir: 'down', row: 4, col: 6, answer: 'INSEL', clue: "Hier ist der Schatz vergraben" },
+    { id: 6, dir: 'across', row: 8, col: 2, answer: 'SÄBEL', clue: "Krummes Schwert" }
+  ] },
+  { theme: "Dinosaurier", rows: 8, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 0, answer: 'VULKAN', clue: "Spuckt Lava" },
+    { id: 2, dir: 'down', row: 0, col: 6, answer: 'EI', clue: "Daraus schlüpften Dinos" },
+    { id: 3, dir: 'across', row: 1, col: 2, answer: 'FOSSIL', clue: "Versteinerter Rest" },
+    { id: 4, dir: 'down', row: 1, col: 4, answer: 'SCHWANZ', clue: "Langes Hinterteil" },
+    { id: 5, dir: 'across', row: 3, col: 0, answer: 'KNOCHEN', clue: "Findet man bei Ausgrabungen" },
+    { id: 6, dir: 'across', row: 5, col: 3, answer: 'ZAHN', clue: "Scharf beim T-Rex" },
+    { id: 7, dir: 'across', row: 7, col: 2, answer: 'URZEIT', clue: "Sehr lange her" }
+  ] },
+  { theme: "Polar", rows: 9, cols: 9, words: [
+    { id: 1, dir: 'down', row: 0, col: 4, answer: 'KÄLTE', clue: "Gegenteil von Hitze" },
+    { id: 2, dir: 'down', row: 1, col: 2, answer: 'EISBÄR', clue: "Weisser Bär" },
+    { id: 3, dir: 'across', row: 2, col: 2, answer: 'IGLU', clue: "Haus aus Schnee" },
+    { id: 4, dir: 'down', row: 2, col: 8, answer: 'PINGUIN', clue: "Watschelt im Schnee" },
+    { id: 5, dir: 'down', row: 3, col: 0, answer: 'ARKTIS', clue: "Gebiet um den Nordpol" },
+    { id: 6, dir: 'across', row: 4, col: 0, answer: 'ROBBE', clue: "Liegt auf dem Eis" },
+    { id: 7, dir: 'down', row: 4, col: 6, answer: 'FROST', clue: "Eisige Temperatur" },
+    { id: 8, dir: 'across', row: 8, col: 0, answer: 'SCHLITTEN', clue: "Wird von Hunden gezogen" }
+  ] },
+  { theme: "Frühstück", rows: 8, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 4, answer: 'ZOPF', clue: "Geflochtenes Sonntagsbrot" },
+    { id: 2, dir: 'down', row: 0, col: 6, answer: 'MÜSLI', clue: "Getreide mit Milch" },
+    { id: 3, dir: 'down', row: 1, col: 1, answer: 'JOGHURT', clue: "Gesäuerte Milch im Becher" },
+    { id: 4, dir: 'across', row: 3, col: 1, answer: 'GIPFELI', clue: "Schweizer Wort für Croissant" },
+    { id: 5, dir: 'across', row: 5, col: 0, answer: 'BUTTER', clue: "Streicht man aufs Brot" },
+    { id: 6, dir: 'down', row: 5, col: 4, answer: 'EI', clue: "Gekocht oder als Spiegelei" }
+  ] },
+  { theme: "Pizza", rows: 9, cols: 9, words: [
+    { id: 1, dir: 'across', row: 0, col: 3, answer: 'KÄSE', clue: "Schmilzt oben drauf" },
+    { id: 2, dir: 'down', row: 0, col: 5, answer: 'SALAMI', clue: "Scharfe Wurstscheiben" },
+    { id: 3, dir: 'down', row: 0, col: 8, answer: 'OFEN', clue: "Darin backt die Pizza" },
+    { id: 4, dir: 'down', row: 2, col: 1, answer: 'TOMATE', clue: "Rote Sosse" },
+    { id: 5, dir: 'across', row: 2, col: 4, answer: 'OLIVE', clue: "Kleine schwarze oder grüne Frucht" },
+    { id: 6, dir: 'down', row: 4, col: 3, answer: 'PILZE', clue: "Champignons" },
+    { id: 7, dir: 'across', row: 5, col: 0, answer: 'BASILIKUM', clue: "Grünes Kraut" },
+    { id: 8, dir: 'across', row: 8, col: 2, answer: 'TEIG', clue: "Boden der Pizza" }
+  ] },
+  { theme: "Strasse", rows: 8, cols: 9, words: [
+    { id: 1, dir: 'across', row: 0, col: 0, answer: 'PARKPLATZ', clue: "Hier stellt man das Auto ab" },
+    { id: 2, dir: 'down', row: 0, col: 1, answer: 'AMPEL', clue: "Rot, gelb und grün" },
+    { id: 3, dir: 'down', row: 0, col: 3, answer: 'KREUZUNG', clue: "Hier treffen Strassen aufeinander" },
+    { id: 4, dir: 'across', row: 2, col: 5, answer: 'STAU', clue: "Viele Autos stehen still" },
+    { id: 4, dir: 'down', row: 2, col: 5, answer: 'SCHILD', clue: "Zeigt Regeln an der Strasse" },
+    { id: 5, dir: 'across', row: 6, col: 0, answer: 'TUNNEL', clue: "Führt durch den Berg" }
+  ] },
+  { theme: "Kino", rows: 8, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 3, answer: 'POPCORN', clue: "Knabbert man im Kino" },
+    { id: 2, dir: 'down', row: 1, col: 5, answer: 'KAMERA', clue: "Damit wird gefilmt" },
+    { id: 3, dir: 'down', row: 2, col: 1, answer: 'TICKET', clue: "Eintrittskarte" },
+    { id: 4, dir: 'down', row: 3, col: 7, answer: 'HELD', clue: "Hauptfigur, die rettet" },
+    { id: 5, dir: 'across', row: 6, col: 0, answer: 'LEINWAND', clue: "Darauf wird projiziert" }
+  ] },
+  { theme: "Rennen", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'across', row: 0, col: 4, answer: 'PILZ', clue: "Gibt in Rennspielen einen Turbo" },
+    { id: 2, dir: 'down', row: 0, col: 7, answer: 'ZIEL', clue: "Hier endet das Rennen" },
+    { id: 3, dir: 'across', row: 2, col: 3, answer: 'KURVE', clue: "Hier muss man driften" },
+    { id: 4, dir: 'down', row: 2, col: 5, answer: 'RUNDE', clue: "Einmal um die Strecke" },
+    { id: 5, dir: 'down', row: 3, col: 1, answer: 'POKAL', clue: "Preis für den Sieger" },
+    { id: 6, dir: 'down', row: 5, col: 3, answer: 'KART', clue: "Kleines Rennauto" },
+    { id: 7, dir: 'across', row: 6, col: 0, answer: 'BANANE', clue: "Rutschige Falle auf der Strecke" },
+    { id: 8, dir: 'across', row: 8, col: 3, answer: 'TURBO', clue: "Macht schneller" }
+  ] },
+  { theme: "Ferien", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'down', row: 0, col: 7, answer: 'ZELT', clue: "Zum Campen" },
+    { id: 2, dir: 'across', row: 1, col: 3, answer: 'KARTE', clue: "Zeigt den Weg" },
+    { id: 2, dir: 'down', row: 1, col: 3, answer: 'KOFFER', clue: "Darin packt man Kleider" },
+    { id: 3, dir: 'across', row: 2, col: 0, answer: 'FOTO', clue: "Erinnerung an die Reise" },
+    { id: 4, dir: 'down', row: 4, col: 1, answer: 'PASS', clue: "Ausweis für Reisen ins Ausland" },
+    { id: 5, dir: 'down', row: 4, col: 5, answer: 'SONNE', clue: "Scheint am Strand" },
+    { id: 6, dir: 'across', row: 6, col: 1, answer: 'STRAND', clue: "Liegt am Meer" },
+    { id: 7, dir: 'across', row: 8, col: 2, answer: 'HOTEL', clue: "Übernachtung auf Reisen" }
+  ] },
+  { theme: "Halloween", rows: 9, cols: 8, words: [
+    { id: 1, dir: 'across', row: 0, col: 0, answer: 'VAMPIR', clue: "Trinkt Blut und schläft im Sarg" },
+    { id: 2, dir: 'down', row: 0, col: 2, answer: 'MASKE', clue: "Versteckt das Gesicht" },
+    { id: 3, dir: 'down', row: 0, col: 7, answer: 'SPINNE', clue: "Hat acht Beine und ein Netz" },
+    { id: 4, dir: 'across', row: 2, col: 0, answer: 'KOSTÜM', clue: "Verkleidung" },
+    { id: 4, dir: 'down', row: 2, col: 0, answer: 'KÜRBIS', clue: "Wird ausgehöhlt und leuchtet" },
+    { id: 5, dir: 'down', row: 4, col: 5, answer: 'GEIST', clue: "Spukt und ist durchsichtig" },
+    { id: 6, dir: 'across', row: 5, col: 4, answer: 'HEXE', clue: "Fliegt auf dem Besen" },
+    { id: 7, dir: 'across', row: 7, col: 0, answer: 'SÜSSES', clue: "Sonst gibt es Saures" }
+  ] },
 ];
 
-let cwPuzzleIndex = 0;
-let crosswordWords = crosswordPuzzles[cwPuzzleIndex];
-
-const CW_ROWS = 9, CW_COLS = 7;
+let cwPuzzleIndex = Math.floor(Math.random() * crosswordPuzzles.length);
+let crosswordWords = crosswordPuzzles[cwPuzzleIndex].words;
+// Grösse des Gitters hängt vom Rätsel ab
+let CW_ROWS = crosswordPuzzles[cwPuzzleIndex].rows, CW_COLS = crosswordPuzzles[cwPuzzleIndex].cols;
+// Mario-Kart-Stil: jedes Rätsel ist eine Strecke in einem Cup
+const mkCups = ['Pilz-Cup', 'Blumen-Cup', 'Stern-Cup', 'Spezial-Cup', 'Panzer-Cup', 'Bananen-Cup', 'Blatt-Cup', 'Blitz-Cup'];
+function mkUpdateHeader(){
+  const el = document.getElementById('mk-track-name');
+  if(!el) return;
+  const cup = mkCups[Math.floor(cwPuzzleIndex / 7) % mkCups.length];
+  el.innerHTML = `<b>${cup}</b> · Strecke ${cwPuzzleIndex + 1}/${crosswordPuzzles.length}: <span>${crosswordPuzzles[cwPuzzleIndex].theme}</span>`;
+}
+// Kart fährt mit, je mehr Felder ausgefüllt sind
+function mkUpdateKart(){
+  const kart = document.getElementById('mk-kart');
+  if(!kart) return;
+  const inputs = [...cwGridEl.querySelectorAll('input')];
+  const filled = inputs.filter(i => i.value !== '').length;
+  kart.style.setProperty('--progress', inputs.length ? filled / inputs.length : 0);
+}
 const cwGridEl = document.getElementById('crossword-grid');
 const cwStatus = document.getElementById('crossword-status');
 
@@ -3371,15 +3953,109 @@ function cwRenderClues(){
     .map(w => `<li><b>${w.id}.</b>${w.clue}</li>`).join('');
 }
 
+// Wort fertig und richtig: Mario fährt einmal über das Wort
+let mkDoneWords = new Set();
+function mkCheckWords(r, c){
+  cwCellWords(r, c).forEach(w => {
+    const key = w.dir + w.id;
+    if(mkDoneWords.has(key)) return;
+    const cells = cwWordCells(w);
+    if(cells.every(cell => { const i = cwGetInput(cell.r, cell.c); return i && i.value === cell.letter; })){
+      mkDoneWords.add(key);
+      mkDrive(w, cells);
+    }
+  });
+}
+function mkDrive(word, cells){
+  const wrap = cwGridEl.parentElement;
+  const template = document.querySelector('#mk-kart svg');
+  if(!wrap || !template) return;
+  const wr = wrap.getBoundingClientRect();
+  const divs = cells.map(cell => cwGetInput(cell.r, cell.c).parentElement);
+  const rects = divs.map(d => d.getBoundingClientRect());
+  const size = rects[0].width * 1.25;
+  const kart = document.createElement('div');
+  kart.className = 'mk-word-kart';
+  kart.style.width = size + 'px';
+  kart.style.height = (size * 0.62) + 'px';
+  kart.innerHTML = template.outerHTML;
+  wrap.appendChild(kart);
+  const across = word.dir === 'across';
+  const rot = across ? 0 : 90;
+  const px = (rc) => rc.left - wr.left + rc.width / 2 - size / 2;
+  const py = (rc) => rc.top - wr.top + rc.height / 2 - size * 0.31;
+  const step = across ? rects[0].width : rects[0].height;
+  const dx = across ? 1 : 0, dy = across ? 0 : 1;
+  const tf = (x, y, deg) => `translate(${x}px, ${y}px) rotate(${deg}deg)`;
+  // Zeitplan in Millisekunden: einblenden, Feld für Feld fahren, bei Bananen ausrutschen und drehen, ausblenden
+  const STEP = 260, SPIN = 900, FADE = 160;
+  const frames = [];
+  let t = 0;
+  const sx = px(rects[0]) - dx * step, sy = py(rects[0]) - dy * step;
+  frames.push({ t: 0, transform: tf(sx, sy, rot), opacity: 0 });
+  t += FADE; frames.push({ t, transform: tf(sx, sy, rot), opacity: 1 });
+  const arrive = [];
+  let turned = 0; // nach jedem Ausrutscher 720° weiter (sieht wieder geradeaus aus)
+  rects.forEach((rc, i) => {
+    t += STEP;
+    const x = px(rc), y = py(rc);
+    frames.push({ t, transform: tf(x, y, rot + turned), opacity: 1 });
+    arrive.push(t);
+    if(divs[i].classList.contains('banana')){
+      // Ausrutschen: Kart schlittert quer weg und dreht sich zweimal, dann geht es weiter
+      const ox = dy * step * 0.35, oy = dx * step * 0.35;
+      frames.push({ t: t + SPIN * 0.3, transform: tf(x + ox + dx * 6, y + oy + dy * 6, rot + turned + 260), opacity: 1 });
+      frames.push({ t: t + SPIN * 0.65, transform: tf(x - ox * 0.5 + dx * 10, y - oy * 0.5 + dy * 10, rot + turned + 560), opacity: 1 });
+      t += SPIN;
+      turned += 720;
+      frames.push({ t, transform: tf(x + dx * 8, y + dy * 8, rot + turned), opacity: 1 });
+      const pop = document.createElement('span');
+      pop.className = 'mk-slip-text';
+      pop.textContent = 'Uiii!';
+      pop.style.left = (rc.left - wr.left + rc.width / 2) + 'px';
+      pop.style.top = (rc.top - wr.top + rc.height * 0.35) + 'px'; // im Feld, damit es in der obersten Reihe nicht abgeschnitten wird
+      setTimeout(() => { wrap.appendChild(pop); setTimeout(() => pop.remove(), 1100); }, arrive[i]);
+    }
+  });
+  const last = rects[rects.length - 1];
+  t += STEP * 0.6; frames.push({ t, transform: tf(px(last) + dx * step * 0.6, py(last) + dy * step * 0.6, rot + turned), opacity: 1 });
+  t += FADE; frames.push({ t, transform: tf(px(last) + dx * step * 0.8, py(last) + dy * step * 0.8, rot + turned), opacity: 0 });
+  const anim = kart.animate(frames.map(f => ({ transform: f.transform, opacity: f.opacity, offset: f.t / t })), { duration: t, easing: 'linear' });
+  anim.onfinish = () => kart.remove();
+  // Jedes Feld leuchtet auf, sobald Mario dort ist, und bleibt danach golden (Bananen verschwinden dabei)
+  divs.forEach((div, i) => setTimeout(() => {
+    div.classList.remove('mk-boost'); void div.offsetWidth;
+    div.classList.add('mk-boost', 'mk-done');
+  }, arrive[i]));
+}
+
 function cwRenderGrid(){
   const layout = cwBuildLayout();
+  mkDoneWords = new Set();
   cwGridEl.innerHTML = '';
+  cwGridEl.style.gridTemplateColumns = `repeat(${CW_COLS}, var(--cw-cell, 38px))`;
+  // 1–2 Bananen auf der Strecke (nicht auf Startlinien oder Kreuzungen), pro Rätsel immer gleich
+  const bananaCells = new Set();
+  {
+    const starts = new Set(crosswordWords.map(w => w.row + ',' + w.col));
+    const road = Object.keys(layout).filter(k => !starts.has(k) && cwCellWords(...k.split(',').map(Number)).length === 1).sort();
+    const pick = (k) => Math.floor(Math.abs(Math.sin((cwPuzzleIndex + 1) * 53.7 + k * 17.3) * 10000) % 1 * road.length);
+    const count = 1 + (cwPuzzleIndex % 2);
+    for(let k = 0; k < 10 && bananaCells.size < Math.min(count, road.length); k++) bananaCells.add(road[pick(k)]);
+  }
   for(let r = 0; r < CW_ROWS; r++){
     for(let c = 0; c < CW_COLS; c++){
       const key = r + ',' + c;
       const cellDiv = document.createElement('div');
       if(layout[key]){
         cellDiv.className = 'cw-cell';
+        // Strecken-Richtung für den Mario-Kart-Look
+        const dirs = cwCellWords(r, c).map(w => w.dir);
+        if(dirs.includes('across')) cellDiv.classList.add('road-h');
+        if(dirs.includes('down')) cellDiv.classList.add('road-v');
+        if(bananaCells.has(key)) cellDiv.classList.add('banana');
+        // Startlinie am ersten Buchstaben eines Wortes
+        crosswordWords.forEach(w => { if(w.row === r && w.col === c) cellDiv.classList.add(w.dir === 'across' ? 'start-h' : 'start-v'); });
         if(layout[key].number){
           const numSpan = document.createElement('span');
           numSpan.className = 'cw-number';
@@ -3393,6 +4069,8 @@ function cwRenderGrid(){
         input.addEventListener('input', () => {
           input.value = input.value.toUpperCase().replace(/[^A-ZÄÖÜ]/g, '').slice(0, 1);
           input.classList.remove('right', 'wrong');
+          mkUpdateKart();
+          mkCheckWords(Number(input.dataset.row), Number(input.dataset.col));
           if(input.value !== ''){
             cwMoveNext(Number(input.dataset.row), Number(input.dataset.col));
           }
@@ -3423,6 +4101,10 @@ function cwRenderGrid(){
         cellDiv.appendChild(input);
       } else {
         cellDiv.className = 'cw-cell blocked';
+        // Etwas Deko auf der Wiese, pro Rätsel immer gleich verteilt
+        const hash = (k) => Math.abs(Math.sin((cwPuzzleIndex + 1) * 97.3 + r * 13.7 + c * 7.1 + k * 31.9) * 10000) % 1;
+        const decos = ['tree', 'flowers', 'itembox', 'mushroom', 'coin', 'bush'];
+        if(hash(1) < 0.3) cellDiv.classList.add('deco-' + decos[Math.floor(hash(2) * decos.length)]);
       }
       cwGridEl.appendChild(cellDiv);
     }
@@ -3446,11 +4128,12 @@ function cwCheck(){
     }
   });
   if(filled < total){
-    cwStatus.textContent = `Noch ${total - filled} Felder offen.`;
+    cwStatus.textContent = `Noch ${total - filled} Felder bis zur Ziellinie.`;
   } else if(correct === total){
-    cwStatus.textContent = '🎉 Gelöst! Gut gemacht.';
+    cwStatus.innerHTML = '<span class="mk-win">🏆 1. PLATZ!</span>';
+    document.querySelector('.mk-crossword')?.classList.add('mk-finished');
   } else {
-    cwStatus.textContent = `${total - correct} Fehler markiert.`;
+    cwStatus.textContent = `Auf ${total - correct} Bananen ausgerutscht – ${total - correct} Fehler markiert.`;
   }
 }
 
@@ -3462,7 +4145,9 @@ function cwShowSolution(){
     input.classList.remove('wrong');
     input.classList.add('right');
   });
-  cwStatus.textContent = 'Lösung angezeigt.';
+  crosswordWords.forEach(w => mkDoneWords.add(w.dir + w.id));
+  cwStatus.textContent = 'Lösung angezeigt – die Ehrenrunde fährt der Computer.';
+  mkUpdateKart();
 }
 
 function cwNewGame(){
@@ -3471,37 +4156,38 @@ function cwNewGame(){
     do { nextIndex = Math.floor(Math.random() * crosswordPuzzles.length); }
     while(nextIndex === cwPuzzleIndex);
     cwPuzzleIndex = nextIndex;
-    crosswordWords = crosswordPuzzles[cwPuzzleIndex];
+    crosswordWords = crosswordPuzzles[cwPuzzleIndex].words;
+    CW_ROWS = crosswordPuzzles[cwPuzzleIndex].rows;
+    CW_COLS = crosswordPuzzles[cwPuzzleIndex].cols;
   }
   cwRenderGrid();
   cwRenderClues();
-  cwStatus.textContent = 'Neues Rätsel geladen.';
+  mkUpdateHeader();
+  mkUpdateKart();
+  document.querySelector('.mk-crossword')?.classList.remove('mk-finished');
+  cwStatus.textContent = '🚦 3… 2… 1… Los!';
   const first = cwGridEl.querySelector('input');
   if(first) first.focus();
 }
 
 cwRenderGrid();
 cwRenderClues();
+mkUpdateHeader();
+mkUpdateKart();
 document.getElementById('crossword-new-btn').addEventListener('click', cwNewGame);
 document.getElementById('crossword-check-btn').addEventListener('click', cwCheck);
 document.getElementById('crossword-solve-btn').addEventListener('click', cwShowSolution);
 
 // Wort des Tages (eigene Wortlisten je Länge, tägliche deterministische Auswahl)
 const wotdWordLists = {
-  2: ['JA', 'ES', 'DU', 'WO', 'OB', 'AN', 'IN', 'ZU', 'AM', 'EI'],
-  3: ['HUT', 'TOR', 'BÄR', 'EIS', 'TEE', 'ARM', 'OHR', 'BAD', 'TAG', 'WEG'],
-  4: ['HAUS', 'BAUM', 'ROSE', 'WALD', 'FEST', 'BOOT', 'KIND', 'BROT', 'WEIN', 'ZAUN'],
-  5: ['APFEL', 'TISCH', 'WOLKE', 'KATZE', 'BLUME', 'STUHL', 'MAUER', 'FEUER', 'WOCHE', 'MUSIK', 'LAMPE', 'STERN', 'BRIEF', 'WOLLE', 'NEBEL'],
-  6: ['GARTEN', 'WINTER', 'SOMMER', 'HERBST', 'BRÜCKE', 'SCHNEE', 'KIRCHE', 'STRAND', 'WOLKEN'],
-  7: ['FENSTER', 'SONNTAG', 'SCHRANK', 'BAHNHOF', 'GEBIRGE', 'FAHRRAD', 'KLAVIER'],
-  8: ['FAHRZEUG', 'FREIHEIT', 'FUSSBALL', 'COMPUTER', 'HANDTUCH', 'FLUGZEUG', 'ERDBEERE', 'SCHULHOF', 'FEIERTAG', 'HAUSTIER'],
-  9: ['KRANKHEIT', 'GESCHENKE', 'BAUSTELLE', 'FEUERWERK', 'FERNSEHER', 'SPIELZEUG', 'FAHRKARTE', 'FLUGHAFEN', 'REGENWALD', 'TURNSCHUH'],
-  10: ['GEBURTSTAG', 'SPIELPLATZ', 'SICHERHEIT', 'SCHOKOLADE', 'BIBLIOTHEK', 'GARTENZAUN', 'WOCHENENDE', 'TASCHENUHR'],
-  11: ['KINDERWAGEN', 'REGENSCHIRM', 'KRANKENHAUS', 'WOCHENMARKT', 'GLÜCKWUNSCH', 'BERGSTEIGEN', 'FOTOAPPARAT', 'FINGERNAGEL'],
-  12: ['SCHREIBTISCH', 'STRASSENBAHN', 'SCHREIBWAREN', 'SONNENSCHEIN', 'SCHLAFZIMMER', 'HUBSCHRAUBER'],
-  13: ['SCHMETTERLING', 'FEUERWEHRAUTO', 'KLASSENZIMMER', 'VERKEHRSAMPEL', 'BUNDESKANZLER'],
-  14: ['GARTENSCHLAUCH', 'MOTORRADFAHRER', 'FUSSGÄNGERZONE'],
-  15: ['GESCHWINDIGKEIT', 'MISSVERSTÄNDNIS', 'FRÜHLINGSBLUMEN'],
+  2: ['AB', 'AM', 'AN', 'AU', 'DU', 'EI', 'ES', 'IM', 'IN', 'JA', 'OB', 'OH', 'SO', 'UM', 'WO', 'ZU'],
+  3: ['ARM', 'AST', 'BAD', 'BAU', 'BOX', 'BUS', 'BÄR', 'EIS', 'FEE', 'GAS', 'HAI', 'HOF', 'HUT', 'KUH', 'OHR', 'RAD', 'REH', 'SEE', 'TAG', 'TEE', 'TOR', 'UHR', 'UHU', 'UND', 'WAL', 'WEG', 'ZOO', 'ZUG'],
+  4: ['AFFE', 'ARZT', 'BALL', 'BEIN', 'BERG', 'BETT', 'BILD', 'BLUT', 'BOOT', 'BROT', 'BUCH', 'BURG', 'BÜRO', 'DACH', 'DIEB', 'DORF', 'DOSE', 'ESEL', 'EULE', 'FELD', 'FILM', 'FLUG', 'GANS', 'GLAS', 'GOLD', 'GRAS', 'HAND', 'HASE', 'HAUT', 'HEFT', 'HEMD', 'HERD', 'HEXE', 'HOSE', 'HUHN', 'HUND', 'IGEL', 'JAHR', 'KAMM', 'KILO', 'KIND', 'KINO', 'KNIE', 'KOCH', 'KOPF', 'KORB', 'KUSS', 'LAND', 'LAUB', 'LEHM', 'LIED', 'LUFT', 'LÖWE', 'MAUS', 'MEER', 'MOND', 'MOOS', 'MUND', 'MÖWE', 'NASE', 'NEST', 'NETZ', 'OBST', 'OFEN', 'PILZ', 'POST', 'RABE', 'RAUM', 'REIS', 'RING', 'ROCK', 'ROSE', 'RUHE', 'SACK', 'SAFT', 'SALZ', 'SAND', 'SEIL', 'SOFA', 'SOHN', 'STAU', 'TEIG', 'TIER', 'TOPF', 'TURM', 'TÜTE', 'VASE', 'WAND', 'WELT', 'WIND', 'WOLF', 'WURM', 'ZAHN', 'ZAUN', 'ZELT', 'ZIEL', 'ZIMT', 'ZOPF'],
+  5: ['ABEND', 'ADLER', 'ANGEL', 'ANKER', 'APFEL', 'ARENA', 'BAUCH', 'BESEN', 'BIENE', 'BIRNE', 'BLATT', 'BLITZ', 'BLUME', 'BOGEN', 'BOHNE', 'BRETT', 'BRIEF', 'DAMPF', 'DECKE', 'EIMER', 'ERBSE', 'FAHNE', 'FALKE', 'FARBE', 'FEDER', 'FEIER', 'FEUER', 'FISCH', 'FLUSS', 'FLÖTE', 'FUCHS', 'GABEL', 'GEIST', 'GLÜCK', 'GURKE', 'HAFEN', 'HAGEL', 'HANDY', 'HONIG', 'HÜGEL', 'HÜTTE', 'INSEL', 'JACKE', 'JUNGE', 'KABEL', 'KAKAO', 'KAMEL', 'KANAL', 'KANNE', 'KARTE', 'KATZE', 'KERZE', 'KETTE', 'KISTE', 'KLEID', 'KNOPF', 'KOMET', 'KRAFT', 'KRAKE', 'KRONE', 'KRÖTE', 'KÄFER', 'KÖNIG', 'LACHS', 'LADEN', 'LAMPE', 'MAGEN', 'MARKT', 'MAUER', 'MILCH', 'MUSIK', 'MÖBEL', 'MÜTZE', 'NACHT', 'NADEL', 'NEBEL', 'NUDEL', 'OLIVE', 'ONKEL', 'PAKET', 'PALME', 'PANDA', 'PARTY', 'PFEIL', 'PFERD', 'PIRAT', 'PIZZA', 'PLATZ', 'POKAL', 'PRINZ', 'PUNKT', 'PUPPE', 'RASEN', 'RAUPE', 'REGAL', 'REGEN', 'RIESE', 'SCHAF', 'SCHAL', 'SCHUH', 'SEIFE', 'SOCKE', 'SONNE', 'SPATZ', 'SPIEL', 'STADT', 'STAUB', 'STEIN', 'STERN', 'STIEL', 'STIFT', 'STOCK', 'STROM', 'STUHL', 'SUPPE', 'TAFEL', 'TANNE', 'TANTE', 'TASSE', 'TAUBE', 'TIGER', 'TISCH', 'TORTE', 'TRAUM', 'TULPE', 'VOGEL', 'WAGEN', 'WELLE', 'WOCHE', 'WOLKE', 'WOLLE', 'WÜSTE', 'ZANGE', 'ZEBRA', 'ZIEGE', 'ZWERG'],
+  6: ['AMEISE', 'BALKON', 'BANANE', 'BLUMEN', 'BRILLE', 'BRUDER', 'BRÜCKE', 'BUTTER', 'BÄCKER', 'DAUMEN', 'DELFIN', 'DONNER', 'DRACHE', 'EICHEL', 'EISBÄR', 'FINGER', 'FLIEGE', 'FREUND', 'FROSCH', 'GABELN', 'GARTEN', 'GEMÜSE', 'GLOCKE', 'HAMMER', 'HEIMAT', 'HERBST', 'HIMMEL', 'KAKTUS', 'KAMERA', 'KERZEN', 'KIRCHE', 'KISSEN', 'KOFFER', 'KUCHEN', 'LEHRER', 'LEITER', 'LÖFFEL', 'MANTEL', 'MELONE', 'MESSER', 'MINUTE', 'MONTAG', 'MORGEN', 'NICHTE', 'NORDEN', 'OSTERN', 'PINSEL', 'PLANET', 'QUELLE', 'RAKETE', 'RITTER', 'SCHATZ', 'SCHERE', 'SCHIFF', 'SCHNEE', 'SCHULE', 'SESSEL', 'SOMMER', 'SPECHT', 'SPINNE', 'STRAND', 'TASCHE', 'TELLER', 'TOMATE', 'TRAUBE', 'TUNNEL', 'VULKAN', 'WAFFEL', 'WASSER', 'WECKER', 'WINTER', 'WOLKEN', 'WÜRFEL', 'ZIMMER', 'ZUCKER'],
+  7: ['BAHNHOF', 'BERGSEE', 'DRACHEN', 'ELEFANT', 'FAHRRAD', 'FENSTER', 'FREITAG', 'GEBIRGE', 'GIRAFFE', 'GITARRE', 'HAUSTÜR', 'KAPITÄN', 'KLAVIER', 'KNOCHEN', 'KÄNGURU', 'LIBELLE', 'MUSCHEL', 'MÄDCHEN', 'NASHORN', 'PAPAGEI', 'PFLANZE', 'PINGUIN', 'POLIZEI', 'PUDDING', 'RAKETEN', 'ROBOTER', 'SAMSTAG', 'SCHLOSS', 'SCHRANK', 'SONNTAG', 'SPIEGEL', 'STEMPEL', 'STIEFEL', 'STRASSE', 'TELEFON', 'TEPPICH', 'TRAKTOR', 'TROMMEL', 'ZEITUNG', 'ZITRONE', 'ZUHAUSE'],
+  8: ['AQUARIUM', 'BADEHOSE', 'BAUMHAUS', 'COMPUTER', 'DIENSTAG', 'ERDBEERE', 'FAHRZEUG', 'FEIERTAG', 'FERNGLAS', 'FLUGZEUG', 'FREIHEIT', 'FUSSBALL', 'GESCHENK', 'GESPENST', 'GEWITTER', 'HANDTUCH', 'HAUSTIER', 'HIMBEERE', 'HUFEISEN', 'KASTANIE', 'KOCHTOPF', 'KRAWATTE', 'MAULWURF', 'MITTWOCH', 'RUCKSACK', 'SANDBURG', 'SCHAUKEL', 'SCHNECKE', 'SCHULHOF', 'SEESTERN', 'TEDDYBÄR', 'ZAUBERER'],
+  9: ['ABENTEUER', 'APFELBAUM', 'BADEWANNE', 'BAUERNHOF', 'BAUSTELLE', 'BLAUBEERE', 'BLEISTIFT', 'EISENBAHN', 'FAHRKARTE', 'FAHRSTUHL', 'FERNSEHER', 'FEUERWEHR', 'FEUERWERK', 'FLUGHAFEN', 'FRÜHSTÜCK', 'GESCHENKE', 'GLÜHBIRNE', 'HALLOWEEN', 'KARTOFFEL', 'KRANKHEIT', 'LANDKARTE', 'LASTWAGEN', 'NACHTISCH', 'OSTERHASE', 'POSTKARTE', 'REGENWALD', 'SCHLITTEN', 'SPAGHETTI', 'SPIELZEUG', 'TRAMPOLIN', 'TURNSCHUH', 'VOGELNEST', 'ZAHNPASTA'],
 };
 const wotdDayIndex = Math.floor(Date.now() / 86400000);
 let wotdLength = 5;
@@ -3525,13 +4211,13 @@ function wotdRenderKeyboard(){
   wotdKeyboardEl.innerHTML = wotdKeyRows.map(row => {
     const keys = row.split('').map(ch => {
       const status = wotdKeyStatus[ch] || '';
-      return `<button type="button" class="wotd-key ${status}" data-letter="${ch}">${ch}</button>`;
+      return `<button type="button" class="wotd-key ${status}" data-letter="${ch}" ${status === 'absent' ? 'disabled title="Nicht im Wort"' : ''}>${ch}</button>`;
     }).join('');
     return `<div class="wotd-kb-row">${keys}</div>`;
   }).join('');
   wotdKeyboardEl.querySelectorAll('.wotd-key').forEach(btn => {
     btn.addEventListener('click', () => {
-      if(wotdOver) return;
+      if(wotdOver || btn.disabled) return;
       if(wotdInput.value.length < wotdLength){
         wotdInput.value += btn.dataset.letter;
         wotdInput.focus();
@@ -3577,6 +4263,16 @@ function wotdEvaluateGuess(guess, answer){
   return result;
 }
 
+// Schon geratene Wörter dürfen nicht nochmal verwendet werden
+let wotdGuesses = [];
+// Fortschritt für den Schaden an den roten Türmen: gefundene grüne Plätze und gelbe Buchstaben
+let wotdGreenPos = new Set(), wotdYellow = new Set();
+// Blau bekommt nur Schaden, wenn ein Versuch keinen neuen Buchstaben bringt
+let wotdBlueHits = 0, wotdFoundNew = false;
+function wotdBlocked(msg){
+  wotdStatusEl.textContent = msg;
+  wotdInput.classList.remove('cr-nope'); void wotdInput.offsetWidth; wotdInput.classList.add('cr-nope');
+}
 function wotdSubmitGuess(){
   if(wotdOver) return;
   const guess = wotdInput.value.toUpperCase().trim();
@@ -3584,6 +4280,10 @@ function wotdSubmitGuess(){
     wotdStatusEl.textContent = `Bitte genau ${wotdLength} Buchstaben eingeben.`;
     return;
   }
+  if(wotdGuesses.includes(guess)){ wotdBlocked(`${guess} hast du schon versucht.`); return; }
+  const used = [...new Set(guess.split(''))].filter(ch => wotdKeyStatus[ch] === 'absent');
+  if(used.length){ wotdBlocked(`${used.join(', ')} ${used.length === 1 ? 'kommt' : 'kommen'} nicht im Wort vor.`); return; }
+  wotdGuesses.push(guess);
 
   const result = wotdEvaluateGuess(guess, wotdAnswer);
   const row = document.getElementById('wotd-row-' + wotdAttempt);
@@ -3604,54 +4304,452 @@ function wotdSubmitGuess(){
   wotdInput.value = '';
   wotdAttempt++;
 
+  // Jeder richtige Buchstabe schadet den roten Türmen (grün voll, gelb weniger); die Rakete gibt am Ende den Rest
+  const beforeFound = wotdGreenPos.size + wotdYellow.size;
+  result.forEach((res, i) => { if(res === 'correct') wotdGreenPos.add(i); if(res === 'present') wotdYellow.add(guess[i]); });
+  wotdFoundNew = wotdGreenPos.size + wotdYellow.size > beforeFound;
+  if(!wotdFoundNew && guess !== wotdAnswer) wotdBlueHits++;
+  if(guess !== wotdAnswer){
+    const greenLetters = new Set([...wotdGreenPos].map(i => wotdAnswer[i]));
+    const yellowOnly = [...wotdYellow].filter(ch => !greenLetters.has(ch)).length;
+    crDamageRed(Math.min(1, (wotdGreenPos.size + yellowOnly * 0.4) / wotdLength));
+  }
+
   if(guess === wotdAnswer){
-    wotdStatusEl.textContent = '🎉 Richtig erraten!';
+    // Clash-Royale-Stil: Kronen je nach Anzahl Versuche (1–2: drei, 3–4: zwei, 5–6: eine)
+    const crowns = wotdAttempt <= 2 ? 3 : wotdAttempt <= 4 ? 2 : 1;
+    crUpdateTowers('won');
+    wotdStatusEl.innerHTML = `<span class="cr-crowns">${[0, 1, 2].map(i => `<i class="${i < crowns ? '' : 'off'}"></i>`).join('')}</span>Sieg! ${crowns} ${crowns === 1 ? 'Krone' : 'Kronen'}`;
     wotdOver = true;
     wotdNextBtn.style.display = 'inline-block';
   } else if(wotdAttempt >= wotdMaxAttempts){
-    wotdStatusEl.textContent = `Leider verloren. Das Wort war: ${wotdAnswer}`;
+    crUpdateTowers('lost');
+    wotdStatusEl.textContent = `Dein Turm ist gefallen! Das Wort war: ${wotdAnswer}`;
     wotdOver = true;
     wotdNextBtn.style.display = 'inline-block';
   } else {
-    wotdStatusEl.textContent = `Versuch ${wotdAttempt} von ${wotdMaxAttempts}.`;
+    if(!wotdFoundNew) crUpdateTowers('miss');
+    wotdStatusEl.textContent = wotdFoundNew
+      ? `Versuch ${wotdAttempt} von ${wotdMaxAttempts} – neue Buchstaben gefunden!`
+      : `Versuch ${wotdAttempt} von ${wotdMaxAttempts} – nichts Neues, dein Turm wird getroffen.`;
   }
 }
 
-function wotdNextWord(){
-  const list = wotdWordLists[wotdLength];
-  let newWord = wotdAnswer;
-  if(list.length > 1){
-    while(newWord === wotdAnswer){
-      newWord = list[Math.floor(Math.random() * list.length)];
-    }
-  } else {
-    newWord = list[0];
+// Jedes Wort kommt erst wieder, wenn alle anderen dieser Länge dran waren (gemischter Stapel pro Länge)
+const wotdBags = {};
+function wotdDraw(len){
+  if(!wotdBags[len] || !wotdBags[len].length){
+    const bag = [...wotdWordLists[len]];
+    for(let i = bag.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
+    if(bag.length > 1 && bag[bag.length - 1] === wotdAnswer) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];
+    wotdBags[len] = bag;
   }
-  wotdAnswer = newWord;
+  return wotdBags[len].pop();
+}
+function wotdNextWord(){
+  wotdAnswer = wotdDraw(wotdLength);
   wotdAttempt = 0;
   wotdOver = false;
   wotdStatusEl.textContent = '';
   wotdInput.value = '';
   wotdNextBtn.style.display = 'none';
   wotdKeyStatus = {};
+  wotdGuesses = [];
+  wotdGreenPos = new Set(); wotdYellow = new Set();
+  wotdBlueHits = 0;
   wotdBuildEmptyGrid();
   wotdRenderKeyboard();
+  if(typeof crUpdateTowers === 'function') crUpdateTowers('reset');
 }
 
 function wotdSetLength(len){
   wotdLength = len;
   wotdInput.maxLength = len;
   wotdInput.placeholder = `${len} Buchstaben`;
-  const list = wotdWordLists[wotdLength];
-  wotdAnswer = list[Math.floor(Math.random() * list.length)];
+  wotdAnswer = wotdDraw(wotdLength);
   wotdAttempt = 0;
   wotdOver = false;
   wotdStatusEl.textContent = '';
   wotdInput.value = '';
   wotdNextBtn.style.display = 'none';
   wotdKeyStatus = {};
+  wotdGuesses = [];
+  wotdGreenPos = new Set(); wotdYellow = new Set();
+  wotdBlueHits = 0;
   wotdBuildEmptyGrid();
   wotdRenderKeyboard();
+  if(typeof crUpdateTowers === 'function') crUpdateTowers('reset');
+}
+
+// Clash-Royale-Türme: oben der blaue König, unten die roten Türme (zwei Prinzessinnen und ein König)
+// Jeder Turm braucht eigene Verlaufs-IDs: ist ein gleich benannter Turm versteckt (zerstört), würden die Farben sonst fehlen
+let crTowerCount = 0;
+function crTowerSvg(kind, color){
+  const c = color === 'blue'
+    ? { main:'#3a8cf0', hi:'#9fd2ff', dark:'#0f3a85', deep:'#0a2456', cloth:'#2f74e0' }
+    : { main:'#f0453a', hi:'#ffa89e', dark:'#8a1010', deep:'#4a0606', cloth:'#e0302a' };
+  const id = color + kind + (++crTowerCount);
+  const defs = `<defs>
+    <linearGradient id="wall${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a8977a"/><stop offset=".35" stop-color="#efe6d2"/><stop offset=".7" stop-color="#d6c8aa"/><stop offset="1" stop-color="#8f7d60"/></linearGradient>
+    <linearGradient id="roof${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.hi}"/><stop offset=".45" stop-color="${c.main}"/><stop offset="1" stop-color="${c.dark}"/></linearGradient>
+    <linearGradient id="gold${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2a0"/><stop offset=".5" stop-color="#ffcf1a"/><stop offset="1" stop-color="#c88a00"/></linearGradient>
+    <linearGradient id="wood${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4a2c14"/><stop offset=".5" stop-color="#7a4a24"/><stop offset="1" stop-color="#4a2c14"/></linearGradient>
+    <radialGradient id="skin${id}" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#ffe2c4"/><stop offset="1" stop-color="#e8b088"/></radialGradient>
+    <linearGradient id="metal${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa3b2"/><stop offset=".5" stop-color="#5c6474"/><stop offset="1" stop-color="#2e3440"/></linearGradient>
+  </defs>`;
+  // Einzelne Steine mit leicht unterschiedlichen Farben (wirkt echter als nur Fugenlinien)
+  const stones = (x0, x1, y0, y1, h) => {
+    let out = '', row = 0;
+    const tones = ['#e8dec8', '#d9ccb0', '#cfc09f', '#e2d6bc', '#c8b896'];
+    for(let y = y0; y < y1 - 2; y += h, row++){
+      const off = row % 2 ? -7 : 0;
+      for(let x = x0 + off, k = 0; x < x1; x += 14, k++){
+        const xa = Math.max(x0, x) + 0.8, xb = Math.min(x1, x + 14) - 0.8;
+        if(xb - xa < 3) continue;
+        out += `<rect x="${xa}" y="${y + 0.8}" width="${xb - xa}" height="${Math.min(h, y1 - y) - 1.6}" rx="1.6" fill="${tones[(row * 3 + k) % tones.length]}" opacity=".55"/>`;
+      }
+    }
+    return out;
+  };
+  const base = (cx, w) => `
+    <ellipse cx="${cx}" cy="117" rx="${w / 2 + 10}" ry="5" fill="rgba(0,0,0,.45)"/>
+    <rect x="${cx - w / 2 - 8}" y="110" width="${w + 16}" height="9" rx="4" fill="${c.dark}" stroke="${c.deep}" stroke-width="2"/>
+    <rect x="${cx - w / 2 - 6}" y="110.5" width="${w + 12}" height="3" rx="1.5" fill="${c.hi}" opacity=".5"/>
+    <path d="M${cx - w / 2 - 4} 117 L${cx - w / 2} 108 H${cx + w / 2} L${cx + w / 2 + 4} 117 Z" fill="#8a7a5e" stroke="#3a3022" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M${cx - w / 2 + 2} 111 H${cx + w / 2 - 2}" stroke="#b8a888" stroke-width="2" opacity=".7"/>`;
+  const flag = (x, y, h, flip) => `
+    <path d="M${x} ${y} V${y + h}" stroke="#3a2a14" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="${x}" cy="${y}" r="2" fill="url(#gold${id})" stroke="#6b4400" stroke-width=".8"/>
+    <path fill="${c.main}" stroke="${c.deep}" stroke-width="1.5" stroke-linejoin="round" d="M${x} ${y + 2} Q${x + (flip ? -8 : 8)} ${y} ${x + (flip ? -16 : 16)} ${y + 4} Q${x + (flip ? -8 : 8)} ${y + 8} ${x} ${y + 9} Z">
+      <animate attributeName="d" dur="1.4s" repeatCount="indefinite" values="
+        M${x} ${y + 2} Q${x + (flip ? -8 : 8)} ${y} ${x + (flip ? -16 : 16)} ${y + 4} Q${x + (flip ? -8 : 8)} ${y + 8} ${x} ${y + 9} Z;
+        M${x} ${y + 2} Q${x + (flip ? -8 : 8)} ${y + 5} ${x + (flip ? -16 : 16)} ${y + 3} Q${x + (flip ? -8 : 8)} ${y + 11} ${x} ${y + 9} Z;
+        M${x} ${y + 2} Q${x + (flip ? -8 : 8)} ${y} ${x + (flip ? -16 : 16)} ${y + 4} Q${x + (flip ? -8 : 8)} ${y + 8} ${x} ${y + 9} Z"/>
+    </path>`;
+  if(kind === 'king'){
+    return `<svg viewBox="0 0 120 122">${defs}
+      ${base(60, 92)}
+      <path d="M18 109 L21 60 H99 L102 109 Z" fill="url(#wall${id})" stroke="#3a3022" stroke-width="3" stroke-linejoin="round"/>
+      ${stones(21, 99, 60, 108, 12)}
+      <path d="M21 60 H99" stroke="url(#gold${id})" stroke-width="3"/>
+      <path d="M45 109 V92 A15 15 0 0 1 75 92 V109 Z" fill="url(#wood${id})" stroke="#1b1208" stroke-width="2.5"/>
+      <path d="M52 109 V90 M60 109 V86 M68 109 V90 M45 99 H75" stroke="#2a1608" stroke-width="1.6"/>
+      <path d="M43 93 A17 17 0 0 1 77 93" fill="none" stroke="url(#gold${id})" stroke-width="2.5"/>
+      <path d="M24 63 V88 L33 82 L42 88 V63 Z" fill="${c.cloth}" stroke="${c.deep}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M78 63 V88 L87 82 L96 88 V63 Z" fill="${c.cloth}" stroke="${c.deep}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M28 71 L30 66 L33 69 L36 66 L38 71 Z M82 71 L84 66 L87 69 L90 66 L92 71 Z" fill="url(#gold${id})" stroke="#6b4400" stroke-width=".8"/>
+      <path d="M24 63 V67 M42 63 V67 M78 63 V67 M96 63 V67" stroke="${c.hi}" stroke-width="1.2" opacity=".6"/>
+      ${flag(13, 24, 22, true)}${flag(107, 24, 22, false)}
+      <path d="M8 61 V46 H19 V52 H30 V46 H41 V52 H79 V46 H90 V52 H101 V46 H112 V61 Z" fill="url(#roof${id})" stroke="${c.deep}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M11 49 H17 M33 49 H39 M81 49 H87 M104 49 H110" stroke="${c.hi}" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+      <circle cx="60" cy="56" r="6" fill="url(#gold${id})" stroke="#6b4400" stroke-width="1.5"/>
+      <path d="M57 56 L59 53 L60 55 L61 53 L63 56 Z" fill="#6b4400"/>
+      <rect x="35" y="33" width="50" height="15" rx="5" fill="url(#metal${id})" stroke="#15181e" stroke-width="2.5"/>
+      <rect x="80" y="35" width="30" height="11" rx="5" fill="url(#metal${id})" stroke="#15181e" stroke-width="2.5"/>
+      <path d="M90 35 V46 M100 35 V46" stroke="#c9a23a" stroke-width="2"/>
+      <ellipse cx="110" cy="40.5" rx="2.5" ry="4.5" fill="#0d0f13"/>
+      <path d="M44 36 Q60 31 76 36" fill="none" stroke="#c4cbd6" stroke-width="1.5" opacity=".7"/>
+      <g class="cr-char">
+      <circle cx="60" cy="22" r="12.5" fill="url(#skin${id})" stroke="#4a2a14" stroke-width="2.5"/>
+      <path d="M47 24 Q47 42 60 42 Q73 42 73 24 Q68 31 60 31 Q52 31 47 24 Z" fill="#e8e8e8" stroke="#7a7a7a" stroke-width="1.6"/>
+      <path d="M52 27 Q56 25 60 27 Q64 25 68 27" fill="none" stroke="#8a8a8a" stroke-width="2" stroke-linecap="round"/>
+      <path d="M54 33 Q60 36 66 33" fill="none" stroke="#6b3a1a" stroke-width="2" stroke-linecap="round"/>
+      <path d="M51 16 L57 17 M69 16 L63 17" stroke="#6b6b6b" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="55" cy="20" r="2" fill="#1b1b1b"/><circle cx="65" cy="20" r="2" fill="#1b1b1b"/>
+      <circle cx="55.6" cy="19.4" r=".7" fill="#fff"/><circle cx="65.6" cy="19.4" r=".7" fill="#fff"/>
+      <ellipse cx="60" cy="24" rx="2.4" ry="1.8" fill="#d48a6a"/>
+      <path d="M45 13 L47 1 L53.5 8 L60 -1 L66.5 8 L73 1 L75 13 Z" fill="url(#gold${id})" stroke="#6b4400" stroke-width="2.4" stroke-linejoin="round"/>
+      <rect x="45" y="11" width="30" height="4" rx="1.5" fill="url(#gold${id})" stroke="#6b4400" stroke-width="1.6"/>
+      <circle cx="60" cy="7" r="2.2" fill="#e0262b" stroke="#6b0000" stroke-width=".8"/><circle cx="50" cy="9" r="1.4" fill="#3aa0ff"/><circle cx="70" cy="9" r="1.4" fill="#3aa0ff"/>
+      <path d="M50 5 L52 3 M70 5 L68 3" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>
+      </g>
+    </svg>`;
+  }
+  // Prinzessinnenturm: schmaler Steinturm, Holzplattform mit gestreiftem Baldachin, Prinzessin mit Bogen
+  return `<svg viewBox="0 -8 90 130">${defs}
+    ${base(45, 54)}
+    <path d="M20 109 L24 66 H66 L70 109 Z" fill="url(#wall${id})" stroke="#3a3022" stroke-width="3" stroke-linejoin="round"/>
+    ${stones(24, 66, 66, 108, 11)}
+    <path d="M37 109 V98 A8 8 0 0 1 53 98 V109 Z" fill="url(#wood${id})" stroke="#1b1208" stroke-width="2.2"/>
+    <path d="M45 109 V91" stroke="#2a1608" stroke-width="1.5"/>
+    <path d="M40 78 A5 5 0 0 1 50 78 V87 H40 Z" fill="#ffcf5a" stroke="#1b1208" stroke-width="1.8"/>
+    <path d="M40 78 A5 5 0 0 1 50 78 V87 H40 Z" fill="#ffae2a" opacity=".6"><animate attributeName="opacity" values=".6;.2;.6" dur="2.2s" repeatCount="indefinite"/></path>
+    <path d="M40 82 H50 M45 74 V87" stroke="#6b5a3a" stroke-width="1.2"/>
+    <path d="M28 70 V84 L33 80 L38 84 V70 Z" fill="${c.cloth}" stroke="${c.deep}" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M52 70 V84 L57 80 L62 84 V70 Z" fill="${c.cloth}" stroke="${c.deep}" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M14 66 V55 H22 V59 H31 V55 H59 V59 H68 V55 H76 V66 Z" fill="url(#roof${id})" stroke="${c.deep}" stroke-width="2.8" stroke-linejoin="round"/>
+    <path d="M17 58 H20 M71 58 H74" stroke="${c.hi}" stroke-width="2" stroke-linecap="round"/>
+    <rect x="26" y="52" width="38" height="4" rx="1.5" fill="url(#wood${id})" stroke="#2a1608" stroke-width="1.4"/>
+    <path d="M26 52 V27 M64 52 V27" stroke="url(#wood${id})" stroke-width="3.4"/>
+    <path d="M26 52 V27 M64 52 V27" stroke="#2a1608" stroke-width="0.8" opacity=".6"/>
+    <path d="M16 29 Q45 2 74 29 Z" fill="url(#roof${id})" stroke="${c.deep}" stroke-width="2.6" stroke-linejoin="round"/>
+    <path d="M24 25 Q30 20 38 18" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+    <path d="M16 29 Q20 34 24 29 Q28 34 32 29 Q36 34 40 29 Q44 34 48 29 Q52 34 56 29 Q60 34 64 29 Q68 34 72 29 L74 29" fill="${c.main}" stroke="${c.deep}" stroke-width="2" stroke-linejoin="round"/>
+    ${flag(45, -6, 18, false)}
+    <g class="cr-char">
+    <path d="M35 52 Q35 42 45 42 Q55 42 55 52 Z" fill="#ff7eb6" stroke="#8a1f5a" stroke-width="2"/>
+    <path d="M40 45 Q45 48 50 45" fill="none" stroke="#ffd0e6" stroke-width="1.5"/>
+    <path d="M37 36 Q33 48 37 51 L40 39 Z M53 36 Q57 48 53 51 L50 39 Z" fill="#ffd84a" stroke="#a87b0a" stroke-width="1.3"/>
+    <circle cx="45" cy="38" r="7.5" fill="url(#skin${id})" stroke="#4a2a14" stroke-width="2"/>
+    <path d="M37.5 38 Q37 29 45 29 Q53 29 52.5 38 Q50 33 45 34 Q40 33 37.5 38 Z" fill="#ffd84a" stroke="#a87b0a" stroke-width="1.3"/>
+    <path d="M40.5 30 L41.5 25.5 L43.5 28.5 L45 24.5 L46.5 28.5 L48.5 25.5 L49.5 30 Z" fill="url(#gold${id})" stroke="#6b4400" stroke-width="1" stroke-linejoin="round"/>
+    <circle cx="42.4" cy="38.5" r="1.3" fill="#1b1b1b"/><circle cx="47.6" cy="38.5" r="1.3" fill="#1b1b1b"/>
+    <circle cx="40.5" cy="41" r="1.4" fill="#ff9ab0" opacity=".7"/><circle cx="49.5" cy="41" r="1.4" fill="#ff9ab0" opacity=".7"/>
+    <path d="M43 42 Q45 43.5 47 42" fill="none" stroke="#a8402a" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M57 35 Q66 43.5 57 52" fill="none" stroke="#8a5a2b" stroke-width="2.8" stroke-linecap="round"/>
+    <path d="M57 35 L57 52" stroke="#eeeeee" stroke-width="0.9"/>
+    <path d="M52 43.5 H65" stroke="#5a3a1c" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M63 41.5 L66.5 43.5 L63 45.5 Z" fill="#c9d1d9" stroke="#5a5f6a" stroke-width=".6"/>
+    <path d="M52 41.5 L50 43.5 L52 45.5" fill="none" stroke="#e0262b" stroke-width="1.3"/>
+    </g>
+  </svg>`;
+}
+// Trümmerhaufen für zerstörte Türme
+function crRubbleSvg(kind){
+  const w = kind === 'king' ? 120 : 90;
+  return `<svg class="cr-rubble" viewBox="0 0 ${w} 122">
+    <ellipse cx="${w / 2}" cy="117" rx="${w * 0.42}" ry="4" fill="rgba(0,0,0,.4)"/>
+    <path d="M${w * 0.12} 116 L${w * 0.2} 100 L${w * 0.32} 104 L${w * 0.42} 90 L${w * 0.55} 96 L${w * 0.66} 88 L${w * 0.78} 100 L${w * 0.88} 116 Z" fill="#8a7a5e" stroke="#3a3022" stroke-width="2.5" stroke-linejoin="round"/>
+    <rect x="${w * 0.24}" y="104" width="12" height="7" rx="2" fill="#cfc09f" stroke="#3a3022" stroke-width="1.5" transform="rotate(-12 ${w * 0.24} 104)"/>
+    <rect x="${w * 0.55}" y="100" width="13" height="7" rx="2" fill="#d9ccb0" stroke="#3a3022" stroke-width="1.5" transform="rotate(14 ${w * 0.55} 100)"/>
+    <rect x="${w * 0.4}" y="92" width="10" height="6" rx="2" fill="#e2d6bc" stroke="#3a3022" stroke-width="1.5" transform="rotate(-6 ${w * 0.4} 92)"/>
+    <path d="M${w * 0.35} 86 Q${w * 0.3} 72 ${w * 0.4} 66 Q${w * 0.38} 76 ${w * 0.45} 80 Q${w * 0.5} 68 ${w * 0.6} 64 Q${w * 0.55} 76 ${w * 0.62} 86" fill="rgba(90,90,90,.35)"/>
+  </svg>`;
+}
+function crTower(kind, color){
+  const maxHp = kind === 'king' ? 4008 : 2534;
+  return `<div class="cr-tower ${kind} ${color}" data-max="${maxHp}">
+    <div class="cr-hp"><span class="cr-level">11</span><div class="cr-bar"><i></i><b>${maxHp}</b></div></div>
+    ${crTowerSvg(kind, color)}${crRubbleSvg(kind)}
+  </div>`;
+}
+const crTop = document.getElementById('cr-towers-top');
+const crBottom = document.getElementById('cr-towers-bottom');
+if(crTop) crTop.innerHTML = crTower('princess', 'blue') + crTower('king', 'blue') + crTower('princess', 'blue');
+if(crBottom) crBottom.innerHTML = crTower('princess', 'red') + crTower('king', 'red') + crTower('princess', 'red');
+// Jeder falsche Versuch beschädigt den blauen Turm, beim Sieg fallen die roten Türme
+function crSetHp(t, pct){
+  t.style.setProperty('--hp', pct + '%');
+  const b = t.querySelector('.cr-bar b');
+  if(b) b.textContent = Math.round(Number(t.dataset.max) * pct / 100);
+}
+// Rakete fliegt im Bogen vom König-Turm der einen Seite auf die Türme der anderen Seite und explodiert dort
+function crFireRocket(fromEl, toRow, onImpact, team){
+  const wrap = document.querySelector('.cr-wotd');
+  if(!wrap || !fromEl || !toRow || !document.body.animate){ onImpact(); return; }
+  const wr = wrap.getBoundingClientRect(), fr = fromEl.getBoundingClientRect(), tr = toRow.getBoundingClientRect();
+  const sx = fr.left - wr.left + fr.width / 2, sy = fr.top - wr.top + fr.height * 0.35;
+  const ex = tr.left - wr.left + tr.width / 2, ey = tr.top - wr.top + tr.height * 0.6;
+  // Bogen: Kontrollpunkt leicht seitlich versetzt
+  const cx = (sx + ex) / 2 + wr.width * 0.25, cy = (sy + ey) / 2;
+  // Wie im Spiel: Karte wird gespielt (6 Elixier), Zielkreis erscheint am Boden, König feuert mit Rückstoss
+  const card = document.createElement('div');
+  card.className = 'cr-card ' + (team || 'blue');
+  card.innerHTML = `<span class="cr-card-cost">6</span><span class="cr-card-art"></span><span class="cr-card-name">Rakete</span>`;
+  card.style.left = Math.min(wr.width - 70, Math.max(0, sx - 34)) + 'px';
+  card.style.top = (sy + (sy < ey ? 40 : -110)) + 'px';
+  wrap.appendChild(card);
+  setTimeout(() => card.remove(), 1400);
+  const zone = document.createElement('div');
+  zone.className = 'cr-zone ' + (team || 'blue');
+  zone.style.left = ex + 'px';
+  zone.style.top = ey + 'px';
+  wrap.appendChild(zone);
+  const launcher = fromEl.querySelector('svg:not(.cr-rubble)');
+  if(launcher){ launcher.classList.remove('cr-recoil'); void launcher.getBoundingClientRect(); launcher.classList.add('cr-recoil'); }
+  // Schatten am Boden: wandert gerade zum Ziel und wird beim Herunterkommen dunkler und grösser
+  const shadow = document.createElement('div');
+  shadow.className = 'cr-rocket-shadow';
+  wrap.appendChild(shadow);
+  const rocket = document.createElement('div');
+  rocket.className = 'cr-rocket';
+  // Rakete wie in Clash Royale: dicker Metallzylinder mit Eisenbändern, Totenkopf, Kuppel-Spitze und grosser Flamme
+  rocket.innerHTML = `<svg viewBox="0 0 44 90">
+    <defs>
+      <linearGradient id="crRkBody" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3e4a44"/><stop offset=".35" stop-color="#7d8c84"/><stop offset=".6" stop-color="#5c6a62"/><stop offset="1" stop-color="#2c3530"/></linearGradient>
+      <linearGradient id="crRkMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6b6f78"/><stop offset=".4" stop-color="#d8dce4"/><stop offset="1" stop-color="#5a5e66"/></linearGradient>
+      <radialGradient id="crRkFire" cx="50%" cy="20%" r="80%"><stop offset="0" stop-color="#fff8c0"/><stop offset=".35" stop-color="#ffd21a"/><stop offset=".7" stop-color="#ff7a1a"/><stop offset="1" stop-color="#e0262b" stop-opacity="0"/></radialGradient>
+    </defs>
+    <path fill="url(#crRkFire)" d="M22 92 Q6 78 10 64 L34 64 Q38 78 22 92 Z">
+      <animate attributeName="d" dur="0.14s" repeatCount="indefinite" values="M22 92 Q6 78 10 64 L34 64 Q38 78 22 92 Z;M22 99 Q3 80 10 64 L34 64 Q41 80 22 99 Z;M22 92 Q6 78 10 64 L34 64 Q38 78 22 92 Z"/>
+    </path>
+    <path d="M22 80 Q14 72 15 64 L29 64 Q30 72 22 80 Z" fill="#fff6c0"/>
+    <rect x="11" y="60" width="22" height="6" rx="2" fill="url(#crRkMetal)" stroke="#1b1d22" stroke-width="2"/>
+    <rect x="7" y="22" width="30" height="40" rx="5" fill="url(#crRkBody)" stroke="#1b1d22" stroke-width="2.5"/>
+    <path d="M13 23 V61 M31 23 V61" stroke="#2a302c" stroke-width="2.2"/>
+    <path d="M13 23 V61 M31 23 V61" stroke="#8a968e" stroke-width=".8" transform="translate(-1 0)"/>
+    <rect x="5" y="24" width="34" height="6" rx="2.5" fill="url(#crRkMetal)" stroke="#1b1d22" stroke-width="2"/>
+    <rect x="5" y="54" width="34" height="6" rx="2.5" fill="url(#crRkMetal)" stroke="#1b1d22" stroke-width="2"/>
+    <circle cx="9" cy="27" r="1" fill="#2a2d33"/><circle cx="35" cy="27" r="1" fill="#2a2d33"/><circle cx="9" cy="57" r="1" fill="#2a2d33"/><circle cx="35" cy="57" r="1" fill="#2a2d33"/>
+    <g transform="translate(22 42)">
+      <path d="M-7 -1 Q-7 -9 0 -9 Q7 -9 7 -1 Q7 3 4 4 V7 H-4 V4 Q-7 3 -7 -1 Z" fill="#e8e6dc" stroke="#1b1d22" stroke-width="1.4"/>
+      <circle cx="-2.8" cy="-2" r="2" fill="#1b1d22"/><circle cx="2.8" cy="-2" r="2" fill="#1b1d22"/>
+      <path d="M0 1 L-1 3 H1 Z" fill="#1b1d22"/>
+      <path d="M-2 5 V7 M0 5 V7 M2 5 V7" stroke="#1b1d22" stroke-width=".8"/>
+    </g>
+    <path d="M7 24 Q7 4 22 2 Q37 4 37 24 Z" fill="url(#crRkMetal)" stroke="#1b1d22" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M14 22 Q14 9 22 5 M30 22 Q30 9 22 5" fill="none" stroke="#5a5e66" stroke-width="1.6"/>
+    <path d="M12 18 Q13 10 18 7" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+    <circle cx="22" cy="3" r="2.2" fill="#9aa0aa" stroke="#1b1d22" stroke-width="1.2"/>
+  </svg>`;
+  wrap.appendChild(rocket);
+  // Bahnpunkte mit Drehwinkel entlang der Flugrichtung
+  const pts = [];
+  const N = 24;
+  for(let i = 0; i <= N; i++){
+    const t = i / N, u = 1 - t;
+    const x = u * u * sx + 2 * u * t * cx + t * t * ex, y = u * u * sy + 2 * u * t * cy + t * t * ey;
+    const dx = 2 * u * (cx - sx) + 2 * t * (ex - cx), dy = 2 * u * (cy - sy) + 2 * t * (ey - cy);
+    const ang = Math.atan2(dy, dx) * 180 / Math.PI + 90; // Spitze zeigt in Flugrichtung
+    // Höhe: Rakete steigt (wird grösser) und stürzt dann auf das Ziel
+    const height = Math.sin(Math.PI * t);
+    const scale = 0.85 + height * 0.75;
+    pts.push({ transform: `translate(${x - 22}px, ${y - 45 - height * 40}px) rotate(${ang}deg) scale(${scale})`, offset: t });
+  }
+  const dur = 1500, delay = 380;
+  const anim = rocket.animate(pts, { duration: dur, delay, easing: 'cubic-bezier(.35,0,.8,1)', fill: 'backwards' });
+  shadow.animate([
+    { transform: `translate(${sx - 20}px, ${sy - 6}px) scale(0.6)`, opacity: 0.15 },
+    { transform: `translate(${(sx + ex) / 2 - 20}px, ${(sy + ey) / 2 - 6}px) scale(0.4)`, opacity: 0.1 },
+    { transform: `translate(${ex - 20}px, ${ey - 6}px) scale(1.4)`, opacity: 0.55 }
+  ], { duration: dur, delay, easing: 'cubic-bezier(.35,0,.8,1)', fill: 'both' });
+  // Rauchspur
+  let smokeOn = false;
+  setTimeout(() => { smokeOn = true; }, delay);
+  const smoke = setInterval(() => {
+    if(!smokeOn) return;
+    const r = rocket.getBoundingClientRect();
+    const puff = document.createElement('span');
+    puff.className = 'cr-smoke';
+    puff.style.left = (r.left - wr.left + r.width / 2) + 'px';
+    puff.style.top = (r.top - wr.top + r.height / 2) + 'px';
+    wrap.appendChild(puff);
+    setTimeout(() => puff.remove(), 900);
+  }, 45);
+  anim.onfinish = () => {
+    clearInterval(smoke);
+    rocket.remove();
+    shadow.remove();
+    zone.remove();
+    // Steinbrocken fliegen weg
+    for(let i = 0; i < 10; i++){
+      const chunk = document.createElement('span');
+      chunk.className = 'cr-chunk';
+      chunk.style.left = ex + 'px';
+      chunk.style.top = ey + 'px';
+      wrap.appendChild(chunk);
+      const a = Math.PI * 2 * i / 10 + Math.random() * 0.5, d = 60 + Math.random() * 70;
+      chunk.animate([
+        { transform: 'translate(-50%, -50%) rotate(0deg)', opacity: 1 },
+        { transform: `translate(calc(-50% + ${Math.cos(a) * d * 0.6}px), calc(-50% + ${Math.sin(a) * d * 0.6 - 40}px)) rotate(${200 + i * 40}deg)`, opacity: 1, offset: 0.5 },
+        { transform: `translate(calc(-50% + ${Math.cos(a) * d}px), calc(-50% + ${Math.sin(a) * d + 10}px)) rotate(${400 + i * 60}deg)`, opacity: 0 }
+      ], { duration: 900, easing: 'ease-out' }).onfinish = () => chunk.remove();
+    }
+    // Schadenszahlen über den getroffenen Türmen
+    toRow.querySelectorAll('.cr-tower:not(.destroyed)').forEach(t => {
+      const tr2 = t.getBoundingClientRect();
+      const dmg = document.createElement('span');
+      dmg.className = 'cr-damage';
+      dmg.textContent = '-' + Math.round(Number(t.dataset.max) * parseFloat(t.style.getPropertyValue('--hp') || '100') / 100);
+      dmg.style.left = (tr2.left - wr.left + tr2.width / 2) + 'px';
+      dmg.style.top = (tr2.top - wr.top + tr2.height * 0.3) + 'px';
+      wrap.appendChild(dmg);
+      setTimeout(() => dmg.remove(), 1300);
+    });
+    const boom = document.createElement('div');
+    boom.className = 'cr-boom';
+    boom.style.left = ex + 'px';
+    boom.style.top = ey + 'px';
+    boom.innerHTML = '<i></i><i></i><i></i><b>BOOM!</b>';
+    wrap.appendChild(boom);
+    wrap.classList.remove('cr-shake'); void wrap.offsetWidth; wrap.classList.add('cr-shake');
+    setTimeout(() => boom.remove(), 1200);
+    onImpact();
+  };
+}
+// Schaden an den roten Türmen: bis zu 80 % der Lebenspunkte, der Reihe nach linke Prinzessin, rechte Prinzessin, König.
+// Blaue Türme, die noch stehen, schiessen dafür einen Pfeil.
+function crDamageRed(progress){
+  const reds = crBottom ? [...crBottom.querySelectorAll('.cr-tower')] : [];
+  const blues = crTop ? [...crTop.querySelectorAll('.cr-tower:not(.destroyed)')] : [];
+  const wrap = document.querySelector('.cr-wotd');
+  if(reds.length < 3 || !wrap) return;
+  const order = [reds[0], reds[2], reds[1]];
+  const total = order.reduce((a, t) => a + Number(t.dataset.max), 0);
+  let pool = Math.round(total * 0.8 * progress);
+  order.forEach((t, i) => {
+    const max = Number(t.dataset.max);
+    const take = Math.min(max, pool); pool -= take;
+    const newPct = Math.max(0, 100 - take / max * 100);
+    const oldPct = parseFloat(t.style.getPropertyValue('--hp') || '100');
+    if(newPct >= oldPct - 0.01) return;
+    const dmg = Math.round(max * (oldPct - newPct) / 100);
+    const shooter = blues.length ? blues[i % blues.length] : null;
+    const hit = () => {
+      crSetHp(t, newPct);
+      t.classList.remove('hit'); void t.offsetWidth; t.classList.add('hit');
+      if(newPct <= 0) setTimeout(() => t.classList.add('destroyed'), 300);
+      const wr = wrap.getBoundingClientRect(), tr = t.getBoundingClientRect();
+      const n = document.createElement('span');
+      n.className = 'cr-damage';
+      n.textContent = '-' + dmg;
+      n.style.left = (tr.left - wr.left + tr.width / 2) + 'px';
+      n.style.top = (tr.top - wr.top + tr.height * 0.3) + 'px';
+      wrap.appendChild(n);
+      setTimeout(() => n.remove(), 1300);
+    };
+    if(!shooter || !document.body.animate){ setTimeout(hit, i * 200); return; }
+    // Pfeil von der blauen Prinzessin (bzw. dem König) zum roten Turm
+    setTimeout(() => {
+      const wr = wrap.getBoundingClientRect(), a = shooter.getBoundingClientRect(), b = t.getBoundingClientRect();
+      const ax = a.left - wr.left + a.width / 2, ay = a.top - wr.top + a.height * 0.45;
+      const bx = b.left - wr.left + b.width / 2, by = b.top - wr.top + b.height * 0.45;
+      const ang = Math.atan2(by - ay, bx - ax) * 180 / Math.PI;
+      const arrow = document.createElement('span');
+      arrow.className = 'cr-arrow';
+      wrap.appendChild(arrow);
+      arrow.animate([
+        { transform: `translate(${ax}px, ${ay}px) rotate(${ang}deg)`, opacity: 1 },
+        { transform: `translate(${bx}px, ${by}px) rotate(${ang}deg)`, opacity: 1 }
+      ], { duration: 520, easing: 'linear' }).onfinish = () => { arrow.remove(); hit(); };
+    }, i * 180);
+  });
+}
+function crUpdateTowers(state){
+  const blues = crTop ? [...crTop.querySelectorAll('.cr-tower')] : [];
+  const reds = crBottom ? [...crBottom.querySelectorAll('.cr-tower')] : [];
+  if(!blues.length) return;
+  if(state === 'reset'){
+    document.querySelectorAll('.cr-rocket, .cr-boom, .cr-smoke, .cr-zone, .cr-card, .cr-rocket-shadow, .cr-chunk, .cr-damage, .cr-arrow').forEach(e => e.remove());
+    [...blues, ...reds].forEach(t => { t.classList.remove('destroyed', 'hit'); crSetHp(t, 100); });
+    return;
+  }
+  // Fehlversuche treffen die blauen Türme der Reihe nach: linke Prinzessin, rechte Prinzessin, dann der König
+  // (je 2 Fehlversuche pro Turm)
+  if(state === 'miss'){
+    const order = [blues[0], blues[2], blues[1]];
+    order.forEach((t, i) => {
+      const taken = Math.max(0, Math.min(2, wotdBlueHits - i * 2));
+      crSetHp(t, 100 - taken * 50);
+      if(taken === 2) t.classList.add('destroyed');
+    });
+    const target = order[Math.min(2, Math.floor((wotdBlueHits - 1) / 2))];
+    if(target){ target.classList.remove('hit'); void target.offsetWidth; target.classList.add('hit'); }
+  }
+  // Verloren: Rakete vom roten König auf die blauen Türme
+  if(state === 'lost'){
+    crFireRocket(reds[1], crTop, () => blues.forEach((t, i) => setTimeout(() => {
+      t.classList.remove('hit'); void t.offsetWidth; t.classList.add('hit'); crSetHp(t, 0);
+      setTimeout(() => t.classList.add('destroyed'), 300);
+    }, i * 120)), 'red');
+  }
+  // Gewonnen: Rakete vom blauen König auf die roten Türme
+  if(state === 'won'){
+    crFireRocket(blues[1].classList.contains('destroyed') ? blues.find(t => !t.classList.contains('destroyed')) || blues[1] : blues[1], crBottom, () => reds.forEach((t, i) => setTimeout(() => {
+      t.classList.remove('hit'); void t.offsetWidth; t.classList.add('hit'); crSetHp(t, 0);
+      setTimeout(() => t.classList.add('destroyed'), 300);
+    }, i * 120)), 'blue');
+  }
 }
 
 wotdInput.maxLength = wotdLength;
@@ -3660,6 +4758,14 @@ wotdBuildEmptyGrid();
 wotdRenderKeyboard();
 wotdGuessBtn.addEventListener('click', wotdSubmitGuess);
 wotdNextBtn.addEventListener('click', wotdNextWord);
+wotdInput.addEventListener('input', () => {
+  const clean = wotdInput.value.toUpperCase().split('').filter(ch => wotdKeyStatus[ch] !== 'absent').join('');
+  if(clean !== wotdInput.value.toUpperCase()){
+    const removed = [...new Set(wotdInput.value.toUpperCase().split('').filter(ch => wotdKeyStatus[ch] === 'absent'))];
+    wotdInput.value = clean;
+    wotdBlocked(`${removed.join(', ')} ${removed.length === 1 ? 'kommt' : 'kommen'} nicht im Wort vor.`);
+  }
+});
 wotdInput.addEventListener('keydown', e => {
   if(e.key === 'Enter') wotdSubmitGuess();
 });

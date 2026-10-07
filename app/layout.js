@@ -13,7 +13,7 @@ export default function RootLayout({ children }) {
         <meta name="theme-color" content="#1A1918" />
         <meta name="darkreader-lock" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;500&family=Dancing+Script:wght@700&family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;500&family=Dancing+Script:wght@700&family=VT323&family=Press+Start+2P&family=Lilita+One&display=swap" rel="stylesheet" />
       </head>
       <body>{children}</body>
     </html>

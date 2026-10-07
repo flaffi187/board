@@ -513,7 +513,7 @@ export default function Page() {
     <button className="city-chip" data-target="game-label-c4">Vier gewinnt</button>
     <button className="city-chip" data-target="game-label-hangman">Galgenmännchen</button>
     <button className="city-chip" data-target="game-label-chess">Schach</button>
-    <button className="city-chip" data-target="game-label-mill">Mühle</button>
+    <button className="city-chip" data-target="game-label-mill">Valorant Schach</button>
     <button className="city-chip" data-target="game-label-bs">Schiffe versenken</button>
     <button className="city-chip" data-target="game-label-ms">Minesweeper</button>
     <button className="city-chip" data-target="game-label-snake">Snake</button>
@@ -675,82 +675,129 @@ export default function Page() {
       <div className="wotd-keyboard" id="wotd-keyboard"></div>
       <div className="wotd-input-row">
         <input type="text" id="wotd-input" maxLength="5" placeholder="5 Buchstaben" autoComplete="off" />
-        <button className="action-btn" id="wotd-guess-btn">Raten</button>
+        <button className="action-btn" id="wotd-guess-btn">Kämpfen</button>
       </div>
     </div>
   </div>
 
   <div className="panel-label" id="game-label-ttt" style={{ marginTop: "44px" }}>Tic Tac Toe</div>
+  {/* Tic Tac Toe im Candy-Crush-Stil: Rot = Jelly Bean, Blau = Bonbon */}
+  <div className="cc-ttt">
+  <div className="cc-banner"><span>Candy</span> Tic Tac Toe</div>
   <div className="mode-select" id="ttt-mode-select">
     <button className="mode-btn" data-mode="friend">Gegen Freund</button>
     <button className="mode-btn active" data-mode="bot">Gegen Bot</button>
   </div>
-  <div className="game-resize-wrap"><div className="ttt-grid" id="ttt-grid"></div><div className="game-resize-handle"></div></div>
+  <div className="cc-board">
+    <div className="game-resize-wrap"><div className="ttt-grid" id="ttt-grid"></div><div className="game-resize-handle"></div></div>
+    <div className="cc-cheer" id="cc-cheer" aria-hidden="true"></div>
+  </div>
   <div className="sudoku-controls" style={{ marginTop: "14px" }}>
     <button className="action-btn" id="ttt-reset-btn">Neues Spiel</button>
   </div>
   <div className="todo-empty" id="ttt-status" style={{ marginTop: "10px" }}></div>
+  </div>
 
   <div className="panel-label" id="game-label-c4" style={{ marginTop: "44px" }}>Vier gewinnt</div>
+  {/* Vier gewinnt im Tetris-Stil */}
+  <div className="tt-c4" id="tt-c4">
+  <div className="tt-bg" aria-hidden="true"><i className="t1"></i><i className="t2"></i><i className="t3"></i><i className="t4"></i></div>
+  <div className="tt-title" aria-label="Vier gewinnt">
+    <span>V</span><span>I</span><span>E</span><span>R</span> <span>G</span><span>E</span><span>W</span><span>I</span><span>N</span><span>N</span><span>T</span>
+  </div>
   <div className="mode-select" id="c4-mode-select">
     <button className="mode-btn" data-mode="friend">Gegen Freund</button>
     <button className="mode-btn active" data-mode="bot">Gegen Bot</button>
   </div>
-  <div className="game-resize-wrap"><div className="c4-board" id="c4-board"></div><div className="game-resize-handle"></div></div>
+  <div className="tt-play">
+    <div className="game-resize-wrap"><div className="c4-board" id="c4-board"></div><div className="game-resize-handle"></div></div>
+    <div className="tt-side">
+      <div className="tt-box"><div className="tt-label">Level</div><div className="tt-num tt-big" id="tt-level">1</div><div className="tt-bot" id="tt-bot">Leicht</div></div>
+      <div className="tt-box"><div className="tt-label">Next</div><div className="tt-next" id="tt-next"></div></div>
+      <div className="tt-box"><div className="tt-label">Score</div><div className="tt-num" id="tt-score">0</div></div>
+      <div className="tt-box"><div className="tt-label">Hi-Score</div><div className="tt-num" id="tt-hiscore">0</div></div>
+    </div>
+    <div className="tt-flash" id="tt-flash" aria-hidden="true"></div>
+  </div>
   <div className="sudoku-controls" style={{ marginTop: "14px" }}>
-    <button className="action-btn" id="c4-reset-btn">Neues Spiel</button>
+    <button className="action-btn" id="c4-reset-btn">BLÖCKE FALLEN LASSEN</button>
   </div>
   <div className="todo-empty" id="c4-status" style={{ marginTop: "10px" }}></div>
+  </div>
 
   <div className="panel-label" id="game-label-hangman" style={{ marginTop: "44px" }}>Galgenmännchen</div>
-  <div className="hm-wrap">
+  {/* Galgenmännchen im Mario-Party-Stil: jeder Fehler = ein Feld weiter auf dem Spielbrett Richtung Bowser-Feld */}
+  <div className="hm-wrap mp-hm">
+    <div className="mp-top">
+      <div className="mp-banner"><span>Minispiel!</span></div>
+      <div className="mp-stats">
+        <div className="mp-stat coin"><i></i><b id="mp-coins">10</b></div>
+        <div className="mp-stat star"><i></i><b id="mp-stars">0</b></div>
+      </div>
+    </div>
     <div className="hm-category" id="hm-category">Kategorie: —</div>
-    <div className="game-resize-wrap">
-      <svg className="hm-figure" id="hm-figure" viewBox="0 0 160 170" xmlns="http://www.w3.org/2000/svg">
-        <line x1="14" y1="160" x2="90" y2="160" stroke="rgba(var(--fg),0.8)" strokeWidth="5" strokeLinecap="round" />
-        <line x1="40" y1="160" x2="40" y2="16" stroke="rgba(var(--fg),0.8)" strokeWidth="5" strokeLinecap="round" />
-        <line x1="40" y1="16" x2="112" y2="16" stroke="rgba(var(--fg),0.8)" strokeWidth="5" strokeLinecap="round" />
-        <line x1="40" y1="36" x2="62" y2="16" stroke="rgba(var(--fg),0.8)" strokeWidth="5" strokeLinecap="round" />
-        <line x1="112" y1="16" x2="112" y2="38" stroke="rgba(var(--fg),0.8)" strokeWidth="4" strokeLinecap="round" />
-        <circle className="hm-part" cx="112" cy="54" r="15" fill="none" stroke="var(--brick)" strokeWidth="5" />
-        <line className="hm-part" x1="112" y1="69" x2="112" y2="112" stroke="var(--brick)" strokeWidth="5" strokeLinecap="round" />
-        <line className="hm-part" x1="112" y1="80" x2="92" y2="98" stroke="var(--brick)" strokeWidth="5" strokeLinecap="round" />
-        <line className="hm-part" x1="112" y1="80" x2="132" y2="98" stroke="var(--brick)" strokeWidth="5" strokeLinecap="round" />
-        <line className="hm-part" x1="112" y1="112" x2="96" y2="142" stroke="var(--brick)" strokeWidth="5" strokeLinecap="round" />
-        <line className="hm-part" x1="112" y1="112" x2="128" y2="142" stroke="var(--brick)" strokeWidth="5" strokeLinecap="round" />
-      </svg>
-      <div className="game-resize-handle"></div>
+    <div className="mp-scene">
+      <div className="mp-clouds" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div className="mp-bill" aria-hidden="true"></div>
+      <div className="mp-board" id="hm-figure" aria-label="Spielbrett"></div>
+      <div className="mp-dice" id="mp-dice" aria-hidden="true"><span>?</span></div>
     </div>
     <div className="hm-word" id="hm-word"></div>
     <div className="wotd-keyboard" id="hm-keyboard"></div>
-    <div className="todo-empty" id="hm-status" style={{ marginTop: "10px" }}></div>
+    <div className="todo-empty mp-status" id="hm-status"></div>
     <div className="sudoku-controls" style={{ marginTop: "14px" }}>
-      <button className="action-btn" id="hm-new-btn">Neues Spiel</button>
+      <button className="action-btn" id="hm-new-btn">Würfeln!</button>
     </div>
   </div>
 
   <div className="panel-label" id="game-label-chess" style={{ marginTop: "44px" }}>Schach</div>
-  <div className="mode-select" id="chess-mode-select">
-    <button className="mode-btn" data-mode="friend">Gegen Freund</button>
-    <button className="mode-btn active" data-mode="bot">Gegen Bot</button>
+  <div className="ea-chess">
+    <div className="ea-top">
+      <div className="ea-logo"><span className="ea-logo-ea">EA</span><span className="ea-logo-sports">SPORTS</span></div>
+      <div className="mode-select" id="chess-mode-select">
+        <button className="mode-btn" data-mode="friend">Gegen Freund</button>
+        <button className="mode-btn active" data-mode="bot">Gegen Bot</button>
+      </div>
+    </div>
+    <div className="ea-pick">
+      <label className="ea-pick-side"><span>Heim</span><select id="ea-home-sel" aria-label="Heimteam"></select></label>
+      <b className="ea-vs">VS</b>
+      <label className="ea-pick-side"><span>Auswärts</span><select id="ea-away-sel" aria-label="Auswärtsteam"></select></label>
+    </div>
+    <div className="ea-scorebug">
+      <span className="ea-team home" id="ea-home"><i className="ea-kit"></i><em id="ea-home-code">BAR</em></span>
+      <span className="ea-score" id="ea-score">0 - 0</span>
+      <span className="ea-team away" id="ea-away"><em id="ea-away-code">RMA</em><i className="ea-kit"></i></span>
+      <span className="ea-clock" id="ea-clock">00:00</span>
+    </div>
+    <div className="game-resize-wrap"><div className="ea-pitch"><div className="chess-board" id="chess-board"></div><div className="ea-ref-layer"><div className="ea-ref" id="ea-ref"></div></div><div className="ea-overlay" id="ea-overlay"></div></div><div className="game-resize-handle"></div></div>
+    <div className="ea-ticker"><span className="ea-ticker-tag">LIVE</span><span className="todo-empty" id="chess-status"></span></div>
+    <div className="sudoku-controls" style={{ marginTop: "14px" }}>
+      <button className="action-btn" id="chess-reset-btn">Anstoss!</button>
+    </div>
   </div>
-  <div className="game-resize-wrap"><div className="chess-board" id="chess-board"></div><div className="game-resize-handle"></div></div>
-  <div className="sudoku-controls" style={{ marginTop: "14px" }}>
-    <button className="action-btn" id="chess-reset-btn">Neues Spiel</button>
-  </div>
-  <div className="todo-empty" id="chess-status" style={{ marginTop: "10px" }}></div>
 
-  <div className="panel-label" id="game-label-mill" style={{ marginTop: "44px" }}>Mühle</div>
-  <div className="mode-select" id="mill-mode-select">
-    <button className="mode-btn" data-mode="friend">Gegen Freund</button>
-    <button className="mode-btn active" data-mode="bot">Gegen Bot</button>
+  <div className="panel-label" id="game-label-mill" style={{ marginTop: "44px" }}>Valorant Schach</div>
+  <div className="vl-mill">
+    <div className="vl-top">
+      <div className="vl-logo"><svg viewBox="0 0 40 32" aria-hidden="true"><path d="M2 3l18 22h-9L2 14z" fill="currentColor"/><path d="M38 3L24 20h-9L38 3z" fill="currentColor"/></svg><span>VALORANT</span></div>
+      <div className="mode-select" id="mill-mode-select">
+        <button className="mode-btn" data-mode="friend">Gegen Freund</button>
+        <button className="mode-btn active" data-mode="bot">Gegen Bot</button>
+      </div>
+    </div>
+    <div className="vl-hud">
+      <div className="vl-side def"><b id="vl-def-count">0</b><div className="vl-side-info"><span>Verteidiger</span><div className="vl-pips" id="vl-def-pips"></div></div></div>
+      <div className="vl-mid"><span id="vl-phase">Kaufphase</span><em id="vl-round">Runde 1</em></div>
+      <div className="vl-side atk"><div className="vl-side-info"><span>Angreifer</span><div className="vl-pips" id="vl-atk-pips"></div></div><b id="vl-atk-count">0</b></div>
+    </div>
+    <div className="game-resize-wrap"><div className="vl-map"><div className="mill-board" id="mill-board"></div><div className="vl-fx" id="vl-fx"></div><div className="vl-feed" id="vl-feed"></div><div className="vl-overlay" id="vl-overlay"></div></div><div className="game-resize-handle"></div></div>
+    <div className="mill-pieces-left" id="mill-pieces-left"></div>
+    <div className="vl-status"><i></i><span className="todo-empty" id="mill-status"></span></div>
+    <div className="sudoku-controls" style={{ marginTop: "14px" }}>
+      <button className="action-btn" id="mill-reset-btn">Neues Match</button>
+    </div>
   </div>
-  <div className="game-resize-wrap"><div className="mill-board" id="mill-board"></div><div className="game-resize-handle"></div></div>
-  <div className="sudoku-controls" style={{ marginTop: "14px" }}>
-    <button className="action-btn" id="mill-reset-btn">Neues Spiel</button>
-  </div>
-  <div className="mill-pieces-left" id="mill-pieces-left"></div>
-  <div className="todo-empty" id="mill-status" style={{ marginTop: "10px" }}></div>
 
   <div className="panel-label" id="game-label-bs" style={{ marginTop: "44px" }}>Schiffe versenken</div>
   <div className="mode-select" id="bs-mode-select">

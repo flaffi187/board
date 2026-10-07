@@ -4822,31 +4822,69 @@ function tttMinimax(board, player){
   }
 }
 
+// Candy-Crush-Stil: X ist eine rote Jelly Bean, O ein blaues Bonbon
+const ccCandies = {
+  // Rot: eingewickeltes Bonbon mit gedrehten Papierenden
+  X: `<svg viewBox="0 0 60 60" aria-label="Rot"><defs>
+      <radialGradient id="ccRed" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#ffc2c2"/><stop offset=".35" stop-color="#ff3b4a"/><stop offset="1" stop-color="#a3001a"/></radialGradient>
+      <linearGradient id="ccWrap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd6dc"/><stop offset="1" stop-color="#e0506a"/></linearGradient></defs>
+    <ellipse cx="30" cy="51" rx="22" ry="3.5" fill="rgba(0,0,0,.25)"/>
+    <g transform="rotate(-18 30 30)">
+      <path d="M17 30 L3 19 Q1 30 3 41 Z" fill="url(#ccWrap)" stroke="#8a0a24" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M43 30 L57 19 Q59 30 57 41 Z" fill="url(#ccWrap)" stroke="#8a0a24" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M6 24 L14 30 M6 36 L14 30 M54 24 L46 30 M54 36 L46 30" stroke="#a3001a" stroke-width="1.2" opacity=".6"/>
+      <ellipse cx="30" cy="30" rx="15" ry="13" fill="url(#ccRed)" stroke="#7a0012" stroke-width="2"/>
+      <path d="M21 26 C23 21 28 19 33 20" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".8"/>
+      <path d="M24 37 Q30 40 37 35" fill="none" stroke="#ffffff" stroke-width="1.5" opacity=".35"/>
+    </g></svg>`,
+  // Blau: Lutscher mit Spirale am Stiel
+  O: `<svg viewBox="0 0 60 60" aria-label="Blau"><defs>
+      <radialGradient id="ccBlue" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#d6f0ff"/><stop offset=".4" stop-color="#2f9bff"/><stop offset="1" stop-color="#0a3fa8"/></radialGradient></defs>
+    <ellipse cx="34" cy="55" rx="16" ry="3" fill="rgba(0,0,0,.25)"/>
+    <path d="M30 40 L40 56" stroke="#f4f0e8" stroke-width="5" stroke-linecap="round"/>
+    <path d="M30 40 L40 56" stroke="#c9c2b0" stroke-width="1.5" stroke-linecap="round" transform="translate(1.5 0)"/>
+    <circle cx="27" cy="24" r="19" fill="url(#ccBlue)" stroke="#072a73" stroke-width="2"/>
+    <path d="M27 24 m0 0 a3 3 0 0 1 4 3 a6 6 0 0 1 -9 3 a9 9 0 0 1 2 -13 a12 12 0 0 1 15 6 a14.5 14.5 0 0 1 -6 16" fill="none" stroke="#bfe6ff" stroke-width="3" stroke-linecap="round" opacity=".85"/>
+    <path d="M14 18 C17 11 23 8 29 8" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".85"/>
+  </svg>`
+};
+const ccNames = { X: 'Rot', O: 'Blau' };
 function tttRender(winLine){
   tttGridEl.innerHTML = '';
   tttBoard.forEach((val, i) => {
     const btn = document.createElement('button');
     btn.className = 'ttt-cell' + (val ? ' ' + val.toLowerCase() : '') + (winLine && winLine.includes(i) ? ' win' : '');
-    btn.textContent = val || '';
+    btn.innerHTML = val ? ccCandies[val] : '';
+    if(val && i === tttLastMove) btn.classList.add('pop');
     btn.disabled = !!val || tttOver;
     btn.addEventListener('click', () => tttPlay(i));
     tttGridEl.appendChild(btn);
   });
 }
 
+let tttLastMove = -1;
+function ccCheer(text){
+  const el = document.getElementById('cc-cheer');
+  if(!el) return;
+  el.textContent = text;
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+}
 function tttPlay(i){
   if(tttBoard[i] || tttOver) return;
   tttBoard[i] = tttTurn;
+  tttLastMove = i;
   const result = tttCheckWinner(tttBoard);
   if(result){
     tttOver = true;
     tttRender(result.line);
-    tttStatusEl.textContent = result.winner === 'draw' ? 'Unentschieden!' : `${result.winner} gewinnt!`;
+    tttStatusEl.textContent = result.winner === 'draw' ? 'Unentschieden – alles verklebt!' : `${ccNames[result.winner]} gewinnt!`;
+    // Wie in Candy Crush: grosses Lob beim Sieg
+    ccCheer(result.winner === 'draw' ? 'Süss!' : ['Sweet!', 'Tasty!', 'Delicious!', 'Divine!'][Math.floor(Math.random() * 4)]);
     return;
   }
   tttTurn = tttTurn === 'X' ? 'O' : 'X';
   tttRender();
-  tttStatusEl.textContent = `${tttTurn} ist dran.`;
+  tttStatusEl.textContent = `${ccNames[tttTurn]} ist dran.`;
 
   if(tttMode === 'bot' && tttTurn === 'O' && !tttOver){
     setTimeout(() => {
@@ -4860,7 +4898,8 @@ function tttReset(){
   tttBoard = Array(9).fill(null);
   tttTurn = 'X';
   tttOver = false;
-  tttStatusEl.textContent = 'X ist dran.';
+  tttLastMove = -1;
+  tttStatusEl.textContent = 'Rot ist dran.';
   tttRender();
 }
 
@@ -4881,12 +4920,174 @@ let c4Board, c4Turn, c4Mode, c4Over;
 const c4BoardEl = document.getElementById('c4-board');
 const c4StatusEl = document.getElementById('c4-status');
 
+// Tetris-Stil: Level (gegen den Bot), nächster Stein, Punkte und Rekord
+let c4LastMove = null, c4Moves = 0, c4Score_ = 0, c4HiScore = 0;
+let c4Level = 1;
+let c4RestartTimer = null;
+try{ c4Level = Math.max(1, Number(localStorage.getItem('c4_level')) || 1); c4HiScore = Number(localStorage.getItem('c4_hiscore')) || 0; } catch(err){}
+function c4SaveProgress(){ try{ localStorage.setItem('c4_level', c4Level); localStorage.setItem('c4_hiscore', c4HiScore); } catch(err){} }
+function ttUpdateSide(){
+  const next = document.getElementById('tt-next');
+  if(next) next.className = 'tt-next ' + (c4Over ? '' : c4Turn);
+  const bot = c4Mode === 'bot';
+  const level = document.getElementById('tt-level'), botEl = document.getElementById('tt-bot');
+  if(level) level.textContent = bot ? c4Level : '–';
+  if(botEl) botEl.textContent = bot ? 'Bot: ' + c4BotNames[Math.min(c4Level, c4BotNames.length - 1)] : 'Zu zweit';
+  const sc = document.getElementById('tt-score'), hi = document.getElementById('tt-hiscore');
+  if(sc) sc.textContent = c4Score_;
+  if(hi) hi.textContent = c4HiScore;
+  const root = document.getElementById('tt-c4');
+  if(root){
+    root.dataset.level = Math.min(8, c4Level);
+    // Steine fallen in höheren Levels schneller, wie in Tetris
+    root.style.setProperty('--tt-speed', bot ? Math.max(0.35, 1 - (c4Level - 1) * 0.1) : 1);
+  }
+
+}
+// Spielende: alle gesetzten Blöcke zerbrechen Reihe für Reihe von unten nach oben.
+// Pro Block: Risse wachsen, Block zittert und blitzt auf, dann bricht er in unregelmässige Scherben.
+// Die Scherben fliegen mit echter Schwerkraft, prallen am Boden und an den Wänden des Spielfelds ab,
+// kippen dabei (3D-Drehung), rutschen aus und bleiben kurz liegen, bevor sie verschwinden.
+const ttPhys = { items: [], running: false, last: 0 };
+function ttPhysAdd(item){
+  ttPhys.items.push(item);
+  if(!ttPhys.running){ ttPhys.running = true; ttPhys.last = performance.now(); requestAnimationFrame(ttPhysStep); }
+}
+function ttPhysStep(now){
+  const dt = Math.min(0.033, (now - ttPhys.last) / 1000);
+  ttPhys.last = now;
+  const G = 1500;
+  ttPhys.items = ttPhys.items.filter(it => {
+    if(!it.el.isConnected) return false;
+    it.age += dt;
+    it.vy += G * dt;
+    it.x += it.vx * dt; it.y += it.vy * dt;
+    it.rot += it.av * dt; it.flip += it.fv * dt;
+    // Boden des Spielfelds
+    if(it.cy + it.y + it.r > it.floor){
+      it.y = it.floor - it.r - it.cy;
+      if(Math.abs(it.vy) > 60){ it.vy = -it.vy * 0.32; it.av *= 0.55; it.fv *= 0.5; }
+      else { it.vy = 0; it.av *= 0.85; it.fv *= 0.8; }
+      it.vx *= 0.82;
+    }
+    // Wände links und rechts
+    if(it.cx + it.x - it.r < it.left){ it.x = it.left + it.r - it.cx; it.vx = Math.abs(it.vx) * 0.45; }
+    if(it.cx + it.x + it.r > it.right){ it.x = it.right - it.r - it.cx; it.vx = -Math.abs(it.vx) * 0.45; }
+    const fade = it.age > it.life ? Math.max(0, 1 - (it.age - it.life) / 0.45) : 1;
+    // Kippen um die eigene Achse: Breite schrumpft und Seite wird dunkler, wie eine flache Scherbe im Licht
+    const sx = Math.cos(it.flip);
+    it.el.style.transform = `translate(${it.x}px, ${it.y}px) rotate(${it.rot}deg) scaleX(${0.25 + 0.75 * Math.abs(sx)})`;
+    it.el.style.filter = `brightness(${(sx < 0 ? 0.62 : 0.95) + 0.25 * Math.abs(Math.sin(it.flip))}) drop-shadow(0 2px 2px rgba(0,0,0,.6))`;
+    it.el.style.opacity = fade;
+    if(fade <= 0){ it.el.remove(); return false; }
+    return true;
+  });
+  if(ttPhys.items.length) requestAnimationFrame(ttPhysStep); else ttPhys.running = false;
+}
+function ttShatterBlock(cell, wrap){
+  const wr = wrap.getBoundingClientRect(), cr = cell.getBoundingClientRect(), br = c4BoardEl.getBoundingClientRect();
+  const W = cr.width, H = cr.height, x0 = cr.left - wr.left, y0 = cr.top - wr.top;
+  const floor = br.bottom - wr.top - 10, left = br.left - wr.left + 10, right = br.right - wr.left - 10;
+  const color = cell.classList.contains('red') ? 'red' : 'yellow';
+  const ix = W * (0.3 + Math.random() * 0.4), iy = H * (0.3 + Math.random() * 0.4);
+  const n = 7 + Math.floor(Math.random() * 3);
+  const per = [];
+  for(let i = 0; i < n; i++){
+    const ang = (i + Math.random() * 0.7) / n * Math.PI * 2;
+    const dx = Math.cos(ang), dy = Math.sin(ang);
+    const t = Math.min(dx > 0 ? (W - ix) / dx : dx < 0 ? -ix / dx : Infinity, dy > 0 ? (H - iy) / dy : dy < 0 ? -iy / dy : Infinity);
+    per.push([ix + dx * t, iy + dy * t, ang]);
+  }
+  [[0, 0], [W, 0], [W, H], [0, H]].forEach(([cx, cy]) => per.push([cx, cy, Math.atan2(cy - iy, cx - ix)]));
+  per.sort((a, b) => ((a[2] + Math.PI * 2) % (Math.PI * 2)) - ((b[2] + Math.PI * 2) % (Math.PI * 2)));
+  // Risse wachsen vom Aufprallpunkt nach aussen
+  const crack = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  crack.setAttribute('class', 'tt-crack');
+  crack.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  crack.style.cssText = `left:${x0}px;top:${y0}px;width:${W}px;height:${H}px`;
+  crack.innerHTML = per.filter((_, i) => i % 2 === 0).map(([px, py]) => {
+    const mx = (ix + px) / 2 + (Math.random() - 0.5) * 7, my = (iy + py) / 2 + (Math.random() - 0.5) * 7;
+    return `<polyline class="grow" points="${ix},${iy} ${mx},${my} ${px},${py}" pathLength="1" fill="none" stroke="rgba(30,10,0,.8)" stroke-width="1.7" stroke-linejoin="round"/>
+            <polyline class="grow" points="${ix + 1},${iy + 1} ${mx + 1},${my + 1} ${px + 1},${py + 1}" pathLength="1" fill="none" stroke="rgba(255,255,255,.6)" stroke-width=".8"/>`;
+  }).join('') + `<circle cx="${ix}" cy="${iy}" r="2.2" fill="rgba(30,10,0,.7)"/>`;
+  wrap.appendChild(crack);
+  cell.classList.add('shaking');
+  setTimeout(() => {
+    crack.remove();
+    cell.classList.remove('shaking');
+    cell.classList.add('broken');
+    // kurzer Lichtblitz und Staub
+    const flash = document.createElement('span');
+    flash.className = 'tt-impact';
+    flash.style.left = (x0 + ix) + 'px'; flash.style.top = (y0 + iy) + 'px';
+    wrap.appendChild(flash);
+    setTimeout(() => flash.remove(), 300);
+    for(let d = 0; d < 4; d++){
+      const dust = document.createElement('span');
+      dust.className = 'tt-dust';
+      dust.style.left = (x0 + ix + (Math.random() - 0.5) * W * 0.6) + 'px';
+      dust.style.top = (y0 + iy + (Math.random() - 0.5) * H * 0.6) + 'px';
+      dust.style.animationDelay = (d * 60) + 'ms';
+      wrap.appendChild(dust);
+      setTimeout(() => dust.remove(), 1000);
+    }
+    // Scherben mit Physik
+    for(let i = 0; i < per.length; i++){
+      const a = per[i], b = per[(i + 1) % per.length];
+      const cx = (ix + a[0] + b[0]) / 3, cy = (iy + a[1] + b[1]) / 3;
+      const r = Math.max(4, Math.min(...[[ix, iy], a, b].map(([px, py]) => Math.hypot(px - cx, py - cy))) * 0.9);
+      const shard = document.createElement('span');
+      shard.className = 'tt-frag ' + color;
+      shard.style.cssText = `left:${x0}px;top:${y0}px;width:${W}px;height:${H}px;transform-origin:${cx}px ${cy}px;` +
+        `clip-path:polygon(${ix}px ${iy}px, ${a[0]}px ${a[1]}px, ${b[0]}px ${b[1]}px)`;
+      wrap.appendChild(shard);
+      const dirx = cx - ix, diry = cy - iy, len = Math.hypot(dirx, diry) || 1;
+      const speed = 120 + Math.random() * 160;
+      ttPhysAdd({ el: shard, x: 0, y: 0, cx: x0 + cx, cy: y0 + cy, r, floor, left, right,
+        vx: dirx / len * speed + (Math.random() - 0.5) * 60, vy: diry / len * speed - 260 - Math.random() * 160,
+        rot: 0, av: (Math.random() - 0.5) * 720, flip: 0, fv: (Math.random() - 0.5) * 14, age: 0, life: 1.6 + Math.random() * 0.8 });
+    }
+    // Krümel
+    for(let i = 0; i < 8; i++){
+      const crumb = document.createElement('span');
+      crumb.className = 'tt-frag crumb ' + color;
+      const sz = 2 + Math.random() * 4;
+      crumb.style.cssText = `left:${x0 + ix}px;top:${y0 + iy}px;width:${sz}px;height:${sz}px`;
+      wrap.appendChild(crumb);
+      ttPhysAdd({ el: crumb, x: 0, y: 0, cx: x0 + ix, cy: y0 + iy, r: sz / 2, floor, left, right,
+        vx: (Math.random() - 0.5) * 360, vy: -200 - Math.random() * 260, rot: 0, av: 0, flip: 0, fv: 0, age: 0, life: 1 + Math.random() * 0.6 });
+    }
+  }, 260);
+}
+function ttShatterAll(){
+  const wrap = c4BoardEl.parentElement;
+  if(!wrap || !document.body.animate) return;
+  const blocks = [...c4BoardEl.querySelectorAll('.c4-cell.red, .c4-cell.yellow')];
+  blocks.forEach(cell => {
+    const row = Number(cell.dataset.row);
+    setTimeout(() => ttShatterBlock(cell, wrap), 700 + (C4_ROWS - 1 - row) * 150 + Math.random() * 80);
+  });
+}
+function ttFlash(text, cls){
+  const flash = document.getElementById('tt-flash');
+  if(!flash) return;
+  flash.textContent = text;
+  flash.className = 'tt-flash ' + (cls || '');
+  void flash.offsetWidth; flash.classList.add('show');
+}
 function c4Init(){
   c4Board = Array.from({length: C4_ROWS}, () => Array(C4_COLS).fill(null));
   c4Turn = 'red';
   c4Over = false;
-  c4StatusEl.textContent = 'Rot ist dran.';
+  clearTimeout(c4RestartTimer);
+  c4LastMove = null; c4Moves = 0;
+  document.getElementById('tt-flash')?.classList.remove('show');
+  document.querySelectorAll('.tt-frag, .tt-crack, .tt-dust, .tt-impact').forEach(f => f.remove());
+
+  c4StatusEl.textContent = c4Mode === 'bot' ? `Level ${c4Level} – Rot ist dran.` : 'Rot ist dran.';
   c4Render();
+  ttUpdateSide();
+  if(c4Mode === 'bot') ttFlash('LEVEL ' + c4Level, 'level');
 }
 
 function c4Render(winCells){
@@ -4899,6 +5100,8 @@ function c4Render(winCells){
       cell.className = 'c4-cell' + (val ? ' ' + val : '') + (isWin ? ' win' : '');
       cell.dataset.col = c;
       cell.dataset.row = r;
+      // Der zuletzt gesetzte Stein fällt wie ein Tetris-Block von oben in seine Zeile
+      if(c4LastMove && c4LastMove[0] === r && c4LastMove[1] === c){ cell.classList.add('drop'); cell.style.setProperty('--fall', r + 1); }
       cell.addEventListener('click', () => c4Play(c));
       cell.addEventListener('mouseenter', () => c4ShowPreview(c));
       cell.addEventListener('mouseleave', c4ClearPreview);
@@ -4953,29 +5156,74 @@ function c4CheckWinner(board){
   return null;
 }
 
+// Bot wird mit jedem Level stärker:
+// 1 Zufall · 2 nimmt Gewinnzüge · 3 blockiert auch · 4 vermeidet Fallen · ab 5 rechnet er voraus (Minimax, immer tiefer)
+const c4BotNames = ['', 'Leicht', 'Einfach', 'Normal', 'Clever', 'Schwer', 'Profi', 'Meister', 'Legende'];
+function c4ValidCols(board){ const v = []; for(let c = 0; c < C4_COLS; c++) if(c4DropRow(board, c) !== -1) v.push(c); return v; }
+function c4WithMove(board, c, who){ const b = board.map(row => row.slice()); b[c4DropRow(b, c)][c] = who; return b; }
+function c4WinningCol(board, who){ return c4ValidCols(board).find(c => c4CheckWinner(c4WithMove(board, c, who))?.winner === who); }
+// Bewertung einer Stellung: zählt alle Viererfenster
+function c4Score(board){
+  let score = 0;
+  const win = (cells) => {
+    const y = cells.filter(v => v === 'yellow').length, rd = cells.filter(v => v === 'red').length;
+    if(y && rd) return 0;
+    if(y === 3) return 6; if(y === 2) return 2;
+    if(rd === 3) return -8; if(rd === 2) return -2;
+    return 0;
+  };
+  for(let r = 0; r < C4_ROWS; r++) score += board[r][3] === 'yellow' ? 3 : board[r][3] === 'red' ? -3 : 0;
+  for(let r = 0; r < C4_ROWS; r++) for(let c = 0; c < C4_COLS; c++){
+    if(c + 3 < C4_COLS) score += win([0,1,2,3].map(k => board[r][c + k]));
+    if(r + 3 < C4_ROWS) score += win([0,1,2,3].map(k => board[r + k][c]));
+    if(r + 3 < C4_ROWS && c + 3 < C4_COLS) score += win([0,1,2,3].map(k => board[r + k][c + k]));
+    if(r + 3 < C4_ROWS && c - 3 >= 0) score += win([0,1,2,3].map(k => board[r + k][c - k]));
+  }
+  return score;
+}
+function c4Minimax(board, depth, alpha, beta, maximizing){
+  const res = c4CheckWinner(board);
+  if(res) return res.winner === 'yellow' ? 100000 + depth : res.winner === 'red' ? -100000 - depth : 0;
+  if(depth === 0) return c4Score(board);
+  const cols = c4ValidCols(board).sort((a, b) => Math.abs(a - 3) - Math.abs(b - 3));
+  if(maximizing){
+    let best = -Infinity;
+    for(const c of cols){ best = Math.max(best, c4Minimax(c4WithMove(board, c, 'yellow'), depth - 1, alpha, beta, false)); alpha = Math.max(alpha, best); if(alpha >= beta) break; }
+    return best;
+  }
+  let best = Infinity;
+  for(const c of cols){ best = Math.min(best, c4Minimax(c4WithMove(board, c, 'red'), depth - 1, alpha, beta, true)); beta = Math.min(beta, best); if(alpha >= beta) break; }
+  return best;
+}
 function c4BotMove(board){
-  const validCols = [];
-  for(let c = 0; c < C4_COLS; c++){
-    if(c4DropRow(board, c) !== -1) validCols.push(c);
+  const level = c4Level;
+  const cols = c4ValidCols(board);
+  if(!cols.length) return undefined;
+  const random = () => cols[Math.floor(Math.random() * cols.length)];
+  if(level <= 1) return Math.random() < 0.35 ? (c4WinningCol(board, 'yellow') ?? random()) : random();
+  const win = c4WinningCol(board, 'yellow');
+  if(win !== undefined) return win;
+  if(level === 2) return Math.random() < 0.6 ? cols.sort((a, b) => Math.abs(a - 3) - Math.abs(b - 3))[Math.floor(Math.random() * Math.min(3, cols.length))] : random();
+  const block = c4WinningCol(board, 'red');
+  if(block !== undefined) return block;
+  // ab Level 4: keine Züge, nach denen Rot direkt gewinnen kann
+  let safe = cols;
+  if(level >= 4){
+    safe = cols.filter(c => c4WinningCol(c4WithMove(board, c, 'yellow'), 'red') === undefined);
+    if(!safe.length) safe = cols;
   }
-  // 1. Gewinnzug finden
-  for(const c of validCols){
-    const testBoard = board.map(row => row.slice());
-    const r = c4DropRow(testBoard, c);
-    testBoard[r][c] = 'yellow';
-    if(c4CheckWinner(testBoard)?.winner === 'yellow') return c;
+  if(level <= 4){
+    const sorted = safe.slice().sort((a, b) => Math.abs(a - 3) - Math.abs(b - 3));
+    return level === 3 && Math.random() < 0.35 ? safe[Math.floor(Math.random() * safe.length)] : sorted[0];
   }
-  // 2. Gegner blockieren
-  for(const c of validCols){
-    const testBoard = board.map(row => row.slice());
-    const r = c4DropRow(testBoard, c);
-    testBoard[r][c] = 'red';
-    if(c4CheckWinner(testBoard)?.winner === 'red') return c;
+  // ab Level 5: Minimax, Tiefe wächst mit dem Level (max. 6)
+  const depth = Math.min(6, level - 2);
+  let bestCol = safe[0], bestVal = -Infinity;
+  for(const c of safe.slice().sort((a, b) => Math.abs(a - 3) - Math.abs(b - 3))){
+    const v = c4Minimax(c4WithMove(board, c, 'yellow'), depth - 1, -Infinity, Infinity, false);
+    if(v > bestVal){ bestVal = v; bestCol = c; }
   }
-  // 3. Mitte bevorzugen
-  const center = 3;
-  validCols.sort((a,b) => Math.abs(a-center) - Math.abs(b-center));
-  return validCols[0];
+  return bestCol;
 }
 
 function c4Play(col){
@@ -4983,16 +5231,46 @@ function c4Play(col){
   const row = c4DropRow(c4Board, col);
   if(row === -1) return;
   c4Board[row][col] = c4Turn;
+  c4LastMove = [row, col];
+  c4Moves++;
+  if(c4Turn === 'red') c4Score_ += 10 * (c4Mode === 'bot' ? c4Level : 1);
   const result = c4CheckWinner(c4Board);
   if(result){
     c4Over = true;
     c4Render(result.cells);
-    c4StatusEl.textContent = result.winner === 'draw' ? 'Unentschieden!' : `${result.winner === 'red' ? 'Rot' : 'Gelb'} gewinnt!`;
+    const vsBot = c4Mode === 'bot';
+    if(vsBot && result.winner === 'red'){
+      // Level geschafft: Punkte, Rekord, weiter zum nächsten Level (Bot wird stärker)
+      c4Score_ += 1000 * c4Level;
+      if(c4Score_ > c4HiScore) c4HiScore = c4Score_;
+      c4StatusEl.textContent = `Level ${c4Level} geschafft! Weiter geht's mit Level ${c4Level + 1}.`;
+      c4Level++;
+      c4SaveProgress();
+      ttFlash('LEVEL UP!', 'up');
+      // nach dem Zerbrechen der Blöcke automatisch ins nächste Level
+      clearTimeout(c4RestartTimer);
+      c4RestartTimer = setTimeout(() => { if(c4Over && c4Mode === 'bot') c4Init(); }, 4200);
+    } else if(vsBot && result.winner === 'yellow'){
+      // Verloren: zurück auf Level 1, nach dem Zerbrechen der Blöcke startet automatisch eine neue Runde
+      const lost = c4Level;
+      c4Level = 1; c4Score_ = 0;
+      c4SaveProgress();
+      c4StatusEl.textContent = `Game Over auf Level ${lost} – es geht wieder bei Level 1 los!`;
+      ttFlash('GAME OVER', 'over');
+      clearTimeout(c4RestartTimer);
+      c4RestartTimer = setTimeout(() => { if(c4Over && c4Mode === 'bot') c4Init(); }, 4200);
+    } else {
+      c4StatusEl.textContent = result.winner === 'draw' ? 'Unentschieden!' : `${result.winner === 'red' ? 'Rot' : 'Gelb'} gewinnt!`;
+      ttFlash(result.winner === 'draw' ? 'DRAW' : 'TETRIS!');
+    }
+    ttUpdateSide();
+    ttShatterAll();
     return;
   }
   c4Turn = c4Turn === 'red' ? 'yellow' : 'red';
   c4Render();
-  c4StatusEl.textContent = `${c4Turn === 'red' ? 'Rot' : 'Gelb'} ist dran.`;
+  ttUpdateSide();
+  c4StatusEl.textContent = (c4Mode === 'bot' ? `Level ${c4Level} – ` : '') + `${c4Turn === 'red' ? 'Rot' : 'Gelb'} ist dran.`;
 
   if(c4Mode === 'bot' && c4Turn === 'yellow' && !c4Over){
     setTimeout(() => {
@@ -5010,20 +5288,23 @@ document.querySelectorAll('#c4-mode-select .mode-btn').forEach(btn => {
     c4Init();
   });
 });
-document.getElementById('c4-reset-btn').addEventListener('click', c4Init);
+document.getElementById('c4-reset-btn').addEventListener('click', () => { c4Score_ = 0; c4Init(); });
+
 c4Mode = 'bot';
 c4Init();
 
 // Galgenmännchen
 const hmCategories = {
-  'Tiere': ['ELEFANT', 'GIRAFFE', 'SCHILDKRÖTE', 'PINGUIN', 'KÄNGURU', 'DELFIN', 'SPINNE', 'SCHMETTERLING', 'BIENE', 'KROKODIL', 'FLAMINGO', 'WASCHBÄR', 'IGEL', 'FUCHS', 'HIRSCH'],
-  'Essen & Trinken': ['PIZZA', 'SCHOKOLADE', 'KAFFEE', 'APFEL', 'BROT', 'KÄSE', 'NUDELN', 'SUPPE', 'KUCHEN', 'HONIG', 'SALAT', 'JOGHURT'],
-  'Berufe': ['LEHRER', 'ARZT', 'BÄCKER', 'FEUERWEHRMANN', 'POLIZIST', 'KOCH', 'PILOT', 'MALER', 'SCHREINER', 'FRISEUR', 'ANWALT', 'GÄRTNER'],
-  'Länder': ['SCHWEIZ', 'DEUTSCHLAND', 'FRANKREICH', 'ITALIEN', 'SPANIEN', 'JAPAN', 'KANADA', 'BRASILIEN', 'ÄGYPTEN', 'NORWEGEN', 'PORTUGAL', 'SCHWEDEN'],
-  'Sport': ['FUSSBALL', 'TENNIS', 'SCHWIMMEN', 'BASKETBALL', 'HANDBALL', 'BOXEN', 'SKIFAHREN', 'RADFAHREN', 'GOLF', 'VOLLEYBALL', 'TURNEN', 'KLETTERN'],
-  'Gegenstände': ['SCHERE', 'REGENSCHIRM', 'RUCKSACK', 'BRILLE', 'SCHLÜSSEL', 'SPIEGEL', 'KERZE', 'TEPPICH', 'KISSEN', 'LAMPE', 'HAMMER', 'LEITER'],
-  'Natur': ['VULKAN', 'WASSERFALL', 'WÜSTE', 'GLETSCHER', 'REGENBOGEN', 'GEWITTER', 'OZEAN', 'HÖHLE', 'DSCHUNGEL', 'TORNADO', 'LAWINE'],
-  'Musik': ['GITARRE', 'TROMMEL', 'KLAVIER', 'GEIGE', 'TROMPETE', 'FLÖTE', 'SAXOFON', 'HARFE', 'CELLO', 'KLARINETTE'],
+  'Tiere': ['ELEFANT', 'GIRAFFE', 'SCHILDKRÖTE', 'PINGUIN', 'KÄNGURU', 'DELFIN', 'SCHMETTERLING', 'KROKODIL', 'FLAMINGO', 'WASCHBÄR'],
+  'Essen & Trinken': ['PIZZA', 'SCHOKOLADE', 'KAFFEE', 'SPAGHETTI', 'BREZEL', 'KÄSEKUCHEN', 'PFANNKUCHEN', 'ERDBEERE', 'LIMONADE', 'POPCORN'],
+  'Berufe': ['FEUERWEHRMANN', 'POLIZIST', 'BÄCKER', 'ASTRONAUT', 'TIERARZT', 'FRISEUR', 'SCHREINER', 'GÄRTNER', 'PILOT', 'ZAUBERER'],
+  'Länder': ['SCHWEIZ', 'DEUTSCHLAND', 'FRANKREICH', 'ITALIEN', 'JAPAN', 'KANADA', 'BRASILIEN', 'ÄGYPTEN', 'NORWEGEN', 'AUSTRALIEN'],
+  'Sport': ['FUSSBALL', 'TENNIS', 'BASKETBALL', 'EISHOCKEY', 'SKIFAHREN', 'VOLLEYBALL', 'KLETTERN', 'SKATEBOARD', 'TISCHTENNIS', 'SURFEN'],
+  'Gegenstände': ['REGENSCHIRM', 'RUCKSACK', 'SCHLÜSSEL', 'SPIEGEL', 'TASCHENLAMPE', 'KOPFHÖRER', 'WECKER', 'STAUBSAUGER', 'FERNBEDIENUNG', 'SONNENBRILLE'],
+  'Natur': ['VULKAN', 'WASSERFALL', 'WÜSTE', 'GLETSCHER', 'REGENBOGEN', 'GEWITTER', 'DSCHUNGEL', 'TORNADO', 'LAWINE', 'SONNENUNTERGANG'],
+  'Musik': ['GITARRE', 'SCHLAGZEUG', 'KLAVIER', 'GEIGE', 'TROMPETE', 'SAXOFON', 'MUNDHARMONIKA', 'KLARINETTE', 'XYLOFON', 'DIRIGENT'],
+  'Fahrzeuge': ['FAHRRAD', 'MOTORRAD', 'HUBSCHRAUBER', 'FLUGZEUG', 'TRAKTOR', 'SCHIFF', 'RAKETE', 'STRASSENBAHN', 'KRANWAGEN', 'SEGELBOOT'],
+  'Spiele & Figuren': ['MARIO', 'YOSHI', 'BOWSER', 'PIKACHU', 'PACMAN', 'TETRIS', 'MINECRAFT', 'ZELDA', 'SONIC', 'DONKEYKONG'],
 };
 const hmMaxWrong = 6;
 let hmAnswer = '';
@@ -5038,19 +5319,336 @@ const hmStatusEl = document.getElementById('hm-status');
 const hmFigureEl = document.getElementById('hm-figure');
 const hmCategoryEl = document.getElementById('hm-category');
 
+// Mario-Party-Stil: Buchstaben in ?-Blöcken, Spielbrett mit Feldern, Münzen und Sternen
+let mpCoins = 10, mpStars = 0;
+try{ mpStars = Number(localStorage.getItem('mp_stars')) || 0; } catch(err){}
+function mpUpdateStats(){
+  const c = document.getElementById('mp-coins'), st = document.getElementById('mp-stars');
+  // Zahl hüpft kurz, wenn sie sich ändert
+  [[c, mpCoins], [st, mpStars]].forEach(([el, v]) => {
+    if(!el || el.textContent === String(v)) return;
+    el.textContent = v;
+    const box = el.parentElement;
+    box.classList.remove('bump'); void box.offsetWidth; box.classList.add('bump');
+  });
+}
+function mpPopup(text, cls){
+  const el = document.createElement('span');
+  el.className = 'mp-pop ' + (cls || '');
+  el.textContent = text;
+  hmFigureEl.appendChild(el);
+  setTimeout(() => el.remove(), 1200);
+}
+let hmLastHit = null;
 function hmRenderWord(){
   hmWordEl.innerHTML = hmAnswer.split('').map(ch => {
     const shown = hmGuessed.has(ch) || hmOver;
-    return `<span class="hm-letter">${shown ? ch : ' '}</span>`;
+    const missed = hmOver && !hmGuessed.has(ch);
+    const fresh = shown && hmLastHit === ch && !hmOver;
+    return `<span class="hm-letter mp-block${shown ? ' open' : ''}${missed ? ' missed' : ''}${fresh ? ' hit' : ''}"><i>?</i><b>${ch}</b>${fresh ? '<em class="mp-coin-pop"></em>' : ''}</span>`;
   }).join('');
 }
-
-function hmRenderFigure(){
-  const parts = hmFigureEl.querySelectorAll('.hm-part');
-  parts.forEach((part, i) => {
-    part.classList.toggle('visible', i < hmWrong);
-  });
+// Spielfigur: Yoshi (selbst gezeichnet)
+const mpHeroSvg = `<svg viewBox="0 0 44 54" aria-hidden="true">
+  <ellipse cx="21" cy="52" rx="13" ry="2.5" fill="rgba(0,0,0,.3)"/>
+  <path d="M8 36 Q2 38 3 44 Q7 41 11 42 Z" fill="#3fb83a" stroke="#1d6b1a" stroke-width="1.2"/>
+  <ellipse cx="14" cy="49" rx="6" ry="3.2" fill="#ff8c1a" stroke="#a84a00" stroke-width="1.2"/>
+  <ellipse cx="27" cy="49" rx="6" ry="3.2" fill="#ff8c1a" stroke="#a84a00" stroke-width="1.2"/>
+  <rect x="11" y="40" width="6" height="8" rx="3" fill="#3fb83a"/><rect x="24" y="40" width="6" height="8" rx="3" fill="#3fb83a"/>
+  <ellipse cx="20" cy="36" rx="12" ry="10" fill="#3fb83a" stroke="#1d6b1a" stroke-width="1.4"/>
+  <ellipse cx="22" cy="38" rx="7" ry="7" fill="#fff"/>
+  <path d="M8 31 Q14 26 21 29 Q16 34 9 35 Z" fill="#e0262b" stroke="#7a0a0e" stroke-width="1.2"/>
+  <path d="M10 30 Q14 27 18 29" fill="none" stroke="#fff" stroke-width="1.4"/>
+  <path d="M10 22 Q8 18 11 16 Q13 19 13 22 Z M12 18 Q11 14 14 13 Q15 16 15 19 Z" fill="#e0262b" stroke="#7a0a0e" stroke-width=".8"/>
+  <path d="M13 28 Q12 20 18 13 Q24 8 31 12 Q40 12 41 20 Q42 27 34 27 Q28 28 26 25 L22 30 Z" fill="#3fb83a" stroke="#1d6b1a" stroke-width="1.4"/>
+  <ellipse cx="34" cy="21" rx="7" ry="5" fill="#5fd35f"/>
+  <circle cx="38.5" cy="19" r="1" fill="#1d6b1a"/>
+  <path d="M27 26 Q33 29 40 24" fill="none" stroke="#1d6b1a" stroke-width="1.2" stroke-linecap="round"/>
+  <ellipse cx="24" cy="9" rx="4.5" ry="6" fill="#fff" stroke="#1d6b1a" stroke-width="1.2"/>
+  <ellipse cx="30" cy="9" rx="4.5" ry="6" fill="#fff" stroke="#1d6b1a" stroke-width="1.2"/>
+  <ellipse cx="25" cy="10" rx="1.8" ry="3" fill="#1b1b1b"/><ellipse cx="31" cy="10" rx="1.8" ry="3" fill="#1b1b1b"/>
+  <circle cx="25.5" cy="8.5" r=".8" fill="#fff"/><circle cx="31.5" cy="8.5" r=".8" fill="#fff"/>
+  <ellipse cx="30" cy="34" rx="3.5" ry="4" fill="#3fb83a" stroke="#1d6b1a" stroke-width="1"/>
+</svg>`;
+// Bowser (selbst gezeichnet) – taucht am Bowser-Feld auf, wenn das Wort nicht geschafft wurde
+const mpBowserSvg = `<svg viewBox="0 0 90 90" aria-hidden="true">
+  <ellipse cx="45" cy="86" rx="30" ry="4" fill="rgba(0,0,0,.35)"/>
+  <ellipse cx="30" cy="80" rx="11" ry="6" fill="#f2c94a" stroke="#7a5200" stroke-width="1.6"/><ellipse cx="60" cy="80" rx="11" ry="6" fill="#f2c94a" stroke="#7a5200" stroke-width="1.6"/>
+  <path d="M22 79 l-3 4 M28 81 l-1 5 M34 80 l1 5 M56 80 l-1 5 M62 81 l1 5 M68 79 l3 4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+  <ellipse cx="45" cy="58" rx="30" ry="24" fill="#3fa63a" stroke="#1d5a1a" stroke-width="2"/>
+  <path d="M22 50 l-6 -9 l10 3 Z M33 40 l-2 -10 l8 7 Z M50 38 l2 -10 l5 9 Z M64 44 l7 -8 l-1 10 Z M70 58 l10 -2 l-6 8 Z" fill="#fff" stroke="#7a7a7a" stroke-width="1.2" stroke-linejoin="round"/>
+  <ellipse cx="45" cy="64" rx="18" ry="16" fill="#f6e3a0" stroke="#b08a3a" stroke-width="1.6"/>
+  <path d="M30 58 H60 M29 66 H61 M31 74 H59" stroke="#b08a3a" stroke-width="1.4"/>
+  <path d="M17 54 Q8 58 12 66 L20 62 Z" fill="#f2c94a" stroke="#7a5200" stroke-width="1.6"/><path d="M73 54 Q82 58 78 66 L70 62 Z" fill="#f2c94a" stroke="#7a5200" stroke-width="1.6"/>
+  <circle cx="13" cy="64" r="3" fill="#1b1b1b"/><circle cx="77" cy="64" r="3" fill="#1b1b1b"/>
+  <path d="M28 22 Q24 6 34 4 Q30 14 36 18 Z M62 22 Q66 6 56 4 Q60 14 54 18 Z" fill="#fff6dc" stroke="#7a7a7a" stroke-width="1.4"/>
+  <path d="M30 16 Q34 4 45 6 Q56 4 60 16 Q50 10 45 12 Q40 10 30 16 Z" fill="#e0402b" stroke="#7a1a0e" stroke-width="1.4"/>
+  <ellipse cx="45" cy="28" rx="18" ry="16" fill="#f2c94a" stroke="#7a5200" stroke-width="1.8"/>
+  <ellipse cx="45" cy="36" rx="16" ry="9" fill="#f6e3a0" stroke="#7a5200" stroke-width="1.4"/>
+  <path d="M33 22 L41 25 M57 22 L49 25" stroke="#e0402b" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="38" cy="27" rx="3" ry="3.5" fill="#fff" stroke="#1b1b1b" stroke-width="1"/><ellipse cx="52" cy="27" rx="3" ry="3.5" fill="#fff" stroke="#1b1b1b" stroke-width="1"/>
+  <circle cx="38.6" cy="27.5" r="1.6" fill="#c0101a"/><circle cx="51.4" cy="27.5" r="1.6" fill="#c0101a"/>
+  <ellipse cx="41" cy="33" rx="1.4" ry="1" fill="#7a5200"/><ellipse cx="49" cy="33" rx="1.4" ry="1" fill="#7a5200"/>
+  <path d="M33 37 Q45 50 57 37 Q45 42 33 37 Z" fill="#8a1a1a" stroke="#4a0a0a" stroke-width="1.2"/>
+  <path d="M36 38 l2 4 l2 -3.5 M50 38.5 l2 3.5 l2 -4" fill="#fff" stroke="#999" stroke-width=".6"/>
+</svg>`;
+// Yoshi-Ei (weiss mit grünen Flecken) für die Rollfahrt zurück zum Start
+const mpEggSvg = `<svg class="mp-egg" viewBox="0 0 40 46" aria-hidden="true">
+  <ellipse cx="20" cy="25" rx="15" ry="18" fill="#fff" stroke="#1d6b1a" stroke-width="1.6"/>
+  <ellipse cx="13" cy="18" rx="4" ry="5" fill="#3fb83a"/><ellipse cx="26" cy="14" rx="3.5" ry="4" fill="#3fb83a"/>
+  <ellipse cx="25" cy="30" rx="5" ry="5.5" fill="#3fb83a"/><ellipse cx="12" cy="33" rx="3" ry="3.5" fill="#3fb83a"/>
+  <ellipse cx="14" cy="13" rx="3" ry="5" fill="#fff" opacity=".6" transform="rotate(-20 14 13)"/>
+</svg>`;
+// Position einer Figur auf einem Feld (Mitte, oben auf dem Feld)
+function mpSpacePos(i){
+  const space = hmFigureEl.querySelectorAll('.mp-space')[i];
+  const br = hmFigureEl.getBoundingClientRect(), sr = space.getBoundingClientRect();
+  return { x: sr.left - br.left + sr.width / 2, y: sr.top - br.top + sr.height * 0.45 };
 }
+let mpForcePos = null;   // nach Ei-Rollen oder Bowser-Wurf steht Yoshi wieder auf START
+// Kleine Effekte für Rollen und Werfen
+function mpPuff(x, y, n, cls){
+  for(let i = 0; i < n; i++){
+    const d = document.createElement('span');
+    d.className = 'mp-puff ' + (cls || '');
+    d.style.left = x + 'px'; d.style.top = y + 'px';
+    d.style.setProperty('--dx', ((Math.random() - 0.5) * 50) + 'px');
+    d.style.setProperty('--dy', (-8 - Math.random() * 18) + 'px');
+    d.style.animationDelay = (i * 25) + 'ms';
+    hmFigureEl.appendChild(d);
+    setTimeout(() => d.remove(), 900);
+  }
+}
+// Schatten am Boden unter Yoshi (zeigt die Höhe beim Springen und Fliegen)
+function mpShadow(){
+  let sh = document.getElementById('mp-shadow');
+  if(!sh){ sh = document.createElement('div'); sh.id = 'mp-shadow'; sh.className = 'mp-shadow'; hmFigureEl.appendChild(sh); }
+  return sh;
+}
+// Bild-für-Bild-Animation: frameFn(t) liefert Bodenposition (x, y), Höhe h, Drehung und Stauchung
+function mpRun(player, frameFn, duration, done){
+  const tok = player.querySelector('.mp-token');
+  const sh = mpShadow();
+  const start = performance.now();
+  player.style.transition = 'none';
+  sh.style.opacity = 1;
+  (function step(now){
+    const t = Math.min(1, (now - start) / duration);
+    const f = frameFn(t);
+    const h = f.h || 0;
+    player.style.left = f.x + 'px';
+    player.style.top = (f.y - h) + 'px';
+    tok.style.transform = `rotate(${f.rot || 0}deg) scale(${f.sx || 1}, ${f.sy || 1})`;
+    sh.style.left = f.x + 'px'; sh.style.top = (f.y + 4) + 'px';
+    const k = Math.max(0.35, 1 - h / 180);
+    sh.style.transform = `translate(-50%, -50%) scale(${k})`;
+    sh.style.opacity = 0.25 + 0.4 * k;
+    if(t < 1) requestAnimationFrame(step);
+    else { tok.style.transform = ''; player.style.transition = ''; sh.style.opacity = 0; done && done(); }
+  })(start);
+}
+// Weicher Weg durch alle Felder (Catmull-Rom), damit das Ei der Kurve des Pfads folgt
+function mpSpline(pts, t){
+  const n = pts.length - 1, u = Math.min(n - 1e-6, t * n), i = Math.floor(u), k = u - i;
+  const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(n, i + 2)];
+  const c = (a, b, c2, d) => 0.5 * ((2 * b) + (-a + c2) * k + (2 * a - 5 * b + 4 * c2 - d) * k * k + (-a + 3 * b - 3 * c2 + d) * k * k * k);
+  return { x: c(p0.x, p1.x, p2.x, p3.x), y: c(p0.y, p1.y, p2.y, p3.y) };
+}
+// Gewonnen: Puff -> Ei hüpft hoch, rollt flüssig dem Weg entlang zurück, prallt am Start ab, bekommt Risse und platzt
+function mpEggRoll(){
+  const player = document.getElementById('mp-player');
+  if(!player) return;
+  const from = Math.min(hmWrong, 6);
+  setTimeout(() => {
+    const p0 = mpSpacePos(from);
+    mpPuff(p0.x, p0.y - 20, 10, 'white');
+    player.classList.add('egg');
+    const pts = [];
+    for(let i = from; i >= 0; i--) pts.push(mpSpacePos(i));
+    if(pts.length === 1) pts.push({ x: pts[0].x + 0.1, y: pts[0].y });
+    // 1) kleiner Sprung auf der Stelle
+    mpRun(player, (t) => ({ x: p0.x, y: p0.y, h: Math.sin(Math.PI * t) * 22, rot: 0, sx: t < 0.15 ? 1.2 : 1, sy: t < 0.15 ? 0.8 : 1 }), 420, () => {
+      // 2) rollen: Tempo steigt an und fällt ab, Drehung passt zur Strecke, kleine Hüpfer über Unebenheiten
+      let lastX = p0.x, rot = 0, nextPuff = 0;
+      const dur = 650 + from * 330;
+      mpRun(player, (t) => {
+        const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        const q = mpSpline(pts, e);
+        rot += (q.x - lastX) / 20 * 57.3; lastX = q.x;
+        const bump = Math.abs(Math.sin(e * (pts.length - 1) * Math.PI)) * 8;
+        if(t > nextPuff){ nextPuff += 0.12; mpPuff(q.x, q.y + 4, 2); }
+        return { x: q.x, y: q.y, h: bump, rot, sx: 1, sy: 1 };
+      }, dur, () => {
+        const ps = mpSpacePos(0);
+        // 3) am Start zweimal abprallen
+        mpRun(player, (t) => {
+          const h = t < 0.6 ? Math.sin(Math.PI * t / 0.6) * 22 : Math.sin(Math.PI * (t - 0.6) / 0.4) * 7;
+          const sq = (t < 0.06 || (t > 0.57 && t < 0.65)) ? 0.75 : 1;
+          return { x: ps.x, y: ps.y, h, rot: rot + Math.sin(t * 6) * 8, sx: 2 - sq, sy: sq };
+        }, 560, () => {
+          mpForcePos = 0; hmRenderFigure();
+          // 4) Risse, Wackeln, Platzen
+          player.classList.add('hatch', 'cracking');
+          setTimeout(() => {
+            ['left', 'right', 'top'].forEach(side => {
+              const sh = document.createElement('span');
+              sh.className = 'mp-shell ' + side;
+              sh.style.left = ps.x + 'px'; sh.style.top = (ps.y - 26) + 'px';
+              hmFigureEl.appendChild(sh);
+              setTimeout(() => sh.remove(), 900);
+            });
+            mpPuff(ps.x, ps.y - 24, 10, 'sparkle');
+            player.classList.remove('egg', 'hatch', 'cracking');
+            player.classList.add('popout');
+            setTimeout(() => player.classList.remove('popout'), 700);
+          }, 650);
+        });
+      });
+    });
+  }, 650);
+}
+// Verloren: Bowser holt aus, schubst Yoshi an und Yoshi rollt wie eine Kugel den Weg zurück zum Start
+function mpBowserThrow(){
+  const player = document.getElementById('mp-player'), bowser = document.getElementById('mp-bowser');
+  if(!player) return;
+  setTimeout(() => {
+    player.classList.remove('hop');
+    player.style.zIndex = 9;                       // immer vor Bowser sichtbar
+    const s0 = { x: parseFloat(player.style.left), y: parseFloat(player.style.top) };
+    const pts = [];
+    for(let i = 6; i >= 0; i--) pts.push(mpSpacePos(i));
+    const start = pts[0], end = mpSpacePos(0);
+    // 1) Yoshi stellt sich vor Bowser und zittert, während Bowser ausholt
+    bowser?.classList.remove('throw'); void bowser?.offsetWidth; bowser?.classList.add('throw');
+    mpRun(player, (t) => {
+      const e = 1 - Math.pow(1 - t, 3);
+      return { x: s0.x + (start.x - s0.x) * e, y: start.y, h: 0, rot: Math.sin(t * 50) * 5, sx: 1, sy: 1 };
+    }, 520, () => {
+      // 2) Schubs: Yoshi wird zur Kugel gestaucht, Staubwolke
+      mpPuff(start.x, start.y + 4, 8);
+      const scene = hmFigureEl.closest('.mp-scene');
+      scene?.classList.remove('mp-shake'); void scene?.offsetWidth; scene?.classList.add('mp-shake');
+      mpRun(player, (t) => ({ x: start.x, y: start.y, h: 0, rot: -40 * t, sx: 1 + 0.25 * t, sy: 1 - 0.25 * t }), 160, () => {
+        // 3) rollen: schnell los, wird langsamer, Drehung passt zur Strecke, kleine Hüpfer zwischen den Feldern
+        let lastX = start.x, lastY = start.y, rot = -40, nextPuff = 0;
+        mpRun(player, (t) => {
+          const e = 1 - Math.pow(1 - t, 2.2);
+          const q = mpSpline(pts, e);
+          const d = Math.hypot(q.x - lastX, q.y - lastY);
+          rot -= d / 18 * 57.3; lastX = q.x; lastY = q.y;
+          const bump = Math.abs(Math.sin(e * (pts.length - 1) * Math.PI)) * 7;
+          if(t > nextPuff){ nextPuff += 0.08; mpPuff(q.x, q.y + 4, 2); }
+          return { x: q.x, y: q.y, h: bump, rot, sx: 1.12, sy: 0.88 };
+        }, 2100, () => {
+          // 4) am Start ausrollen: noch ein Stück wackeln, dann aufrichten und schwindlig
+          mpPuff(end.x, end.y + 4, 8);
+          const r0 = rot % 360;
+          mpRun(player, (t) => {
+            const e = 1 - Math.pow(1 - t, 3);
+            return { x: end.x + Math.sin(t * Math.PI * 3) * 6 * (1 - t), y: end.y, h: Math.sin(Math.PI * t) * 10, rot: r0 * (1 - e), sx: 1.12 - 0.12 * e, sy: 0.88 + 0.12 * e };
+          }, 600, () => {
+            player.style.zIndex = '';
+            mpForcePos = 0; hmRenderFigure();
+            player.classList.add('dizzy');
+            setTimeout(() => player.classList.remove('dizzy'), 2000);
+          });
+        });
+      });
+    });
+  }, 700);
+}
+// Bullet Bill fliegt endlos in Schleifen durch den Himmel und schaut immer in Flugrichtung
+(function mpBillLoop(){
+  const bill = document.querySelector('.mp-bill');
+  if(!bill) return;
+  let last = null, prev = null;
+  function step(now){
+    requestAnimationFrame(step);
+    const scene = bill.parentElement;
+    if(!scene || scene.offsetParent === null) return;
+    const W = scene.clientWidth, t = now / 1000;
+    const x = W / 2 + Math.sin(t * 0.32) * (W / 2 - 40) - 29;
+    const y = -58 + Math.sin(t * 0.64) * 18;
+    if(prev){
+      const dx = x - prev.x, dy = y - prev.y;
+      const left = dx < 0;                      // Bullet Bill schaut nach links (Spitze links)
+      const ang = Math.atan2(dy, Math.abs(dx)) * 57.3 * (left ? -1 : 1);
+      bill.style.transform = `translate(${x}px, ${y}px) scaleX(${left ? 1 : -1}) rotate(${ang}deg)`;
+    }
+    prev = { x, y };
+  }
+  requestAnimationFrame(step);
+})();
+// Felder: Start, blau, grünes !-Feld (Ereignis), rot, Pilz-Feld, rot, Bowser
+const mpKinds = ['start', 'blue', 'event', 'red', 'mushroom', 'red', 'bowser'];
+// Landet Yoshi auf einem besonderen Feld, passiert etwas
+function mpLandEffect(){
+  const kind = mpKinds[Math.min(hmWrong, mpKinds.length - 1)];
+  if(kind === 'event'){
+    const gain = Math.random() < 0.5;
+    const n = 2 + Math.floor(Math.random() * 4);
+    mpCoins = Math.max(0, mpCoins + (gain ? n : -n));
+    setTimeout(() => mpPopup(gain ? `! +${n}` : `! −${n}`, gain ? 'gain' : 'lose'), 500);
+  } else if(kind === 'mushroom'){
+    mpCoins += 5;
+    setTimeout(() => mpPopup('1-Up! +5', 'gain'), 500);
+  }
+  mpUpdateStats();
+}
+// Würfel zeigt, wie lang das Wort ist
+function mpShowLength(){
+  const face = document.querySelector('#mp-dice span');
+  if(face) face.textContent = hmAnswer.length;
+}
+// Spielbrett: Start, 5 Felder, Bowser-Feld. Die Spielfigur steht auf dem Feld = Anzahl Fehler.
+function hmRenderFigure(){
+  const kinds = mpKinds;
+  if(!hmFigureEl.querySelector('.mp-space')){
+    hmFigureEl.innerHTML = `<svg class="mp-path" viewBox="0 0 700 120" preserveAspectRatio="none" aria-hidden="true"><path d="M50 70 C150 20 200 110 300 70 S450 20 520 70 S620 110 650 60"/><path d="M50 70 C150 20 200 110 300 70 S450 20 520 70 S620 110 650 60"/></svg>` +
+      kinds.map((k, i) => `<div class="mp-space ${k}" style="--i:${i}"><span>${k === 'start' ? 'START' : k === 'bowser' ? '' : k === 'blue' ? '+3' : '−3'}</span></div>`).join('') +
+      `<div class="mp-deco tree" style="left:16%;top:-6px"></div><div class="mp-deco tree small" style="left:58%;top:62px"></div>` +
+      `<div class="mp-deco flower" style="left:33%;top:78px"></div><div class="mp-deco flower" style="left:76%;top:2px"></div>` +
+      `<div class="mp-player" id="mp-player"><div class="mp-token">${mpHeroSvg}${mpEggSvg}<span class="mp-tag">1P</span></div></div>` +
+      `<div class="mp-bowser" id="mp-bowser">${mpBowserSvg}<span class="mp-laugh">Bwahaha!</span></div>`;
+  }
+  const pos = mpForcePos ?? Math.min(hmWrong, kinds.length - 1);
+  const player = document.getElementById('mp-player');
+  // Bowser steht immer auf seinem Feld
+  const bowserEl = document.getElementById('mp-bowser'), bspace = hmFigureEl.querySelector('.mp-space.bowser');
+  if(bowserEl && bspace){
+    const br0 = hmFigureEl.getBoundingClientRect(), sr0 = bspace.getBoundingClientRect();
+    bowserEl.style.left = (sr0.left - br0.left + sr0.width / 2) + 'px';
+    bowserEl.style.top = (sr0.top - br0.top + sr0.height * 0.5) + 'px';
+  }
+  const space = hmFigureEl.querySelectorAll('.mp-space')[pos];
+  if(player && space){
+    // echte Position des Feldes (inkl. Wellen-Versatz), Figur steht oben drauf
+    const br = hmFigureEl.getBoundingClientRect(), sr = space.getBoundingClientRect();
+    player.style.left = (sr.left - br.left + sr.width / 2 - (pos === kinds.length - 1 ? 34 : 0)) + 'px';
+    player.style.top = (sr.top - br.top + sr.height * 0.45) + 'px';
+    if(player.dataset.pos !== String(pos)){
+      player.dataset.pos = pos;
+      player.classList.remove('hop'); void player.offsetWidth; player.classList.add('hop');
+    }
+  }
+  hmFigureEl.querySelectorAll('.mp-space').forEach((sp, i) => sp.classList.toggle('active', i === pos));
+  hmFigureEl.classList.toggle('danger', pos >= kinds.length - 2);
+}
+// Figuren neu setzen, sobald das Brett sichtbar wird oder seine Grösse ändert (auch beim Wechsel in den Spiele-Tab)
+if('ResizeObserver' in window) new ResizeObserver(() => { if(hmFigureEl.querySelector('.mp-space') && hmFigureEl.offsetParent !== null) hmRenderFigure(); }).observe(hmFigureEl);
+window.addEventListener('resize', () => { if(hmFigureEl.querySelector('.mp-space')) hmRenderFigure(); });
+// Zusätzlich: sobald das Brett ins Bild kommt und nach jedem Tab-Wechsel neu setzen
+if('IntersectionObserver' in window) new IntersectionObserver((entries) => {
+  if(entries.some(e => e.isIntersecting)) hmRenderFigure();
+}).observe(hmFigureEl);
+document.querySelectorAll('.tab-btn, .overview-card').forEach(el => el.addEventListener('click', () => {
+  [60, 300, 700].forEach(t => setTimeout(() => { if(hmFigureEl.offsetParent !== null) hmRenderFigure(); }, t));
+}));
+// Falls die Seite direkt im Spiele-Tab startet: bis zum ersten sichtbaren Bild nachprüfen
+(function mpWaitVisible(n){
+  if(hmFigureEl.offsetParent !== null && hmFigureEl.getBoundingClientRect().width > 0){ hmRenderFigure(); return; }
+  if(n < 600) requestAnimationFrame(() => mpWaitVisible(n + 1));
+})(0);
 
 function hmRenderKeyboard(){
   hmKeyboardEl.innerHTML = wotdKeyRows.map(row => {
@@ -5071,19 +5669,50 @@ function hmCheckState(){
   const solved = hmAnswer.split('').every(ch => hmGuessed.has(ch));
   if(solved){
     hmOver = true;
-    hmStatusEl.textContent = `🎉 Gewonnen! Das Wort war ${hmAnswer}.`;
+    mpStars++;
+    try{ localStorage.setItem('mp_stars', mpStars); } catch(err){}
+    mpUpdateStats();
+    mpPopup('★ STERN!', 'star');
+    mpEggRoll();
+    const colors = ['#ff5a5a', '#ffd21a', '#5fd35f', '#3aa0ff', '#c359ff', '#ff8ad0'];
+    for(let i = 0; i < 40; i++){
+      const c = document.createElement('i');
+      c.className = 'mp-confetti';
+      c.style.left = (Math.random() * 100) + '%';
+      c.style.background = colors[i % colors.length];
+      c.style.animationDelay = (Math.random() * 0.6) + 's';
+      c.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
+      c.style.setProperty('--drift', ((Math.random() - 0.5) * 120) + 'px');
+      hmFigureEl.appendChild(c);
+      setTimeout(() => c.remove(), 3200);
+    }
+    document.querySelector('.mp-hm')?.classList.add('mp-win');
+    setTimeout(() => document.querySelector('.mp-hm')?.classList.remove('mp-win'), 1500);
+    hmStatusEl.textContent = `Du hast einen Stern bekommen! Das Wort war ${hmAnswer}.`;
   } else if(hmWrong >= hmMaxWrong){
     hmOver = true;
-    hmStatusEl.textContent = `💀 Verloren! Das Wort war ${hmAnswer}.`;
+    mpCoins = 0;
+    mpUpdateStats();
+    mpPopup('Bowser!', 'bowser');
+    // Bowser lacht und schmeisst Yoshi zurück zum Start
+    const bowser = document.getElementById('mp-bowser');
+    if(bowser){ bowser.classList.remove('show'); void bowser.offsetWidth; bowser.classList.add('show'); }
+    mpBowserThrow();
+    const hmRoot = document.querySelector('.mp-hm');
+    if(hmRoot){ hmRoot.classList.remove('mp-lose'); void hmRoot.offsetWidth; hmRoot.classList.add('mp-lose'); }
+    hmStatusEl.textContent = `Bowser hat alle Münzen geklaut! Das Wort war ${hmAnswer}.`;
   } else {
-    hmStatusEl.textContent = `Noch ${hmMaxWrong - hmWrong} Fehlversuche übrig.`;
+    hmStatusEl.textContent = `Noch ${hmMaxWrong - hmWrong} Felder bis zum Bowser-Feld.`;
   }
 }
 
 function hmGuessLetter(ch){
   if(hmOver || hmGuessed.has(ch)) return;
   hmGuessed.add(ch);
-  if(!hmAnswer.includes(ch)) hmWrong++;
+  hmLastHit = hmAnswer.includes(ch) ? ch : null;
+  if(!hmAnswer.includes(ch)){ hmWrong++; mpCoins = Math.max(0, mpCoins - 3); mpPopup('−3', 'lose'); mpLandEffect(); }
+  else { mpCoins += 3; mpPopup('+3', 'gain'); }
+  mpUpdateStats();
   hmCheckState();
   hmRenderWord();
   hmRenderFigure();
@@ -5091,15 +5720,36 @@ function hmGuessLetter(ch){
 }
 
 function hmNewGame(){
-  const cats = Object.keys(hmCategories);
-  hmCategory = cats[Math.floor(Math.random() * cats.length)];
-  const list = hmCategories[hmCategory];
-  hmAnswer = list[Math.floor(Math.random() * list.length)];
+  // Alle 100 Wörter kommen einmal dran (gemischt), erst danach wiederholt sich eins
+  const all = Object.entries(hmCategories).flatMap(([c, ws]) => ws.map(w => c + '|' + w));
+  let bag = [];
+  try{ bag = JSON.parse(localStorage.getItem('hm_bag') || '[]').filter(x => all.includes(x)); } catch(err){}
+  if(!bag.length){
+    bag = all.slice();
+    for(let i = bag.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
+    if(bag[bag.length - 1] === hmCategory + '|' + hmAnswer) bag.unshift(bag.pop());
+  }
+  [hmCategory, hmAnswer] = bag.pop().split('|');
+  try{ localStorage.setItem('hm_bag', JSON.stringify(bag)); } catch(err){}
   hmCategoryEl.textContent = 'Kategorie: ' + hmCategory;
   hmGuessed = new Set();
   hmWrong = 0;
   hmOver = false;
-  hmStatusEl.textContent = `Noch ${hmMaxWrong} Fehlversuche übrig.`;
+  mpCoins = 10;
+  mpUpdateStats();
+  const dice = document.getElementById('mp-dice');
+  if(dice){
+    dice.classList.remove('roll'); void dice.offsetWidth; dice.classList.add('roll');
+    let n = 0; const face = dice.querySelector('span');
+    const iv = setInterval(() => { face.textContent = 1 + Math.floor(Math.random() * 6); if(++n > 9){ clearInterval(iv); mpShowLength(); } }, 70);
+  }
+  hmFigureEl.querySelectorAll('.mp-confetti').forEach(c => c.remove());
+  document.getElementById('mp-bowser')?.classList.remove('show', 'throw');
+  mpForcePos = null;
+  document.getElementById('mp-player')?.getAnimations().forEach(a => a.cancel());
+  document.getElementById('mp-player')?.classList.remove('egg', 'hatch', 'flying', 'bonk', 'popout', 'dizzy');
+  hmFigureEl.querySelectorAll('.mp-puff, .mp-trail, .mp-shell, .mp-impact').forEach(e => e.remove());
+  hmStatusEl.textContent = `Los geht's! Noch ${hmMaxWrong} Felder bis zum Bowser-Feld.`;
   hmRenderWord();
   hmRenderFigure();
   hmRenderKeyboard();
@@ -5107,12 +5757,160 @@ function hmNewGame(){
 
 document.getElementById('hm-new-btn').addEventListener('click', hmNewGame);
 hmNewGame();
+mpShowLength();
 
 // Schach
+// EA-Sports-Stil: beide Teams mit vollen Figuren, Heim weiss, Auswärts dunkel (\uFE0E = keine Emoji-Darstellung)
 const chessPieceChars = {
-  w: { p: '♙', n: '♘', b: '♗', r: '♖', q: '♕', k: '♔' },
-  b: { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚' }
+  w: { p: '♟\uFE0E', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚' },
+  b: { p: '♟\uFE0E', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚' }
 };
+// Mannschaften zum Aussuchen: Trikot als Muster in den Figuren, Rand in der Zierfarbe
+const eaStripes = (a, b) => `repeating-linear-gradient(90deg, ${a} 0 0.16em, ${b} 0.16em 0.32em)`;
+const eaHalves = (a, b) => `linear-gradient(90deg, ${a} 50%, ${b} 50%)`;
+const eaSolid = (a) => `linear-gradient(${a}, ${a})`;
+const eaTeams = {
+  barca:     { name: 'Barça',           code: 'BAR', kit: eaStripes('#0a4fb0', '#b0004a'), trim: '#edbb00' },
+  real:      { name: 'Real Madrid',     code: 'RMA', kit: eaSolid('#ffffff'),              trim: '#febe10' },
+  bayern:    { name: 'Bayern München',  code: 'FCB', kit: eaSolid('#dc052d'),              trim: '#ffffff' },
+  dortmund:  { name: 'Dortmund',        code: 'BVB', kit: eaSolid('#fde100'),              trim: '#111111' },
+  juventus:  { name: 'Juventus',        code: 'JUV', kit: eaStripes('#ffffff', '#111111'), trim: '#c8a24a' },
+  inter:     { name: 'Inter Mailand',   code: 'INT', kit: eaStripes('#0068a8', '#111111'), trim: '#d4af37' },
+  milan:     { name: 'AC Mailand',      code: 'MIL', kit: eaStripes('#e2001a', '#111111'), trim: '#ffffff' },
+  city:      { name: 'Manchester City', code: 'MCI', kit: eaSolid('#6cabdd'),              trim: '#ffffff' },
+  liverpool: { name: 'Liverpool',       code: 'LIV', kit: eaSolid('#c8102e'),              trim: '#f6eb61' },
+  arsenal:   { name: 'Arsenal',         code: 'ARS', kit: eaSolid('#ef0107'),              trim: '#ffffff' },
+  chelsea:   { name: 'Chelsea',         code: 'CHE', kit: eaSolid('#034694'),              trim: '#ffffff' },
+  psg:       { name: 'Paris SG',        code: 'PSG', kit: eaSolid('#004170'),              trim: '#e30613' },
+  basel:     { name: 'FC Basel',        code: 'FCB', kit: eaHalves('#e30613', '#0055a4'),  trim: '#f2c300' },
+  yb:        { name: 'Young Boys',      code: 'YB',  kit: eaSolid('#ffd700'),              trim: '#111111' },
+};
+let eaPicked = { w: 'barca', b: 'real' };
+try{ const sv = JSON.parse(localStorage.getItem('ea_teams') || 'null'); if(sv && eaTeams[sv.w] && eaTeams[sv.b] && sv.w !== sv.b) eaPicked = sv; } catch(err){}
+const eaTeam = (col) => eaTeams[eaPicked[col]].name;
+function eaApplyTeams(){
+  const root = document.querySelector('.ea-chess');
+  if(!root) return;
+  ['w', 'b'].forEach(col => {
+    const t = eaTeams[eaPicked[col]];
+    root.style.setProperty('--kit-' + col, t.kit);
+    root.style.setProperty('--trim-' + col, t.trim);
+  });
+  document.getElementById('ea-home-code').textContent = eaTeams[eaPicked.w].code;
+  document.getElementById('ea-away-code').textContent = eaTeams[eaPicked.b].code;
+  document.getElementById('ea-home-sel').value = eaPicked.w;
+  document.getElementById('ea-away-sel').value = eaPicked.b;
+  try{ localStorage.setItem('ea_teams', JSON.stringify(eaPicked)); } catch(err){}
+}
+[['ea-home-sel', 'w'], ['ea-away-sel', 'b']].forEach(([id, col]) => {
+  const sel = document.getElementById(id);
+  if(!sel) return;
+  sel.innerHTML = Object.entries(eaTeams).map(([k, t]) => `<option value="${k}">${t.name}</option>`).join('');
+  sel.addEventListener('change', () => {
+    const other = col === 'w' ? 'b' : 'w';
+    if(sel.value === eaPicked[other]) eaPicked[other] = eaPicked[col];   // gleiches Team gewählt → Seiten tauschen
+    eaPicked[col] = sel.value;
+    eaApplyTeams();
+    chessReset();
+  });
+});
+eaApplyTeams();
+const eaValues = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+let eaLastMove = null, eaClockStart = 0, eaClockTimer = null, eaCapture = null;
+const eaOverlayEl = document.getElementById('ea-overlay');
+// Einblendung wie in der TV-Übertragung (Anstoss, Schach, Abpfiff)
+function eaBanner(big, small, cls, stay){
+  if(!eaOverlayEl) return;
+  eaOverlayEl.innerHTML = `<div class="ea-banner ${cls || ''}"><b>${big}</b>${small ? `<span>${small}</span>` : ''}</div>`;
+  clearTimeout(eaBanner.t);
+  if(!stay) eaBanner.t = setTimeout(() => { eaOverlayEl.innerHTML = ''; }, 1700);
+}
+// Spielstand = geschlagenes Material, Uhr läuft ab dem ersten Zug
+function eaUpdateScore(){
+  let w = 0, b = 0;
+  chessBoard.flat().forEach(p => { if(p){ if(p[0] === 'w') w += eaValues[p[1]]; else b += eaValues[p[1]]; } });
+  const el = document.getElementById('ea-score');
+  const txt = `${Math.max(0, 39 - b)} - ${Math.max(0, 39 - w)}`;
+  if(el && el.textContent !== txt){
+    el.textContent = txt;
+    el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+  }
+  document.getElementById('ea-home')?.classList.toggle('turn', !chessOver && chessTurn === 'w');
+  document.getElementById('ea-away')?.classList.toggle('turn', !chessOver && chessTurn === 'b');
+}
+function eaClockTick(){
+  const el = document.getElementById('ea-clock');
+  if(!el) return;
+  const sec = eaClockStart ? Math.floor((Date.now() - eaClockStart) / 1000) : 0;
+  el.textContent = String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
+}
+// Schiri: läuft immer zum letzten Zug, pfeift, zeigt bei Schach Gelb und bei Schachmatt Rot
+const eaRefEl = document.getElementById('ea-ref');
+if(eaRefEl) eaRefEl.innerHTML = `<svg viewBox="0 0 40 66" aria-hidden="true">
+  <ellipse cx="20" cy="63" rx="11" ry="2.6" fill="rgba(0,0,0,0.35)"/>
+  <g class="ea-ref-legs">
+    <g class="ea-ref-leg l"><rect x="14.5" y="42" width="4.4" height="10" rx="2" fill="#e8b48a"/><rect x="14.3" y="50" width="4.8" height="9" rx="1.6" fill="#111"/><rect x="14.3" y="49.5" width="4.8" height="1.6" fill="#13ff7a"/><path d="M13.6 58.5h6.6v3h-7.6z" fill="#000"/></g>
+    <g class="ea-ref-leg r"><rect x="21.1" y="42" width="4.4" height="10" rx="2" fill="#e8b48a"/><rect x="20.9" y="50" width="4.8" height="9" rx="1.6" fill="#111"/><rect x="20.9" y="49.5" width="4.8" height="1.6" fill="#13ff7a"/><path d="M20.4 58.5h6.6l1 3h-7.6z" fill="#000"/></g>
+  </g>
+  <path d="M12.5 36h15l0.8 8h-7.4l-0.9-3-0.9 3h-7.4z" fill="#0d0d0d"/>
+  <path d="M12 20.5q8-3 16 0l1.2 16.5h-18.4z" fill="#161616"/>
+  <path d="M12.6 26l14.8 0" stroke="#13ff7a" stroke-width="1.1" opacity="0.9"/>
+  <path d="M16.5 19.5l3.5 4 3.5-4" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
+  <rect x="16" y="29" width="3.2" height="3.6" rx="0.6" fill="#ffd400"/>
+  <g class="ea-ref-arm l"><path d="M12.6 21.5q-3 1-3.6 6l-0.6 7" stroke="#161616" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="8.4" cy="35.5" r="1.9" fill="#e8b48a"/></g>
+  <g class="ea-ref-arm r"><path d="M27.4 21.5q3 1 3.6 6l0.6 7" stroke="#161616" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="31.6" cy="35.5" r="1.9" fill="#e8b48a"/>
+    <rect class="ea-card" x="29.2" y="35" width="5.6" height="8" rx="0.8" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/></g>
+  <rect x="18.2" y="16.5" width="3.6" height="4" fill="#d9a47b"/>
+  <circle cx="20" cy="12" r="6.4" fill="#e8b48a"/>
+  <path d="M13.6 11.5q0-7 6.4-7t6.4 7q-1.6-3.6-6.4-3.6t-6.4 3.6z" fill="#2a1a10"/>
+  <circle cx="17.8" cy="12.4" r="0.8" fill="#222"/><circle cx="22.2" cy="12.4" r="0.8" fill="#222"/>
+  <path class="ea-ref-mouth" d="M18.4 15.4q1.6 1 3.2 0" stroke="#7a3b2a" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <g class="ea-whistle"><rect x="19.4" y="14.6" width="5" height="2.4" rx="1.2" fill="#c9cfd6" stroke="#6b737c" stroke-width="0.4"/><circle cx="24.6" cy="15.8" r="1.6" fill="#c9cfd6" stroke="#6b737c" stroke-width="0.4"/></g>
+</svg><span class="ea-ref-say"></span>`;
+// Schiri bewegt sich nur zur gerade bewegten Figur und bleibt dort stehen; zum Pfeifen sprintet er
+let eaRefPos = { rr: 4.4, cc: 4.35 };
+function eaRefPlace(rr, cc, secPerCell){
+  if(!eaRefEl) return 0;
+  const dist = Math.hypot(rr - eaRefPos.rr, cc - eaRefPos.cc);
+  const dur = Math.max(0.35, dist * (secPerCell || 0.32));
+  if(Math.abs(cc - eaRefPos.cc) > 0.05) eaRefEl.classList.toggle('face-left', cc < eaRefPos.cc);
+  eaRefPos = { rr, cc };
+  eaRefEl.style.transitionDuration = dur + 's';
+  eaRefEl.style.left = (cc / 8 * 100) + '%';
+  eaRefEl.style.top = (rr / 8 * 100) + '%';
+  eaRefEl.classList.toggle('jog', (secPerCell || 0.32) > 0.3);
+  eaRefEl.classList.add('walk');
+  clearTimeout(eaRefPlace.t); eaRefPlace.t = setTimeout(() => eaRefEl.classList.remove('walk'), dur * 1000);
+  return dur * 1000;
+}
+// Zur bewegten Figur laufen; bei Pfiff (whistle) sprinten, pfeifen und evtl. Karte zeigen
+function eaRefCall(r, c, card, whistle = true){
+  clearTimeout(eaRefCall.t);
+  // neben das Feld stellen, nicht direkt auf die Figur
+  const arrive = eaRefPlace(Math.min(7.5, Math.max(0.6, r + (r < 4 ? 0.9 : -0.1))), c < 7 ? c + 1 : c, whistle ? 0.2 : 0.32);
+  if(!whistle) return;
+  eaRefCall.t = setTimeout(() => {
+    eaRefAct('whistle');
+    if(card) eaRefCall.t = setTimeout(() => eaRefAct(card), 650);
+  }, arrive);
+}
+function eaRefAct(kind){
+  if(!eaRefEl) return;
+  const say = eaRefEl.querySelector('.ea-ref-say');
+  eaRefEl.classList.remove('whistle', 'yellow', 'red');
+  void eaRefEl.offsetWidth;
+  eaRefEl.classList.add(kind);
+  say.textContent = kind === 'whistle' ? 'PFIFF!' : '';
+  clearTimeout(eaRefAct.t);
+  if(kind !== 'red') eaRefAct.t = setTimeout(() => eaRefEl.classList.remove(kind), 1500);
+}
+function chessDoMove(move){
+  const target = chessBoard[move.to[0]][move.to[1]];
+  eaCapture = target ? { at: move.to, val: eaValues[target[1]] } : null;
+  eaLastMove = move;
+  if(!eaClockStart){ eaClockStart = Date.now(); clearInterval(eaClockTimer); eaClockTimer = setInterval(eaClockTick, 1000); }
+  chessApplyMove(chessBoard, move, chessCastleRights);
+}
 let chessBoard, chessTurn, chessMode, chessOver, chessSelected, chessLegalTargets, chessCastleRights;
 const chessBoardEl = document.getElementById('chess-board');
 const chessStatusEl = document.getElementById('chess-status');
@@ -5355,8 +6153,21 @@ function chessRender(){
       cell.className = 'chess-cell' + (isDark ? ' dark' : '');
       const piece = chessBoard[r][c];
       if(piece){
-        cell.textContent = chessPieceChars[piece[0]][piece[1]];
+        const g = document.createElement('span');
+        g.className = 'ea-piece';
+        g.textContent = chessPieceChars[piece[0]][piece[1]];
+        cell.appendChild(g);
         cell.classList.add(piece[0] === 'w' ? 'white-piece' : 'black-piece');
+      }
+      if(eaLastMove && [eaLastMove.from, eaLastMove.to].some(([lr, lc]) => lr === r && lc === c)){
+        cell.classList.add(eaLastMove.to[0] === r && eaLastMove.to[1] === c ? 'last-to' : 'last-from');
+      }
+      if(eaCapture && eaCapture.at[0] === r && eaCapture.at[1] === c){
+        cell.classList.add('captured');
+        const pop = document.createElement('span');
+        pop.className = 'ea-pop';
+        pop.textContent = '+' + eaCapture.val;
+        cell.appendChild(pop);
       }
       if(chessSelected && chessSelected[0] === r && chessSelected[1] === c){
         cell.classList.add('selected');
@@ -5383,7 +6194,7 @@ function chessHandleClick(r, c){
   if(chessSelected){
     const isTarget = chessLegalTargets.some(([lr, lc]) => lr === r && lc === c);
     if(isTarget){
-      chessApplyMove(chessBoard, { from: chessSelected, to: [r, c] }, chessCastleRights);
+      chessDoMove({ from: chessSelected, to: [r, c] });
       chessSelected = null;
       chessLegalTargets = [];
       chessAfterMove();
@@ -5415,21 +6226,31 @@ function chessAfterMove(){
 
   if(legalMoves.length === 0){
     chessOver = true;
+    clearInterval(eaClockTimer);
     chessStatusEl.textContent = inCheck
-      ? `Schachmatt! ${chessTurn === 'w' ? 'Schwarz' : 'Weiss'} gewinnt.`
+      ? `Schachmatt! ${eaTeam(chessTurn === 'w' ? 'b' : 'w')} gewinnt.`
       : 'Patt! Unentschieden.';
     chessRender();
+    eaUpdateScore();
+    eaBanner('ABPFIFF', inCheck ? `${eaTeam(chessTurn === 'w' ? 'b' : 'w')} gewinnt` : 'Unentschieden', 'final', true);
+    if(eaLastMove) eaRefCall(...eaLastMove.to, inCheck ? 'red' : null);
+    eaCapture = null;
     return;
   }
 
-  chessStatusEl.textContent = `${chessTurn === 'w' ? 'Weiss' : 'Schwarz'} ist dran.` + (inCheck ? ' Schach!' : '');
+  chessStatusEl.textContent = `${eaTeam(chessTurn)} ist am Ball.` + (inCheck ? ' Schach!' : '');
   chessRender();
+  eaUpdateScore();
+  if(eaLastMove) eaRefCall(...eaLastMove.to, inCheck ? 'yellow' : null, !!(inCheck || eaCapture));
+  if(inCheck) eaBanner('SCHACH!', `${eaTeam(chessTurn)} unter Druck`, 'check');
+  else if(eaCapture) eaBanner('BALLGEWINN', `+${eaCapture.val} für ${eaTeam(chessTurn === 'w' ? 'b' : 'w')}`, 'steal');
+  eaCapture = null;
 
   if(chessMode === 'bot' && chessTurn === 'b' && !chessOver){
     setTimeout(() => {
       const result = chessMinimax(chessBoard, 2, 'b');
       if(result.move){
-        chessApplyMove(chessBoard, result.move, chessCastleRights);
+        chessDoMove(result.move);
         chessAfterMove();
       }
     }, 300);
@@ -5443,8 +6264,15 @@ function chessReset(){
   chessSelected = null;
   chessLegalTargets = [];
   chessCastleRights = { w: { k: true, q: true }, b: { k: true, q: true } };
-  chessStatusEl.textContent = 'Weiss ist dran.';
+  eaLastMove = null; eaCapture = null; eaClockStart = 0;
+  clearInterval(eaClockTimer); eaClockTick();
+  chessStatusEl.textContent = eaTeam('w') + ' hat Anstoss.';
   chessRender();
+  eaUpdateScore();
+  eaBanner('EA SPORTS', "It's in the game", 'intro');
+  // Anstoss: am Mittelpunkt pfeifen, dann an die Seitenlinie
+  eaRefEl?.classList.remove('red', 'yellow');
+  eaRefCall(3.5, 3.35, null);
 }
 
 document.querySelectorAll('#chess-mode-select .mode-btn').forEach(btn => {
@@ -5894,13 +6722,195 @@ function millHasAnyMove(board, player, canFly){
   return false;
 }
 
+// Valorant-Stil: Verteidiger (türkis, du) gegen Angreifer (rot)
+const vlName = (p) => p === 'w' ? 'Verteidiger' : 'Angreifer';
+// Jeder Stein ist ein eigener Agent (selbst gezeichnete Symbole in der Agentenfarbe)
+const VL_AGENTS = {
+  w: [
+    { name: 'Sage',     c: '#4fe3d0', i: '<circle cx="10" cy="10" r="6.5"/><path d="M10 5.5l3 4.5-3 4.5-3-4.5z" fill="currentColor" stroke="none"/>' },
+    { name: 'Killjoy',  c: '#ffd23f', i: '<circle cx="10" cy="10" r="4.2"/><path d="M10 2.5v3M10 14.5v3M2.5 10h3M14.5 10h3M4.7 4.7l2.1 2.1M13.2 13.2l2.1 2.1M15.3 4.7l-2.1 2.1M6.8 13.2l-2.1 2.1"/>' },
+    { name: 'Cypher',   c: '#ece8e1', i: '<path d="M2.5 9h15M6 9l1.2-4.5h5.6L14 9"/><circle cx="10" cy="13.5" r="2.4" fill="currentColor" stroke="none"/>' },
+    { name: 'Chamber',  c: '#e2b85c', i: '<path d="M14.5 4.5H8L4.5 10 8 15.5h6.5"/><path d="M9 10h6" />' },
+    { name: 'Sova',     c: '#5aa9ff', i: '<path d="M3.5 16.5L16 4M16 4h-6M16 4v6"/>' },
+    { name: 'Viper',    c: '#4fd36b', i: '<path d="M10 2.5c3 4.6 5 6.8 5 9.8a5 5 0 0 1-10 0c0-3 2-5.2 5-9.8z" fill="currentColor" stroke="none"/>' },
+    { name: 'Astra',    c: '#b78cff', i: '<path d="M10 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="currentColor" stroke="none"/>' },
+    { name: 'Harbor',   c: '#2bc6d9', i: '<path d="M2.5 8c2.5-3.5 5-3.5 7.5 0s5 3.5 7.5 0M2.5 13.5c2.5-3.5 5-3.5 7.5 0s5 3.5 7.5 0"/>' },
+    { name: 'Deadlock', c: '#c9d3dc', i: '<path d="M10 2.5l6.5 3.75v7.5L10 17.5l-6.5-3.75v-7.5z"/><path d="M10 2.5v15M3.5 6.25l13 7.5M16.5 6.25l-13 7.5" stroke-width="0.9"/>' },
+  ],
+  b: [
+    { name: 'Jett',     c: '#a8e3ff', i: '<path d="M10 2l2.6 9.5H7.4z" fill="currentColor" stroke="none"/><path d="M10 11.5V17M7.5 17h5"/>' },
+    { name: 'Phoenix',  c: '#ff8a3d', i: '<path d="M10 2c1 4 5 5.2 5 10a5 5 0 0 1-10 0c0-3 1.8-4 2-6 1 1 1.3 2 2 3 0-3-.2-5 1-7z" fill="currentColor" stroke="none"/>' },
+    { name: 'Raze',     c: '#ffb020', i: '<path d="M10 2l1.8 4.6 4.7-1.9-2.6 4.4 3.9 2.6-4.9.3-.7 5-2.2-4.3-3.9 3 .9-4.9-4.4-2.1 4.9-1z" fill="currentColor" stroke="none"/>' },
+    { name: 'Reyna',    c: '#d05bff', i: '<path d="M2 10c4-6 12-6 16 0-4 6-12 6-16 0z"/><circle cx="10" cy="10" r="2.6" fill="currentColor" stroke="none"/>' },
+    { name: 'Neon',     c: '#3fd0ff', i: '<path d="M11.5 2L4 11h5.2L8 18l7.5-9.5h-5.2z" fill="currentColor" stroke="none"/>' },
+    { name: 'Yoru',     c: '#5b7bff', i: '<path d="M12.5 2.8a7.3 7.3 0 1 0 4.8 11.4A6 6 0 1 1 12.5 2.8z" fill="currentColor" stroke="none"/>' },
+    { name: 'Breach',   c: '#ff6a3d', i: '<path d="M3 10h4.5M8.5 5.2a5.6 5.6 0 0 1 0 9.6M11.8 3a8.8 8.8 0 0 1 0 14"/>' },
+    { name: 'Skye',     c: '#7ad86b', i: '<path d="M3.5 16.5C3.5 8.5 8.5 4 17 3c-1 8.4-5.4 13.5-13.5 13.5z" fill="currentColor" stroke="none"/><path d="M4 16l7.5-7.5" stroke="#0f1923" stroke-width="1.4"/>' },
+    { name: 'Omen',     c: '#8a6bff', i: '<path d="M3.5 17.5c0-8.5 3-13.5 6.5-13.5s6.5 5 6.5 13.5z" fill="currentColor" stroke="none"/><path d="M7.5 11.5h5" stroke="#0f1923" stroke-width="1.6"/>' },
+  ],
+};
+const vlAgentSvg = (a) => `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${a.i}</svg>`;
+let millAgent = Array(24).fill(null);
+function millAgentPlace(i, p){ millAgent[i] = VL_AGENTS[p][9 - millToPlace[p]]; }   // vor dem Herunterzählen aufrufen
+function millAgentMove(from, to){ millAgent[to] = millAgent[from]; millAgent[from] = null; }
+
+// KI: Negamax mit Alpha-Beta-Suche und zunehmender Tiefe (max. ~0.7 s Bedenkzeit)
+const MILL_LINES_OF = Array.from({ length: 24 }, (_, i) => MILL_LINES.filter(l => l.includes(i)));
+const aiOpp = (p) => p === 'w' ? 'b' : 'w';
+function aiFormsMill(bd, i, p){ return MILL_LINES_OF[i].some(l => bd[l[0]] === p && bd[l[1]] === p && bd[l[2]] === p); }
+function aiCount(bd, p){ let n = 0; for(let i = 0; i < 24; i++) if(bd[i] === p) n++; return n; }
+function aiRemovable(bd, o){
+  const all = [], free = [];
+  for(let i = 0; i < 24; i++) if(bd[i] === o){ all.push(i); if(!aiFormsMill(bd, i, o)) free.push(i); }
+  return free.length ? free : all;
+}
+function aiGen(bd, tp, p){
+  const o = aiOpp(p), res = [];
+  const add = (from, to) => {
+    bd[to] = p; if(from !== null) bd[from] = null;
+    if(aiFormsMill(bd, to, p)) for(const r of aiRemovable(bd, o)) res.push({ from, to, rem: r });
+    else res.push({ from, to, rem: null });
+    bd[to] = null; if(from !== null) bd[from] = p;
+  };
+  if(tp[p] > 0){
+    for(let i = 0; i < 24; i++) if(!bd[i]) add(null, i);
+  } else {
+    const fly = aiCount(bd, p) === 3;
+    for(let i = 0; i < 24; i++){
+      if(bd[i] !== p) continue;
+      if(fly){ for(let t = 0; t < 24; t++) if(!bd[t]) add(i, t); }
+      else for(const t of MILL_ADJ[i]) if(!bd[t]) add(i, t);
+    }
+  }
+  return res;
+}
+function aiApply(bd, tp, p, m){ if(m.from === null){ tp[p]--; } else bd[m.from] = null; bd[m.to] = p; if(m.rem !== null) bd[m.rem] = null; }
+function aiUndo(bd, tp, p, m){ if(m.rem !== null) bd[m.rem] = aiOpp(p); bd[m.to] = null; if(m.from === null) tp[p]++; else bd[m.from] = p; }
+function aiEval(bd, tp, p){
+  let score = 0;
+  const moving = tp.w === 0 && tp.b === 0;
+  for(const s of ['w', 'b']){
+    const sign = s === p ? 1 : -1, cnt = aiCount(bd, s);
+    let v = (cnt + tp[s]) * 100;
+    for(const l of MILL_LINES){
+      let own = 0, empty = 0, other = 0;
+      for(const i of l){ if(bd[i] === s) own++; else if(!bd[i]) empty++; else other++; }
+      if(own === 2 && empty === 1) v += 14;       // offene Zweierreihe = Drohung
+      if(own === 3) v += 8;
+      if(own === 1 && empty === 2) v += 1;
+    }
+    if(moving && cnt > 3){
+      for(let i = 0; i < 24; i++) if(bd[i] === s){
+        const free = MILL_ADJ[i].filter(n => !bd[n]).length;
+        v += free * 3; if(!free) v -= 6;
+      }
+    }
+    if(!moving) for(let i = 0; i < 24; i++) if(bd[i] === s && MILL_ADJ[i].length >= 3) v += 2;   // Kreuzungspunkte sind stark
+    score += sign * v;
+  }
+  return score;
+}
+function aiSearch(bd, tp, p, depth, alpha, beta, ply, deadline){
+  if(performance.now() > deadline) throw 'zeit';
+  if(tp.w === 0 && tp.b === 0 && aiCount(bd, p) < 3) return -10000 + ply;
+  const moves = aiGen(bd, tp, p);
+  if(!moves.length) return -10000 + ply;
+  if(depth === 0) return aiEval(bd, tp, p);
+  moves.sort((x, y) => (y.rem !== null) - (x.rem !== null));
+  let best = -Infinity;
+  for(const m of moves){
+    aiApply(bd, tp, p, m);
+    const v = -aiSearch(bd, tp, aiOpp(p), depth - 1, -beta, -alpha, ply + 1, deadline);
+    aiUndo(bd, tp, p, m);
+    if(v > best) best = v;
+    if(v > alpha) alpha = v;
+    if(alpha >= beta) break;
+  }
+  return best;
+}
+function millAiBest(p){
+  const bd = millBoard.slice(), tp = { ...millToPlace };
+  let moves = aiGen(bd, tp, p);
+  if(!moves.length) return null;
+  for(let i = moves.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [moves[i], moves[j]] = [moves[j], moves[i]]; }
+  const deadline = performance.now() + 700;
+  let bestMove = moves[0];
+  for(let depth = 1; depth <= 9; depth++){
+    try{
+      let best = -Infinity, bestHere = null, alpha = -Infinity;
+      for(const m of moves){
+        aiApply(bd, tp, p, m);
+        const v = -aiSearch(bd, tp, aiOpp(p), depth - 1, -Infinity, -alpha, 1, deadline);
+        aiUndo(bd, tp, p, m);
+        if(v > best){ best = v; bestHere = m; }
+        if(v > alpha) alpha = v;
+      }
+      bestMove = bestHere;
+      moves = [bestHere, ...moves.filter(m => m !== bestHere)];   // bester Zug zuerst für die nächste Tiefe
+      if(best > 9000) break;
+    } catch(e){ if(e !== 'zeit') throw e; break; }
+  }
+  return bestMove;
+}
+let vlRound = 1, vlLast = null, vlLastFrom = null;
+const vlFxEl = document.getElementById('vl-fx');
+// HUD oben: lebende Agenten, Reserve (noch zu setzen) und eliminierte als Rauten
 function millRenderPiecesLeft(){
-  const el = document.getElementById('mill-pieces-left');
-  if(millPhase !== 'placing'){ el.innerHTML = ''; return; }
-  el.innerHTML = `
-    <div class="mill-count"><span class="dot white"></span> Braun: ${millToPlace.w} übrig</div>
-    <div class="mill-count"><span class="dot black"></span> Schwarz: ${millToPlace.b} übrig</div>
-  `;
+  ['w', 'b'].forEach(p => {
+    const alive = millCountPieces(millBoard, p), reserve = millToPlace[p], dead = 9 - alive - reserve;
+    const side = p === 'w' ? 'def' : 'atk';
+    document.getElementById(`vl-${side}-count`).textContent = alive;
+    document.getElementById(`vl-${side}-pips`).innerHTML =
+      '<i class="alive"></i>'.repeat(alive) + '<i class="reserve"></i>'.repeat(reserve) + '<i class="dead"></i>'.repeat(Math.max(0, dead));
+  });
+  const ph = document.getElementById('vl-phase');
+  const fly = millPhase === 'moving' && millCountPieces(millBoard, millTurn) === 3;
+  ph.textContent = millOver ? 'Match vorbei' : millRemoving ? 'Ziel ausschalten' : millPhase === 'placing' ? 'Kaufphase' : fly ? 'Letzter Stand' : 'Kampfphase';
+  ph.className = millRemoving ? 'hot' : '';
+  document.getElementById('vl-round').textContent = 'Runde ' + vlRound;
+  document.querySelector('.vl-hud .def')?.classList.toggle('turn', !millOver && millTurn === 'w');
+  document.querySelector('.vl-hud .atk')?.classList.toggle('turn', !millOver && millTurn === 'b');
+}
+// Position eines Punkts in Prozent (Brett und Effekt-Ebene skalieren mit)
+function vlPos(i){ const [x, y] = MILL_COORDS[i]; return [(20 + x * 50) / 340 * 100, (20 + y * 50) / 340 * 100]; }
+// Abschuss: Fadenkreuz, Splitter, Kill-Feed-Eintrag und Banner
+function vlKill(killer, idx){
+  const [l, t] = vlPos(idx);
+  const ka = millAgent[vlLast], va = millAgent[idx];
+  millAgent[idx] = null;
+  if(vlFxEl){
+    const fx = document.createElement('div');
+    fx.className = 'vl-kill ' + (killer === 'w' ? 'by-def' : 'by-atk');
+    fx.style.left = l + '%'; fx.style.top = t + '%';
+    fx.innerHTML = '<span class="vl-cross"></span>' + Array.from({ length: 8 }, (_, k) =>
+      `<span class="vl-shard" style="--a:${k * 45 + Math.random() * 20}deg; --d:${22 + Math.random() * 18}px"></span>`).join('');
+    vlFxEl.appendChild(fx);
+    setTimeout(() => fx.remove(), 900);
+  }
+  const feed = document.getElementById('vl-feed');
+  if(feed){
+    const row = document.createElement('div');
+    row.className = 'vl-feed-row ' + (killer === 'w' ? 'by-def' : 'by-atk');
+    const tag = (a, p) => a ? `<span class="vl-feed-agent" style="color:${a.c}">${vlAgentSvg(a)}</span><b>${a.name}</b>` : `<b>${vlName(p)}</b>`;
+    row.innerHTML = `${tag(ka, killer)}<svg viewBox="0 0 24 10"><path d="M1 4h13l2-2h5v2h2v2h-9l-2 3h-3l1-3H1z" fill="currentColor"/></svg>${tag(va, killer === 'w' ? 'b' : 'w')}`;
+    feed.prepend(row);
+    while(feed.children.length > 4) feed.lastChild.remove();
+    setTimeout(() => row.classList.add('out'), 3500);
+    setTimeout(() => row.remove(), 4000);
+  }
+  vlBanner('Eliminiert', killer === 'w' ? 'def' : 'atk', false, va ? va.name + ' ist raus' : '');
+}
+function vlWin(winner){
+  const you = millMode === 'bot';
+  const text = you ? (winner === 'w' ? 'Sieg' : 'Niederlage') : vlName(winner) + ' gewinnen';
+  setTimeout(() => vlBanner(text, winner === 'w' ? 'def' : 'atk', true, `Runde ${vlRound} · ${millCountPieces(millBoard, winner)} Agenten übrig`), 700);
+}
+function vlBanner(text, side, stay, sub){
+  const ov = document.getElementById('vl-overlay');
+  if(!ov) return;
+  ov.innerHTML = `<div class="vl-banner ${side}${stay ? ' stay' : ''}"><b>${text}</b>${sub ? `<span>${sub}</span>` : ''}</div>`;
+  clearTimeout(vlBanner.t);
+  if(!stay) vlBanner.t = setTimeout(() => { ov.innerHTML = ''; }, 1300);
 }
 
 function millRender(){
@@ -5910,7 +6920,10 @@ function millRender(){
   // Linien als SVG zeichnen
   const scale = 340 / 6.6; const offset = 20;
   function px(v){ return offset + v * (300/6); }
-  let svg = `<svg viewBox="0 0 340 340">`;
+  // Karte: Site-Markierungen A/B und die Spike in der Mitte
+  let svg = `<svg viewBox="0 0 340 340">
+    <text x="${px(0.5)}" y="${px(0.62)}" class="vl-site">A</text><text x="${px(5.5)}" y="${px(5.62)}" class="vl-site">B</text>
+    <g class="vl-spike" transform="translate(170 170)"><path d="M0-26l9 10v22l-9 14-9-14v-22z"/><path d="M0-16v28M-5-4h10" class="ln"/></g>`;
   const edges = [];
   MILL_ADJ.forEach((neighbors, i) => {
     neighbors.forEach(n => {
@@ -5919,7 +6932,7 @@ function millRender(){
   });
   edges.forEach(([a, b]) => {
     const [ax, ay] = MILL_COORDS[a], [bx, by] = MILL_COORDS[b];
-    svg += `<line x1="${px(ax)}" y1="${px(ay)}" x2="${px(bx)}" y2="${px(by)}" stroke="#8a8f9c" stroke-width="2.5"/>`;
+    svg += `<line x1="${px(ax)}" y1="${px(ay)}" x2="${px(bx)}" y2="${px(by)}" stroke="rgba(236,232,225,0.55)" stroke-width="2" stroke-linecap="square"/>`;
   });
   svg += `</svg>`;
   millBoardEl.innerHTML = svg;
@@ -5933,12 +6946,16 @@ function millRender(){
     btn.className = 'mill-point';
     if(millBoard[i] === 'w') btn.classList.add('white');
     if(millBoard[i] === 'b') btn.classList.add('black');
+    const ag = millBoard[i] && millAgent[i];
+    if(ag){ btn.innerHTML = `<span class="vl-agent" style="color:${ag.c}">${vlAgentSvg(ag)}</span>`; btn.title = ag.name; }
     if(millSelected === i) btn.classList.add('selected');
     if(millRemoving && millBoard[i] && millGetRemovable(millBoard, millTurn === 'w' ? 'b' : 'w').includes(i)){
       btn.classList.add('removable');
     }
-    btn.style.left = px(cx) + 'px';
-    btn.style.top = px(cy) + 'px';
+    const [pl, pt] = vlPos(i);
+    btn.style.left = pl + '%';
+    btn.style.top = pt + '%';
+    if(i === vlLast) btn.classList.add(vlLastFrom === null ? 'spawn' : 'moved');
     btn.addEventListener('click', () => millHandleClick(i));
     millBoardEl.appendChild(btn);
   }
@@ -5951,6 +6968,7 @@ function millHandleClick(i){
   if(millRemoving){
     const removable = millGetRemovable(millBoard, millTurn === 'w' ? 'b' : 'w');
     if(!removable.includes(i)) return;
+    vlKill(millTurn, i);
     millBoard[i] = null;
     millRemoving = false;
     millAfterAction();
@@ -5959,13 +6977,15 @@ function millHandleClick(i){
 
   if(millPhase === 'placing'){
     if(millBoard[i]) return;
+    millAgentPlace(i, millTurn);
     millBoard[i] = millTurn;
+    vlLast = i; vlLastFrom = null;
     millToPlace[millTurn]--;
     if(millFormsMill(millBoard, i, millTurn)){
       millRemoving = true;
-      millStatusEl.textContent = `Mühle! ${millTurn === 'w' ? 'Braun' : 'Schwarz'} entfernt einen gegnerischen Stein.`;
+      millStatusEl.textContent = `Mühle! ${vlName(millTurn)} schalten einen Gegner aus: Ziel wählen.`;
       millRender();
-      if(millMode === 'bot' && millTurn === 'w'){ /* Spieler entfernt selbst */ }
+      vlBanner('Mühle!', millTurn === 'w' ? 'def' : 'atk', false, 'Ziel ausschalten');
       return;
     }
     millAfterAction();
@@ -5996,13 +7016,16 @@ function millHandleClick(i){
 
   millBoard[i] = millTurn;
   millBoard[millSelected] = null;
+  millAgentMove(millSelected, i);
+  vlLast = i; vlLastFrom = millSelected;
   const movedFrom = millSelected;
   millSelected = null;
 
   if(millFormsMill(millBoard, i, millTurn)){
     millRemoving = true;
-    millStatusEl.textContent = `Mühle! ${millTurn === 'w' ? 'Braun' : 'Schwarz'} entfernt einen gegnerischen Stein.`;
+    millStatusEl.textContent = `Mühle! ${vlName(millTurn)} schalten einen Gegner aus: Ziel wählen.`;
     millRender();
+    vlBanner('Mühle!', millTurn === 'w' ? 'def' : 'atk', false, 'Ziel ausschalten');
     return;
   }
   millAfterAction();
@@ -6014,26 +7037,29 @@ function millAfterAction(){
   }
 
   millTurn = millTurn === 'w' ? 'b' : 'w';
+  if(millTurn === 'w') vlRound++;
 
   if(millPhase === 'moving'){
     const opponentCount = millCountPieces(millBoard, millTurn);
     if(opponentCount < 3){
       millOver = true;
-      millStatusEl.textContent = `${millTurn === 'w' ? 'Schwarz' : 'Braun'} gewinnt — Gegner hat zu wenig Steine!`;
+      millStatusEl.textContent = `${vlName(millTurn === 'w' ? 'b' : 'w')} gewinnen: Gegner hat zu wenig Agenten!`;
       millRender();
+      vlWin(millTurn === 'w' ? 'b' : 'w');
       return;
     }
     const canFly = opponentCount === 3;
     if(!millHasAnyMove(millBoard, millTurn, canFly)){
       millOver = true;
-      millStatusEl.textContent = `${millTurn === 'w' ? 'Schwarz' : 'Braun'} gewinnt — Gegner kann nicht mehr ziehen!`;
+      millStatusEl.textContent = `${vlName(millTurn === 'w' ? 'b' : 'w')} gewinnen: Gegner kann nicht mehr ziehen!`;
       millRender();
+      vlWin(millTurn === 'w' ? 'b' : 'w');
       return;
     }
   }
 
-  const phaseLabel = millPhase === 'placing' ? `Noch ${millToPlace[millTurn]} zu setzen.` : 'Ziehphase.';
-  millStatusEl.textContent = `${millTurn === 'w' ? 'Braun' : 'Schwarz'} ist dran. ${phaseLabel}`;
+  const phaseLabel = millPhase === 'placing' ? `Noch ${millToPlace[millTurn]} Agenten zu setzen.` : millCountPieces(millBoard, millTurn) === 3 ? 'Nur noch 3: Agenten dürfen springen!' : 'Agent bewegen.';
+  millStatusEl.textContent = `${vlName(millTurn)} sind dran. ${phaseLabel}`;
   millRender();
 
   if(millMode === 'bot' && millTurn === 'b' && !millOver){
@@ -6041,71 +7067,27 @@ function millAfterAction(){
   }
 }
 
+let millGameId = 0;
 function millBotMove(){
-  if(millOver) return;
-
-  if(millPhase === 'placing'){
-    let bestIdx = null;
-    const empties = [];
-    for(let i = 0; i < 24; i++) if(!millBoard[i]) empties.push(i);
-
-    bestIdx = empties.find(i => { millBoard[i]='b'; const r=millFormsMill(millBoard,i,'b'); millBoard[i]=null; return r; });
-    if(bestIdx === undefined){
-      bestIdx = empties.find(i => { millBoard[i]='w'; const r=millFormsMill(millBoard,i,'w'); millBoard[i]=null; return r; });
-    }
-    if(bestIdx === undefined){
-      const preferred = empties.filter(i => MILL_ADJ[i].length >= 3);
-      bestIdx = preferred.length ? preferred[Math.floor(Math.random()*preferred.length)] : empties[Math.floor(Math.random()*empties.length)];
-    }
-
-    millBoard[bestIdx] = 'b';
-    millToPlace.b--;
-    if(millFormsMill(millBoard, bestIdx, 'b')){
-      const removable = millGetRemovable(millBoard, 'w');
-      const rem = removable[Math.floor(Math.random()*removable.length)];
-      millBoard[rem] = null;
+  if(millOver || millTurn !== 'b') return;
+  const gid = millGameId;
+  const m = millAiBest('b');
+  if(!m) return;
+  if(m.from === null){ millAgentPlace(m.to, 'b'); millBoard[m.to] = 'b'; millToPlace.b--; }
+  else { millBoard[m.to] = 'b'; millBoard[m.from] = null; millAgentMove(m.from, m.to); }
+  vlLast = m.to; vlLastFrom = m.from;
+  if(m.rem !== null){
+    // Mühle des Bots: kurz zeigen, dann Abschuss
+    millStatusEl.textContent = `Mühle! ${vlName('b')} schalten einen Gegner aus.`;
+    millRender();
+    vlBanner('Mühle!', 'atk', false, 'Ziel ausschalten');
+    setTimeout(() => {
+      if(millOver || gid !== millGameId) return;
+      vlKill('b', m.rem);
+      millBoard[m.rem] = null;
       millAfterAction();
-      return;
-    }
-    millAfterAction();
+    }, 750);
     return;
-  }
-
-  // Ziehphase
-  const canFly = millCountPieces(millBoard, 'b') === 3;
-  const myPieces = [];
-  for(let i = 0; i < 24; i++) if(millBoard[i] === 'b') myPieces.push(i);
-
-  let chosen = null;
-  for(const from of myPieces){
-    for(const to of millGetValidMoves(millBoard, from, 'b', canFly)){
-      millBoard[to] = 'b'; millBoard[from] = null;
-      const formsMill = millFormsMill(millBoard, to, 'b');
-      millBoard[from] = 'b'; millBoard[to] = null;
-      if(formsMill){ chosen = { from, to }; break; }
-    }
-    if(chosen) break;
-  }
-
-  if(!chosen){
-    const candidates = [];
-    for(const from of myPieces){
-      for(const to of millGetValidMoves(millBoard, from, 'b', canFly)){
-        candidates.push({ from, to });
-      }
-    }
-    chosen = candidates[Math.floor(Math.random()*candidates.length)];
-  }
-
-  if(!chosen) return;
-
-  millBoard[chosen.to] = 'b';
-  millBoard[chosen.from] = null;
-
-  if(millFormsMill(millBoard, chosen.to, 'b')){
-    const removable = millGetRemovable(millBoard, 'w');
-    const rem = removable[Math.floor(Math.random()*removable.length)];
-    millBoard[rem] = null;
   }
   millAfterAction();
 }
@@ -6118,8 +7100,12 @@ function millReset(){
   millSelected = null;
   millRemoving = false;
   millToPlace = { w: 9, b: 9 };
-  millStatusEl.textContent = 'Braun ist dran. Noch 9 zu setzen.';
+  millAgent = Array(24).fill(null);
+  millGameId++;
+  vlRound = 1; vlLast = null; vlLastFrom = null;
+  millStatusEl.textContent = 'Verteidiger sind dran. Noch 9 Agenten zu setzen.';
   millRender();
+  vlBanner('Kaufphase', 'def', false, 'Setze deine 9 Agenten');
 }
 
 document.querySelectorAll('#mill-mode-select .mode-btn').forEach(btn => {

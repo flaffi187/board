@@ -703,16 +703,28 @@
   .app-tile{
     display:flex; flex-direction:column; align-items:center; gap:12px;
     background:var(--board-2); border:1px solid var(--line);
-    border-top:3px solid var(--tile-color);
     border-radius:2px; padding:26px 14px; text-decoration:none;
     color:var(--card); transition: transform 0.15s ease, border-color 0.15s ease; position:relative;
   }
-  .app-tile:hover{ transform:translateY(-2px); border-color:var(--line); border-top-color:var(--tile-color); }
+  .app-tile:hover{ transform:translateY(-2px); border-color:var(--line); }
   .app-tile .app-icon{
     font-size:1.9rem; width:52px; height:52px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
     background: var(--tile-color);
   }
+  /* Kachel mit eigenem Bild über die ganze Fläche (z.B. YouTube-Neon-Logo) */
+  .app-tile.app-tile-image{
+    justify-content:flex-end; min-height:134px; padding-bottom:10px; overflow:hidden;
+    background: var(--tile-image) var(--tile-pos, center) / var(--tile-size, cover) no-repeat, var(--tile-bg, #050505);
+    border-color: color-mix(in srgb, var(--tile-color) 35%, transparent);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  }
+  .app-tile.app-tile-image:hover{ box-shadow: 0 0 22px color-mix(in srgb, var(--tile-color) 55%, transparent); filter:brightness(1.12); border-color: color-mix(in srgb, var(--tile-color) 60%, transparent); }
+  .app-tile.app-tile-image::after{
+    content:''; position:absolute; left:0; right:0; bottom:0; height:42%; pointer-events:none;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.72) 100%);
+  }
+  .app-tile.app-tile-image .app-name{ position:relative; z-index:1; color:#fff; text-shadow: 0 0 6px var(--tile-color), 0 1px 3px rgba(0,0,0,0.9); }
   .app-tile .app-name{
     font-family:'JetBrains Mono'; font-size:0.76rem; letter-spacing:0.04em;
     text-transform:uppercase;
@@ -1370,6 +1382,121 @@
   .nokia-mic{ width:6px; height:6px; margin:16px auto 0; border-radius:50%; background:#0d1a36; box-shadow: inset 0 1px 2px rgba(0,0,0,0.8); }
 
   .conv-wrap{ max-width:420px; }
+  /* Umrechner als Game Boy */
+  .conv-wrap.gameboy{
+    position:relative; max-width:400px; padding:20px 20px 26px;
+    background: linear-gradient(160deg, #d6d2ca 0%, #c4c0b7 55%, #b3aea4 100%);
+    border-radius:12px 12px 70px 12px;
+    box-shadow: 0 18px 34px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.6), inset 0 -4px 10px rgba(0,0,0,0.2);
+  }
+  .gb-bezel{
+    position:relative; background:#5f6070; border-radius:10px 10px 40px 10px; padding:24px 22px 22px 34px;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+  }
+  .gb-bezel-top{ position:absolute; left:12px; right:12px; top:8px; display:flex; align-items:center; gap:6px; }
+  .gb-bezel-top::before, .gb-bezel-top::after{ content:''; flex:1; height:2px; background:#8b1a4a; box-shadow:0 4px 0 #2a3a8a; }
+  .gb-bezel-top span{ font-family:'Inter', sans-serif; font-size:0.5rem; letter-spacing:0.08em; color:#c9c9d6; white-space:nowrap; }
+  .gb-led{ position:absolute; left:8px; top:58px; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .gb-led i{ width:8px; height:8px; border-radius:50%; background: radial-gradient(circle at 35% 30%, #ff8a8a, #e0262b 60%, #7a0a0e); box-shadow:0 0 6px #ff3a3a; }
+  .gb-led span{ font-family:'Inter', sans-serif; font-size:0.4rem; color:#c9c9d6; writing-mode:vertical-rl; transform:rotate(180deg); letter-spacing:0.08em; }
+  .gb-screen{
+    position:relative; background:#9bbc0f; border-radius:4px; padding:12px;
+    box-shadow: inset 0 3px 8px rgba(15,56,15,0.55);
+    font-family:'Press Start 2P', monospace; color:#0f380f;
+    background-image: linear-gradient(rgba(15,56,15,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(15,56,15,0.06) 1px, transparent 1px);
+    background-size: 3px 3px;
+  }
+  /* Inhalt im Game-Boy-Grün */
+  .gameboy .mode-select, .gameboy .diff-select{ background:#8bac0f; border:2px solid #306230; border-radius:4px; padding:3px; gap:3px; width:auto; }
+  .gameboy .mode-select{ margin-bottom:10px; }
+  .gameboy .mode-btn, .gameboy .diff-btn{
+    flex:1; justify-content:center; border-radius:2px; color:#306230; font-family:'Press Start 2P', monospace; font-size:0.45rem; letter-spacing:0;
+    padding:6px 4px !important; gap:4px !important;
+  }
+  .gameboy .mode-btn:hover, .gameboy .diff-btn:hover{ color:#0f380f; }
+  .gameboy .mode-btn.active, .gameboy .diff-btn.active{ background:#0f380f; color:#9bbc0f; font-weight:400; }
+  .gameboy .mode-icon, .gameboy .cat-icon{ width:22px !important; height:22px !important; filter: grayscale(1) sepia(1) hue-rotate(40deg) saturate(2.4) brightness(0.75) !important; }
+  .gameboy .mode-btn.active .mode-icon, .gameboy .diff-btn.active .cat-icon{ filter: grayscale(1) sepia(1) hue-rotate(40deg) saturate(2) brightness(1.25) !important; }
+  .gameboy #conv-cat-select{ margin-bottom:10px !important; }
+  .gameboy .conv-row{ gap:6px; margin-bottom:6px; }
+  .gameboy .conv-row input, .gameboy .conv-row select{
+    background:#8bac0f; color:#0f380f; border:2px solid #306230; border-radius:2px;
+    font-family:'Press Start 2P', monospace; font-size:0.7rem; padding:10px 8px;
+  }
+  .gameboy .conv-row select{ font-size:0.55rem; }
+  .gameboy .conv-row input[readonly]{ background:#306230; color:#9bbc0f; }
+  .gameboy .conv-row input:focus, .gameboy .conv-row select:focus{ border-color:#0f380f; }
+  .gameboy .flag-btn{ height:38px; background:#8bac0f; border:2px solid #306230; border-radius:2px; color:#0f380f; }
+  .gameboy .flag-menu{ background:#9bbc0f; border:2px solid #0f380f; border-radius:4px; }
+  .gameboy .flag-opt.active{ border-color:#0f380f; }
+  .gameboy .conv-swap-btn{ width:30px; height:30px; background:#0f380f; color:#9bbc0f; border-radius:2px; margin:0 auto 6px; }
+  .gameboy #conv-cur-status{ font-family:'Press Start 2P', monospace; font-size:0.45rem; color:#306230; }
+  /* Game Boy: Menü-Cursor, Hinweiszeile, Start-Logo, Schalter und Kontrastrad */
+  .gb-screen{ padding-left:24px !important; overflow:hidden; }
+  .gb-cursor{
+    position:absolute; left:4px; top:0; font-family:'Press Start 2P', monospace; font-size:0.8rem; line-height:1; color:#0f380f;
+    transition: top 0.12s steps(3); animation: gb-blink 0.9s steps(1) infinite; pointer-events:none; z-index:3;
+  }
+  @keyframes gb-blink{ 0%,65%{ opacity:1; } 66%,100%{ opacity:0.45; } }
+  .gameboy .gb-focus{ outline:2px dashed #0f380f; outline-offset:2px; }
+  .gb-hint{
+    margin-top:8px; padding-top:6px; border-top:2px solid #306230; text-align:center; white-space:pre;
+    font-family:'Press Start 2P', monospace; font-size:0.38rem; color:#306230; letter-spacing:0.02em;
+  }
+  .gb-boot{
+    position:absolute; inset:0; z-index:5; display:flex; align-items:center; justify-content:center; pointer-events:none;
+    background:#9bbc0f; font-family:'Press Start 2P', monospace; font-size:1.05rem; color:#0f380f; opacity:0;
+  }
+  .view.active .gb-boot{ animation: gb-boot 2s ease-out both; }
+  @keyframes gb-boot{
+    0%{ opacity:1; padding-bottom:180px; }
+    55%{ opacity:1; padding-bottom:0; }
+    80%{ opacity:1; padding-bottom:0; }
+    100%{ opacity:0; padding-bottom:0; }
+  }
+  .gb-power{
+    position:absolute; top:-1px; left:30px; display:flex; align-items:center; gap:6px;
+    font-family:'Inter', sans-serif; font-size:0.42rem; font-weight:700; color:#8e8a82; letter-spacing:0.06em;
+  }
+  .gb-power i{ width:22px; height:6px; border-radius:0 0 3px 3px; background:#8e8a82; box-shadow: inset 0 -1px 2px rgba(0,0,0,0.4); position:relative; }
+  .gb-power i::after{ content:''; position:absolute; right:2px; top:0; width:8px; height:5px; border-radius:0 0 2px 2px; background:#5f6070; }
+  .gb-contrast{
+    position:absolute; left:-5px; top:90px; width:7px; height:40px; border-radius:3px;
+    background: repeating-linear-gradient(180deg, #8e8a82 0 2px, #b3aea4 2px 4px); box-shadow: -1px 0 2px rgba(0,0,0,0.3);
+  }
+
+  .gb-logo{ margin:12px 0 0 6px; font-family:'Oswald', sans-serif; font-style:italic; font-weight:700; font-size:1.15rem; letter-spacing:0.02em; color:#2a3a8a; }
+  .gb-controls{ display:flex; justify-content:space-between; align-items:center; margin:14px 6px 0; }
+  .gb-dpad{ position:relative; width:84px; height:84px; display:grid; grid-template-columns:repeat(3, 1fr); grid-template-rows:repeat(3, 1fr); }
+  .gb-d{ background:#2a2b30; border:none; padding:0; cursor:pointer; box-shadow: 0 3px 0 #111; }
+  .gb-d.up{ grid-area:1 / 2; border-radius:3px 3px 0 0; } .gb-d.left{ grid-area:2 / 1; border-radius:3px 0 0 3px; }
+  .gb-d.center{ grid-area:2 / 2; background:#2a2b30; box-shadow:0 3px 0 #111; }
+  .gb-d.center::after{ content:''; display:block; margin:9px auto; width:10px; height:10px; border-radius:50%; background:#222327; box-shadow: inset 0 1px 2px rgba(0,0,0,0.8); }
+  .gb-d.right{ grid-area:2 / 3; border-radius:0 3px 3px 0; } .gb-d.down{ grid-area:3 / 2; border-radius:0 0 3px 3px; }
+  .gb-d:active{ transform:translateY(2px); box-shadow:0 1px 0 #111; }
+  .gb-ab{ display:flex; gap:14px; transform:rotate(-25deg); margin-right:4px; }
+  .gb-round{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .gb-round:first-child{ margin-top:18px; }
+  .gb-btn{
+    width:40px; height:40px; border-radius:50%; border:none; cursor:pointer;
+    background: radial-gradient(circle at 35% 30%, #c94a7a, #9a1f52 60%, #6a0a32); box-shadow: 0 3px 0 #4a0a22, 0 5px 8px rgba(0,0,0,0.35);
+  }
+  .gb-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #4a0a22; }
+  .gb-round span, .gb-pill span{ font-family:'Inter', sans-serif; font-weight:700; font-size:0.6rem; color:#2a3a8a; letter-spacing:0.08em; }
+  .gb-start{ display:flex; justify-content:center; gap:18px; margin-top:16px; }
+  .gb-pill{ display:flex; flex-direction:column; align-items:center; gap:4px; transform:rotate(-25deg); }
+  .gb-pill button{ width:38px; height:10px; border-radius:6px; border:none; cursor:pointer; background:#8a8a92; box-shadow: 0 2px 0 #555, inset 0 1px 0 rgba(255,255,255,0.4); }
+  .gb-pill button:active{ transform:translateY(1px); box-shadow:0 1px 0 #555; }
+  .gb-speaker{ position:absolute; right:22px; bottom:22px; display:flex; gap:6px; transform:rotate(-30deg); }
+  .gb-speaker i{ width:5px; height:40px; border-radius:3px; background:#8e8a82; box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5); }
+  @media (max-width:420px){
+    .conv-wrap.gameboy{ padding:14px 12px 22px; }
+    .gb-bezel{ padding:22px 12px 16px 26px; }
+    .gb-screen{ padding:8px; }
+    .gameboy .mode-btn span, .gameboy .diff-btn span{ font-size:0.4rem; }
+    .gameboy .conv-row input{ font-size:0.6rem; }
+    .gb-speaker{ display:none; }
+  }
   .conv-row{ display:flex; gap:10px; margin-bottom:10px; align-items:center; }
   .conv-row input{
     flex:1; min-width:0; background:var(--board-2); color:#fff; border:1px solid var(--line);

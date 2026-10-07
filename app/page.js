@@ -303,7 +303,16 @@ export default function Page() {
   </div>
 
   <div className="panel-label" style={{ marginTop: "44px" }}>Umrechner</div>
-  <div className="conv-wrap">
+  {/* Umrechner als Game Boy */}
+  <div className="conv-wrap gameboy">
+    <div className="gb-power"><span>◁ OFF</span><i></i><span>ON ▷</span></div>
+    <div className="gb-contrast" aria-hidden="true"></div>
+    <div className="gb-bezel">
+      <div className="gb-bezel-top"><span>DOT MATRIX WITH STEREO SOUND</span></div>
+      <div className="gb-led"><i></i><span>BATTERY</span></div>
+      <div className="gb-screen" id="gb-screen">
+        <div className="gb-boot" aria-hidden="true">GAME BOY</div>
+        <div className="gb-cursor" id="gb-cursor" aria-hidden="true">▶</div>
     <div className="mode-select" id="conv-mode-select">
       <button className="mode-btn active" data-mode="unit">
         {/* Einheiten: Lineal mit m/ft und zwei Umrechnungs-Pfeilen */}
@@ -398,6 +407,28 @@ export default function Page() {
       </div>
       <div className="todo-empty" id="conv-cur-status"></div>
     </div>
+        <div className="gb-hint">▲▼ WÄHLEN  ◀▶ ÄNDERN  A TAUSCHEN</div>
+      </div>
+    </div>
+    <div className="gb-logo">GAME BOY</div>
+    <div className="gb-controls">
+      <div className="gb-dpad" aria-label="Steuerkreuz">
+        <button className="gb-d up" data-gb="up" aria-label="Cursor hoch"></button>
+        <button className="gb-d left" data-gb="left" aria-label="Wert links ändern"></button>
+        <span className="gb-d center"></span>
+        <button className="gb-d right" data-gb="right" aria-label="Wert rechts ändern"></button>
+        <button className="gb-d down" data-gb="down" aria-label="Cursor runter"></button>
+      </div>
+      <div className="gb-ab">
+        <div className="gb-round"><button className="gb-btn" data-gb="b" aria-label="Einheiten oder Währung"></button><span>B</span></div>
+        <div className="gb-round"><button className="gb-btn" data-gb="a" aria-label="Tauschen"></button><span>A</span></div>
+      </div>
+    </div>
+    <div className="gb-start">
+      <div className="gb-pill"><button data-gb="select" aria-label="Nächste Zeile"></button><span>SELECT</span></div>
+      <div className="gb-pill"><button data-gb="start" aria-label="Wert auf 1"></button><span>START</span></div>
+    </div>
+    <div className="gb-speaker"><i></i><i></i><i></i><i></i><i></i><i></i></div>
   </div>
 </div>
 
@@ -430,52 +461,43 @@ export default function Page() {
 <div className="view" id="apps-view">
   <div className="panel-label">Schnellzugriff</div>
   <div className="apps-grid">
-    <a className="app-tile" href="https://www.youtube.com" target="_blank" rel="noopener" style={{ '--tile-color': "#FF0000" }}>
-      <span className="app-icon">▶️</span>
+    <a className="app-tile app-tile-image" href="https://www.youtube.com" target="_blank" rel="noopener" style={{ '--tile-color': "#FF0000", '--tile-image': "url(/youtube-neon.jpg)" }}>
       <span className="app-name">YouTube</span>
     </a>
-    <a className="app-tile" href="whatsapp://" rel="noopener" style={{ '--tile-color': "#25D366" }}>
-      <span className="app-icon">💬</span>
+    <a className="app-tile app-tile-image" href="whatsapp://" rel="noopener" style={{ '--tile-color': "#25D366", '--tile-image': "url(/whatsapp-glitzer.jpg)", '--tile-pos': "55% 60%" }}>
       <span className="app-name">WhatsApp</span>
     </a>
-    <a className="app-tile" href="https://web.snapchat.com" target="_blank" rel="noopener" style={{ '--tile-color': "#FFFC00" }}>
-      <span className="app-icon">👻</span>
+    <a className="app-tile app-tile-image" href="https://web.snapchat.com" target="_blank" rel="noopener" style={{ '--tile-color': "#b04ae0", '--tile-image': "url(/snapchat-geist.jpg)", '--tile-pos': "50% 80%" }}>
       <span className="app-name">Snapchat</span>
     </a>
-    <a className="app-tile" href="https://www.instagram.com" target="_blank" rel="noopener" style={{ '--tile-color': "#C13584" }}>
-      <span className="app-icon">📷</span>
+    <a className="app-tile app-tile-image" href="https://www.instagram.com" target="_blank" rel="noopener" style={{ '--tile-color': "#e0509a", '--tile-image': "url(/instagram-neon.jpg)" }}>
       <span className="app-name">Instagram</span>
     </a>
-    <a className="app-tile" href="https://www.tiktok.com" target="_blank" rel="noopener" style={{ '--tile-color': "#25F4EE" }}>
-      <span className="app-icon">🎵</span>
+    <a className="app-tile app-tile-image" href="https://www.tiktok.com" target="_blank" rel="noopener" style={{ '--tile-color': "#d8dce6", '--tile-image': "url(/tiktok-licht.jpg)", '--tile-pos': "50% 57%" }}>
       <span className="app-name">TikTok</span>
     </a>
-    <a className="app-tile" href="discord://" rel="noopener" style={{ '--tile-color': "#5865F2" }}>
-      <span className="app-icon">🎮</span>
+    <a className="app-tile app-tile-image" href="discord://" rel="noopener" style={{ '--tile-color': "#3aa0ff", '--tile-image': "url(/discord-blitz.jpg)", '--tile-size': "auto 68%", '--tile-pos': "50% 22%", '--tile-bg': "#04020f" }}>
       <span className="app-name">Discord</span>
     </a>
-    <a className="app-tile" href="steam://open/main" rel="noopener" style={{ '--tile-color': "#66C0F4" }}>
-      <span className="app-icon">🕹️</span>
+    <a className="app-tile app-tile-image" href="steam://open/main" rel="noopener" style={{ '--tile-color': "#5a8ae0", '--tile-image': "url(/steam-neon.jpg)", '--tile-pos': "50% 45%" }}>
       <span className="app-name">Steam</span>
     </a>
-    <a className="app-tile" href="spotify:" rel="noopener" style={{ '--tile-color': "#1DB954" }}>
-      <span className="app-icon">🎧</span>
+    <a className="app-tile app-tile-image" href="https://www.riotgames.com/de" target="_blank" rel="noopener" style={{ '--tile-color': "#d9a63a", '--tile-image': "url(/riot-gold.jpg)", '--tile-size': "auto 90%", '--tile-pos': "50% 0%", '--tile-bg': "#090a0f" }}>
+      <span className="app-name">Riot</span>
+    </a>
+    <a className="app-tile app-tile-image" href="spotify:" rel="noopener" style={{ '--tile-color': "#c9cdd4", '--tile-image': "url(/spotify-chrom.jpg)", '--tile-size': "auto 88%", '--tile-pos': "50% 15%", '--tile-bg': "#000000" }}>
       <span className="app-name">Spotify</span>
     </a>
-    <a className="app-tile" href="https://www.amazon.com" target="_blank" rel="noopener" style={{ '--tile-color': "#FF9900" }}>
-      <span className="app-icon">📦</span>
+    <a className="app-tile app-tile-image" href="https://www.amazon.com" target="_blank" rel="noopener" style={{ '--tile-color': "#5fc0b0", '--tile-image': "url(/amazon-glas.jpg)" }}>
       <span className="app-name">Amazon</span>
     </a>
-    <a className="app-tile" href="https://claude.ai" target="_blank" rel="noopener" style={{ '--tile-color': "#D97757" }}>
-      <span className="app-icon">✨</span>
+    <a className="app-tile app-tile-image" href="https://claude.ai" target="_blank" rel="noopener" style={{ '--tile-color': "#D97757", '--tile-image': "url(/claude-3d.jpg)", '--tile-pos': "50% 35%" }}>
       <span className="app-name">Claude AI</span>
     </a>
-    <a className="app-tile" href="https://chatgpt.com" target="_blank" rel="noopener" style={{ '--tile-color': "#10A37F" }}>
-      <span className="app-icon">🤖</span>
+    <a className="app-tile app-tile-image" href="https://chatgpt.com" target="_blank" rel="noopener" style={{ '--tile-color': "#8a9cff", '--tile-image': "url(/chatgpt-cyber.jpg)", '--tile-pos': "45% 50%" }}>
       <span className="app-name">ChatGPT</span>
     </a>
-    <a className="app-tile" href="https://www.google.com" target="_blank" rel="noopener" style={{ '--tile-color': "#4285F4" }}>
-      <span className="app-icon">🔍</span>
+    <a className="app-tile app-tile-image" href="https://www.google.com" target="_blank" rel="noopener" style={{ '--tile-color': "#4285F4", '--tile-image': "url(/google-farbe.jpg)", '--tile-pos': "50% 40%" }}>
       <span className="app-name">Google</span>
     </a>
   </div>

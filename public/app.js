@@ -2842,6 +2842,94 @@ convModeSelectEl.querySelectorAll('.mode-btn').forEach(btn => {
   });
 });
 
+// Game Boy: Menü-Cursor. ▲▼ wählt die Zeile, ◀▶ ändert sie, A tauscht, B wechselt Einheiten↔Währung,
+// SELECT springt zur nächsten Zeile, START setzt den Wert auf 1. Pfeiltasten und A/B auf der Tastatur gehen auch.
+const gbScreen = document.getElementById('gb-screen');
+const gbCursorEl = document.getElementById('gb-cursor');
+let gbRow = 'value';
+const gbIsCurrency = () => convCurrencyPanel.style.display !== 'none';
+const gbRows = () => gbIsCurrency() ? ['mode', 'from', 'value', 'to'] : ['mode', 'cat', 'from', 'value', 'to'];
+function gbTarget(row){
+  const cur = gbIsCurrency();
+  switch(row){
+    case 'mode': return document.getElementById('conv-mode-select');
+    case 'cat': return document.getElementById('conv-cat-select');
+    case 'from': return cur ? document.querySelector('#conv-cur-from-unit + .flag-picker .flag-btn') : document.getElementById('conv-unit-from-unit');
+    case 'value': return document.getElementById(cur ? 'conv-cur-from-value' : 'conv-unit-from-value');
+    case 'to': return cur ? document.querySelector('#conv-cur-to-unit + .flag-picker .flag-btn') : document.getElementById('conv-unit-to-unit');
+  }
+  return null;
+}
+function gbRender(){
+  if(!gbScreen || gbScreen.offsetParent === null) return;
+  if(!gbRows().includes(gbRow)) gbRow = 'mode';
+  document.querySelectorAll('.gameboy .gb-focus').forEach(el => el.classList.remove('gb-focus'));
+  const el = gbTarget(gbRow);
+  if(!el) return;
+  el.classList.add('gb-focus');
+  const sr = gbScreen.getBoundingClientRect(), er = el.getBoundingClientRect();
+  gbCursorEl.style.top = (er.top - sr.top + er.height / 2 - 6) + 'px';
+}
+function gbCycleSelect(sel, dir){
+  const n = sel.options.length;
+  if(!n) return;
+  sel.selectedIndex = (sel.selectedIndex + dir + n) % n;
+  sel.dispatchEvent(new Event('change'));
+}
+function gbCycleCurrency(sel, dir){
+  const i = convCurrencies.indexOf(sel.value);
+  sel.value = convCurrencies[(i + dir + convCurrencies.length) % convCurrencies.length];
+  convFlagPickers.forEach(sync => sync());
+  convUpdateCurrencyResult();
+}
+function gbPress(key){
+  const cur = gbIsCurrency();
+  const fromInput = document.getElementById(cur ? 'conv-cur-from-value' : 'conv-unit-from-value');
+  const setValue = (v) => { fromInput.value = Math.round(v * 1000) / 1000; fromInput.dispatchEvent(new Event('input')); };
+  const rows = gbRows();
+  const toggleMode = () => {
+    const other = convModeSelectEl.querySelector(`.mode-btn[data-mode="${cur ? 'unit' : 'currency'}"]`);
+    if(other) other.click();
+  };
+  switch(key){
+    case 'up': gbRow = rows[(rows.indexOf(gbRow) - 1 + rows.length) % rows.length]; break;
+    case 'down': case 'select': gbRow = rows[(rows.indexOf(gbRow) + 1) % rows.length]; break;
+    case 'a': document.getElementById(cur ? 'conv-cur-swap' : 'conv-unit-swap').click(); break;
+    case 'b': toggleMode(); break;
+    case 'start': setValue(1); break;
+    case 'left': case 'right': {
+      const dir = key === 'right' ? 1 : -1;
+      if(gbRow === 'mode') toggleMode();
+      else if(gbRow === 'cat'){
+        const cats = [...document.querySelectorAll('#conv-cat-select .diff-btn')];
+        const i = cats.findIndex(c => c.classList.contains('active'));
+        cats[(i + dir + cats.length) % cats.length].click();
+      }
+      else if(gbRow === 'value') setValue((parseFloat(fromInput.value) || 0) + dir);
+      else if(gbRow === 'from') cur ? gbCycleCurrency(convCurFromUnit, dir) : gbCycleSelect(document.getElementById('conv-unit-from-unit'), dir);
+      else if(gbRow === 'to') cur ? gbCycleCurrency(convCurToUnit, dir) : gbCycleSelect(document.getElementById('conv-unit-to-unit'), dir);
+      break;
+    }
+  }
+  requestAnimationFrame(gbRender);
+}
+document.querySelectorAll('.gameboy [data-gb]').forEach(btn => btn.addEventListener('click', () => gbPress(btn.dataset.gb)));
+// Klick auf eine Zeile setzt den Cursor dorthin
+document.querySelector('.gameboy')?.addEventListener('pointerdown', (e) => {
+  const map = [['#conv-mode-select', 'mode'], ['#conv-cat-select', 'cat'], ['#conv-unit-from-unit, #conv-cur-from-unit + .flag-picker', 'from'],
+    ['#conv-unit-from-value, #conv-cur-from-value', 'value'], ['#conv-unit-to-unit, #conv-cur-to-unit + .flag-picker', 'to']];
+  for(const [sel, row] of map){ if(e.target.closest(sel)){ gbRow = row; requestAnimationFrame(gbRender); break; } }
+});
+convModeSelectEl.addEventListener('click', () => requestAnimationFrame(gbRender));
+if(gbScreen && 'ResizeObserver' in window) new ResizeObserver(() => gbRender()).observe(gbScreen);
+document.addEventListener('keydown', (e) => {
+  if(!document.getElementById('calc-view').classList.contains('active')) return;
+  const tag = document.activeElement.tagName;
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  const map = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', a: 'a', A: 'a', b: 'b', B: 'b' };
+  if(map[e.key]){ e.preventDefault(); gbPress(map[e.key]); }
+});
+
 convUpdateCurrencyResult();
 
 // Timer

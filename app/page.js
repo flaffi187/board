@@ -34,6 +34,7 @@ export default function Page() {
 
 <div className="view active" id="overview-view">
   <div className="panel-label">Register</div>
+  <div className="overview-fit" id="overview-fit">
   <div className="overview-wrap">
     <div className="honeycomb-bg" id="honeycomb-bg"></div>
     <div className="overview-grid">
@@ -62,6 +63,7 @@ export default function Page() {
         <span className="ov-name">Spiele</span>
       </button>
     </div>
+  </div>
   </div>
   <div className="meadow" id="meadow"></div>
   <div className="bee-layer" id="bee-layer"></div>

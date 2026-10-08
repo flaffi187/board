@@ -2957,10 +2957,14 @@
     .ea-pick{ flex-wrap:nowrap; gap:6px; } .ea-pick-side{ flex:1; min-width:0; } .ea-pick select{ min-width:0; width:100%; font-size:0.8rem; padding:8px 26px 8px 8px; background-position:right 8px center, 0 0; }
   }
 
+  /* Übersicht: feste 950×546-Wabe, auf schmalen Bildschirmen als Ganzes verkleinert (siehe fitOverview in app.js) */
+  .overview-fit{ position:relative; width:100%; overflow:visible; }
+  .overview-fit.scaled{ overflow:hidden; margin:20px 0 30px; }
   .overview-wrap{
-    position:relative; width:950px; height:546px; max-width:100%;
+    position:relative; width:950px; height:546px;
     margin:20px auto 40px; overflow:visible;
   }
+  .overview-fit.scaled .overview-wrap{ margin:0; transform-origin:0 0; }
   .honeycomb-bg{ position:absolute; inset:0; z-index:0; pointer-events:none; }
   .honeycomb-bg svg{ display:block; width:100%; height:100%; }
   .honey-cell{ pointer-events:auto; }

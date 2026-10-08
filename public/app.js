@@ -8894,3 +8894,20 @@ document.getElementById('to-top-btn')?.addEventListener('click', () => window.sc
   check();
 })();
 
+
+// Übersicht aufs Handy einpassen: die ganze Wabe proportional verkleinern statt sie zu zerschneiden
+(function fitOverview(){
+  const fit = document.getElementById('overview-fit'), wrap = fit && fit.querySelector('.overview-wrap');
+  if(!fit || !wrap) return;
+  const apply = () => {
+    const w = fit.clientWidth;
+    if(!w) return;
+    const s = Math.min(1, w / 950);
+    fit.classList.toggle('scaled', s < 1);
+    wrap.style.transform = s < 1 ? `scale(${s})` : '';
+    fit.style.height = s < 1 ? (546 * s) + 'px' : '';
+  };
+  new ResizeObserver(apply).observe(fit);
+  window.addEventListener('resize', apply);
+  apply();
+})();

@@ -8775,3 +8775,17 @@ updateClocks();
 setInterval(updateClocks, 1000);
 // Knopf ganz unten: weich ganz nach oben scrollen
 document.getElementById('to-top-btn')?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+// nur zeigen, wenn die Seite (im aktuellen Tab) überhaupt nach unten scrollbar ist
+(function toTopVisibility(){
+  const btn = document.getElementById('to-top-btn');
+  if(!btn) return;
+  const check = () => {
+    btn.style.display = 'none';   // erst ausblenden, damit der Knopf selbst die Höhe nicht beeinflusst
+    const scrollable = document.documentElement.scrollHeight > window.innerHeight + 40;
+    btn.style.display = scrollable ? '' : 'none';
+  };
+  new ResizeObserver(check).observe(document.body);
+  window.addEventListener('resize', check);
+  document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => setTimeout(check, 50)));
+  check();
+})();

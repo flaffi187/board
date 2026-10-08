@@ -8604,6 +8604,96 @@ function g2048AddRandomTile(){
   return idx;
 }
 
+// Minecraft-Stil: jede Zahl ist ein Block, je höher desto wertvoller (Pixel-Texturen werden als 16×16-SVG erzeugt)
+const MC_BLOCKS = {
+  2:     { name: 'Erde',              base: ['#8b5a2b', '#79502a', '#9a6a3a', '#6b4423'] },
+  4:     { name: 'Grasblock',         base: ['#8b5a2b', '#79502a', '#9a6a3a', '#6b4423'], top: ['#5fa13a', '#4e8a2f', '#6fb447', '#3f7a25'] },
+  8:     { name: 'Bruchstein',        base: ['#7a7a7a', '#5f5f5f', '#9a9a9a', '#4a4a4a'] },
+  16:    { name: 'Kohleerz',          base: ['#7d7d7d', '#6a6a6a', '#8f8f8f'], ore: ['#1c1c1c', '#3a3a3a'] },
+  32:    { name: 'Kupfererz',         base: ['#7d7d7d', '#6a6a6a', '#8f8f8f'], ore: ['#e0784a', '#3fae8a', '#b8552e'] },
+  64:    { name: 'Eisenerz',          base: ['#7d7d7d', '#6a6a6a', '#8f8f8f'], ore: ['#d8af93', '#b78a6c'] },
+  128:   { name: 'Redstoneerz',       base: ['#7d7d7d', '#6a6a6a', '#8f8f8f'], ore: ['#ff2a1a', '#a3100a'] },
+  256:   { name: 'Lapislazulierz',    base: ['#7d7d7d', '#6a6a6a', '#8f8f8f'], ore: ['#2a52c8', '#173089'] },
+  512:   { name: 'Golderz',           base: ['#7d7d7d', '#6a6a6a', '#8f8f8f'], ore: ['#fce35a', '#d9a51a'] },
+  1024:  { name: 'Smaragderz',        base: ['#7d7d7d', '#6a6a6a', '#8f8f8f'], ore: ['#3fe07a', '#17a347'] },
+  2048:  { name: 'Diamanterz',        base: ['#7d7d7d', '#6a6a6a', '#8f8f8f'], ore: ['#7ff8f0', '#2bc4bc'] },
+  4096:  { name: 'Tiefenschiefer-Diamanterz', base: ['#4d4d55', '#3c3c44', '#5c5c66'], ore: ['#7ff8f0', '#2bc4bc'] },
+  8192:  { name: 'Netherquarzerz',    base: ['#7a2a2a', '#5e1f1f', '#8f3a36'], ore: ['#f4eee6', '#d8cdbf'] },
+  16384: { name: 'Nether-Golderz',    base: ['#7a2a2a', '#5e1f1f', '#8f3a36'], ore: ['#fce35a', '#d9a51a'] },
+  32768: { name: 'Antiker Schrott',   base: ['#6b4f45', '#5a4038', '#7d5f53', '#4a332c'], ore: ['#a07c6c', '#3a2a24'] },
+  65536: { name: 'Netheritblock',     base: ['#4a4245', '#3a3335', '#5c5356', '#2a2426'], shiny: true },
+};
+const mcTexCache = {};
+function mcTexture(v){
+  if(mcTexCache[v]) return mcTexCache[v];
+  const b = MC_BLOCKS[v] || MC_BLOCKS[65536];
+  let seed = v * 7919;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  let px = '';
+  for(let y = 0; y < 16; y++) for(let x = 0; x < 16; x++){
+    let c = b.base[Math.floor(rnd() * b.base.length)];
+    if(b.planks){ c = b.base[(y % 4 === 3) ? 3 : (rnd() < 0.15 ? 1 : 0)]; if(y % 4 === 3 || (x === ((Math.floor(y / 4) % 2) ? 4 : 11) && y % 4 !== 3)) c = '#6e5230'; }
+    if(b.top && (y < 3 || (y === 3 && rnd() < 0.5))) c = b.top[Math.floor(rnd() * b.top.length)];
+    if(b.shiny){ if(x === 0 || y === 0) c = b.base[2]; if(x === 15 || y === 15) c = b.base[3]; if((x === 2 || x === 13) && y > 1 && y < 14) c = b.base[1]; }
+    px += `<rect x="${x}" y="${y}" width="1" height="1" fill="${c}"/>`;
+  }
+  if(b.ore){ // Erzklumpen
+    const spots = [[2, 2], [10, 1], [6, 6], [12, 8], [2, 11], [8, 12], [13, 13]];
+    spots.forEach(([sx, sy]) => {
+      [[0, 0], [1, 0], [0, 1], [1, 1], [2, 1]].forEach(([dx, dy], k) => {
+        if(rnd() < 0.85) px += `<rect x="${sx + dx}" y="${sy + dy}" width="1" height="1" fill="${b.ore[k % b.ore.length]}"/>`;
+      });
+    });
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">${px}</svg>`;
+  return (mcTexCache[v] = `url('data:image/svg+xml,${encodeURIComponent(svg)}')`);   // einfache Anführungszeichen, damit es auch in style="…" funktioniert
+}
+
+// Minecraft-Extras: Splash-Text, Erfahrungsleiste, Hotbar mit gefundenen Blöcken, Erfolge und Block-Partikel
+const MC_SPLASHES = ['Jetzt mit Diamanten!', 'Jetzt mit 13 Erzen!', 'Tiefer graben!', 'Auch mit WASD!', 'Kein Creeper inklusive!', '100% Klötzchen!', 'Craften macht Spass!', 'Grabe nie direkt nach unten!', 'Ssssss...', 'Holz zuerst!'];
+let mcBestBlock = 0;
+function mcSplash(){ const el = document.getElementById('mc-splash'); if(el) el.textContent = MC_SPLASHES[Math.floor(Math.random() * MC_SPLASHES.length)]; }
+function mcUpdateExtras(){
+  const max = Math.max(...g2048Board);
+  // Level = höchster Block als Stufe (2 → 1, 4 → 2 …), Leiste füllt sich zum nächsten Block
+  const lvl = max ? Math.log2(max) : 0;
+  const lvlEl = document.getElementById('mc-xp-lvl'), fill = document.getElementById('mc-xp-fill');
+  if(lvlEl) lvlEl.textContent = lvl;
+  if(fill){ const rest = g2048Board.filter(v => v < max).reduce((a, v) => a + v, 0) + (g2048Board.filter(v => v === max).length - 1) * max; fill.style.width = (max ? Math.min(100, rest / max * 100) : 0) + '%'; }   // wie viel schon für den nächsten Block da ist
+  // Ergebnis-Feld der Werkbank zeigt den besten Block
+  const out = document.getElementById('mc-out');
+  if(out && max){ const i = out.querySelector('i'), bg = mcTexture(max); if(i.style.backgroundImage !== bg){ i.style.backgroundImage = bg; out.title = (MC_BLOCKS[max] || MC_BLOCKS[65536]).name; out.classList.remove('pop'); void out.offsetWidth; out.classList.add('pop'); } }
+  // Erz-Liste: alle Blöcke mit Zahl und Name, gefundene hell, der beste markiert
+  const book = document.getElementById('mc-book');
+  if(book) book.innerHTML = Object.keys(MC_BLOCKS).map(Number).map(v => `<div class="mc-book-row${v <= max ? ' got' : ''}${v === max ? ' sel' : ''}"><i style="background-image:${mcTexture(v)}"></i><b>${v}</b><span>${MC_BLOCKS[v].name.replace('Lapislazulierz', 'Lapis­lazuli­erz').replace('Netherquarzerz', 'Nether­quarz­erz').replace('Tiefenschiefer-', 'Tiefen­schiefer-')}</span></div>`).join('');
+  if(max > mcBestBlock && mcBestBlock){ mcToast((MC_BLOCKS[max] || MC_BLOCKS[65536]).name, max); }
+  mcBestBlock = Math.max(mcBestBlock, max);
+}
+function mcToast(name, v){
+  const t = document.getElementById('mc-toast');
+  if(!t || v < 8) return;
+  t.innerHTML = `<i style="background-image:${mcTexture(v)}"></i><div><b>Erfolg erzielt!</b><span>${name} hergestellt</span></div>`;
+  t.classList.remove('show'); void t.offsetWidth; t.classList.add('show');
+  clearTimeout(mcToast.t); mcToast.t = setTimeout(() => { t.classList.remove('show'); t.innerHTML = ''; }, 3300);   // danach ganz weg
+}
+function mcParticles(i, v){
+  const fx = document.getElementById('mc-fx'), cell = g2048GridEl.children[i];
+  if(!fx || !cell) return;
+  const fr = fx.getBoundingClientRect(), cr = cell.getBoundingClientRect();
+  const b = MC_BLOCKS[v] || MC_BLOCKS[65536], cols = b.ore ? [...b.base, ...b.ore] : b.top ? [...b.base, ...b.top] : b.base;
+  for(let k = 0; k < 10; k++){
+    const p = document.createElement('i');
+    p.className = 'mc-px';
+    p.style.left = (cr.left - fr.left + cr.width * (0.2 + Math.random() * 0.6)) + 'px';
+    p.style.top = (cr.top - fr.top + cr.height * (0.2 + Math.random() * 0.6)) + 'px';
+    p.style.background = cols[k % cols.length];
+    p.style.setProperty('--dx', ((Math.random() - 0.5) * 50) + 'px');
+    p.style.setProperty('--dy', (-10 - Math.random() * 25) + 'px');
+    fx.appendChild(p);
+    setTimeout(() => p.remove(), 650);
+  }
+}
+
 function g2048BuildGrid(){
   g2048GridEl.innerHTML = '';
   for(let i = 0; i < G2048_SIZE * G2048_SIZE; i++){
@@ -8617,13 +8707,19 @@ function g2048Render(newIdx){
   const cells = g2048GridEl.children;
   g2048Board.forEach((v, i) => {
     const cell = cells[i];
-    cell.textContent = v === 0 ? '' : v;
     cell.className = 'g2048-cell';
+    cell.style.backgroundImage = '';
+    cell.removeAttribute('title');
     if(v === 0){
+      cell.textContent = '';
       cell.removeAttribute('data-v');
     } else {
+      cell.innerHTML = `<span>${v}</span>`;
       cell.setAttribute('data-v', v);
+      cell.style.backgroundImage = mcTexture(v);
+      cell.title = (MC_BLOCKS[v] || MC_BLOCKS[65536]).name;
       if(i === newIdx) cell.classList.add('g2048-new');
+      if(g2048Merged.includes(i)) cell.classList.add('g2048-merge');
     }
   });
 }
@@ -8633,6 +8729,7 @@ function g2048SetRow(r, row){ for(let c = 0; c < G2048_SIZE; c++) g2048Board[g20
 function g2048GetCol(c){ const col = []; for(let r = 0; r < G2048_SIZE; r++) col.push(g2048Board[g2048Idx(r, c)]); return col; }
 function g2048SetCol(c, col){ for(let r = 0; r < G2048_SIZE; r++) g2048Board[g2048Idx(r, c)] = col[r]; }
 
+let g2048Merged = [];
 function g2048SlideLine(line){
   const filtered = line.filter(v => v !== 0);
   const merged = [];
@@ -8668,6 +8765,7 @@ function g2048Move(dir){
   if(g2048Over) return;
   let anyMoved = false;
   let totalGained = 0;
+  const g2048Before = g2048Board.slice();
 
   if(dir === 'left' || dir === 'right'){
     for(let r = 0; r < G2048_SIZE; r++){
@@ -8693,7 +8791,9 @@ function g2048Move(dir){
     }
   }
 
-  if(!anyMoved) return;
+  if(!anyMoved){ g2048Merged = []; return; }
+  // Felder, deren Wert gestiegen ist, bekommen einen kleinen Effekt
+  g2048Merged = g2048Board.map((v, i) => (v && v > (g2048Before[i] || 0) && g2048Before.some(b => b && b * 2 === v)) ? i : -1).filter(i => i >= 0);
 
   g2048Score += totalGained;
   g2048ScoreEl.textContent = g2048Pad(g2048Score);
@@ -8705,13 +8805,15 @@ function g2048Move(dir){
 
   const newIdx = g2048AddRandomTile();
   g2048Render(newIdx);
+  g2048Merged.forEach(i => mcParticles(i, g2048Board[i]));
+  mcUpdateExtras();
 
   if(!g2048Won && g2048Board.includes(2048)){
     g2048Won = true;
-    g2048StatusEl.textContent = '🎉 2048 erreicht! Du kannst weiterspielen.';
+    g2048StatusEl.textContent = 'Diamanten gefunden! Du kannst weitergraben.';
   } else if(!g2048CanMove()){
     g2048Over = true;
-    g2048StatusEl.textContent = `Game Over! ${g2048Score} Punkte.`;
+    g2048StatusEl.textContent = `Du bist gestorben! Punktestand: ${g2048Score}`;
   } else {
     g2048StatusEl.textContent = '';
   }
@@ -8726,9 +8828,11 @@ function g2048Reset(){
   g2048AddRandomTile();
   g2048ScoreEl.textContent = g2048Pad(g2048Score);
   g2048BestEl.textContent = g2048Pad(g2048Best);
-  g2048StatusEl.textContent = 'Pfeiltasten zum Spielen.';
+  g2048StatusEl.textContent = 'Klick auf die Werkbank und benutze WASD oder die Pfeiltasten. Gleiche Blöcke ergeben den nächsten.';
+  g2048Merged = [];
   g2048BuildGrid();
   g2048Render();
+  mcBestBlock = 0; mcSplash(); mcUpdateExtras();
 }
 
 g2048GridEl.addEventListener('pointerdown', () => { gameArrowFocus = '2048'; });
@@ -8739,8 +8843,8 @@ document.addEventListener('keydown', (e) => {
   const gamesView = document.getElementById('games-view');
   if(!gamesView || !gamesView.classList.contains('active')) return;
   if(gameArrowFocus !== '2048') return;
-  const map = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
-  const dir = map[e.key];
+  const map = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
+  const dir = map[e.key.length === 1 ? e.key.toLowerCase() : e.key];
   if(dir){
     e.preventDefault();
     g2048Move(dir);
@@ -8789,3 +8893,4 @@ document.getElementById('to-top-btn')?.addEventListener('click', () => window.sc
   document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => setTimeout(check, 50)));
   check();
 })();
+

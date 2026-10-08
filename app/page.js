@@ -918,6 +918,7 @@ export default function Page() {
 
   <div className="panel-label" id="game-label-2048" style={{ marginTop: "44px" }}>2048</div>
   <div className="g2048-wrap">
+    <div className="mc-logo"><span className="mc-logo-txt">MINE2048</span><span className="mc-splash" id="mc-splash">Jetzt mit Diamanten!</span></div>
     <div className="g2048-hud">
       <div className="g2048-hud-item">
         <div className="snake-hud-label">Punkte</div>
@@ -928,14 +929,20 @@ export default function Page() {
         <div className="ms-counter" id="g2048-best">000</div>
       </div>
     </div>
+    <div className="mc-inv-title">Werkbank</div>
     <div className="game-resize-wrap">
       <div className="g2048-grid" id="g2048-grid"></div>
+      <div className="mc-fx" id="mc-fx"></div>
       <div className="game-resize-handle"></div>
     </div>
+    <div className="mc-result"><span>Bester Block</span><i className="mc-arrow"></i><div className="mc-out" id="mc-out" title=""><i></i></div></div>
+    <div className="mc-xp"><span className="mc-xp-lvl" id="mc-xp-lvl">0</span><div className="mc-xp-bar"><i id="mc-xp-fill"></i></div></div>
+    <div className="mc-toast" id="mc-toast"></div>
     <div className="sudoku-controls" style={{ marginTop: "14px" }}>
       <button className="action-btn" id="g2048-new-btn">Neues Spiel</button>
     </div>
     <div className="todo-empty" id="g2048-status" style={{ marginTop: "10px" }}></div>
+    <div className="mc-book"><div className="mc-book-title">Erz-Liste</div><div className="mc-book-list" id="mc-book"></div></div>
   </div>
 </div>
 

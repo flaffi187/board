@@ -8058,7 +8058,7 @@ function msNewGame(){
   document.getElementById('cs-planted')?.classList.remove('on');
   document.getElementById('ms-timer')?.classList.remove('hot');
   msGrid.style.gridTemplateColumns = `repeat(${msSize}, 1fr)`;
-  msStatusEl.textContent = 'Die Bomben sind gelegt. Linksklick: Feld prüfen, Rechtsklick: Entschärfer-Kit legen.';
+  msStatusEl.textContent = matchMedia('(pointer:coarse)').matches ? 'Die Bomben sind gelegt. Tippen: Feld prüfen, lange drücken: Entschärfer-Kit legen.' : 'Die Bomben sind gelegt. Linksklick: Feld prüfen, Rechtsklick: Entschärfer-Kit legen.';
   msRenderGrid();
 }
 
@@ -8181,10 +8181,31 @@ function msToggleFlag(r, c){
   msUpdateMineCounter();
 }
 
+// Handy: Kit-Modus-Schalter und langes Drücken legen ein Entschärfer-Kit (statt Rechtsklick)
+let msKitMode = false, msLongPressed = false, msPressTimer = null;
 msGrid.addEventListener('click', (e) => {
   const cell = e.target.closest('.ms-cell');
   if(!cell) return;
-  msReveal(Number(cell.dataset.r), Number(cell.dataset.c));
+  if(msLongPressed){ msLongPressed = false; return; }
+  const r = Number(cell.dataset.r), c = Number(cell.dataset.c);
+  if(msKitMode) msToggleFlag(r, c); else msReveal(r, c);
+});
+msGrid.addEventListener('touchstart', (e) => {
+  const cell = e.target.closest('.ms-cell');
+  if(!cell) return;
+  msLongPressed = false;
+  clearTimeout(msPressTimer);
+  msPressTimer = setTimeout(() => {
+    msLongPressed = true;
+    msToggleFlag(Number(cell.dataset.r), Number(cell.dataset.c));
+    if(navigator.vibrate) navigator.vibrate(30);
+  }, 450);
+}, { passive: true });
+['touchend', 'touchmove', 'touchcancel'].forEach(ev => msGrid.addEventListener(ev, () => clearTimeout(msPressTimer), { passive: true }));
+document.getElementById('ms-kit-btn')?.addEventListener('click', (e) => {
+  msKitMode = !msKitMode;
+  e.currentTarget.classList.toggle('on', msKitMode);
+  e.currentTarget.textContent = msKitMode ? 'Modus: Kit legen' : 'Modus: Prüfen';
 });
 msGrid.addEventListener('contextmenu', (e) => {
   const cell = e.target.closest('.ms-cell');
@@ -8497,7 +8518,7 @@ function snakeReset(){
   snakeRandomFood();
   snakeBuildGrid();
   snakeRender();
-  snakeStatusEl.textContent = 'Pfeiltasten zum Starten.';
+  snakeStatusEl.textContent = matchMedia('(pointer:coarse)').matches ? 'Wischen oder Steuerkreuz zum Starten.' : 'Pfeiltasten zum Starten.';
 }
 
 function snakeGameOver(){
@@ -8573,6 +8594,22 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// Handy: Wischen auf dem Feld oder Steuerkreuz unter dem Spiel
+let snakeTouchX = 0, snakeTouchY = 0;
+snakeGridEl.addEventListener('touchstart', (e) => {
+  gameArrowFocus = 'snake';
+  snakeTouchX = e.changedTouches[0].clientX; snakeTouchY = e.changedTouches[0].clientY;
+}, { passive: true });
+snakeGridEl.addEventListener('touchend', (e) => {
+  const dx = e.changedTouches[0].clientX - snakeTouchX, dy = e.changedTouches[0].clientY - snakeTouchY;
+  if(Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+  if(Math.abs(dx) > Math.abs(dy)) snakeSetDirection(dx > 0 ? 1 : -1, 0); else snakeSetDirection(0, dy > 0 ? 1 : -1);
+});
+document.querySelectorAll('#snake-pad button').forEach(b => b.addEventListener('click', () => {
+  gameArrowFocus = 'snake';
+  const [dx, dy] = b.dataset.dir.split(',').map(Number);
+  snakeSetDirection(dx, dy);
+}));
 document.getElementById('snake-new-btn').addEventListener('click', snakeReset);
 snakeReset();
 

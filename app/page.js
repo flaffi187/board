@@ -893,6 +893,7 @@ export default function Page() {
     <div className="cs-drop" id="cs-drop"></div>
   </div>
   </div>
+  <button className="ms-kit-btn" id="ms-kit-btn" type="button">Modus: Prüfen</button>
   <div className="cs-status"><b>[ALLE]</b><span className="todo-empty" id="ms-status"></span></div>
   </div>
 
@@ -915,6 +916,12 @@ export default function Page() {
   </div>
   <div className="sudoku-controls" style={{ marginTop: "14px" }}>
     <button className="action-btn" id="snake-new-btn">Neues Spiel</button>
+  </div>
+  <div className="snake-pad" id="snake-pad">
+    <button type="button" data-dir="0,-1" aria-label="Hoch">▲</button>
+    <button type="button" data-dir="-1,0" aria-label="Links">◀</button>
+    <button type="button" data-dir="1,0" aria-label="Rechts">▶</button>
+    <button type="button" data-dir="0,1" aria-label="Runter">▼</button>
   </div>
   <div className="todo-empty" id="snake-status" style={{ marginTop: "10px" }}></div>
 

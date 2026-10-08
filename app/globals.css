@@ -3726,3 +3726,18 @@
   .mc-out{ width:44px; height:44px; display:grid; place-items:center; background:#8b8b8b; box-shadow:inset 2px 2px 0 #373737, inset -2px -2px 0 #fff; }
   .mc-out i{ width:34px; height:34px; background-size:100% 100%; image-rendering:pixelated; }
   .mc-out.pop i{ animation: mc-merge 0.3s steps(3); }
+
+  /* Handy-Steuerung */
+  .snake-grid, .g2048-grid{ touch-action:none; }
+  .ms-kit-btn{ display:none; margin-top:10px; padding:9px 16px; cursor:pointer; border:1px solid #3a4046; border-radius:2px; background:#1b1e21; color:#e6e8ea;
+    font-family:'Oswald', sans-serif; font-size:0.9rem; letter-spacing:0.08em; text-transform:uppercase; }
+  .ms-kit-btn.on{ background:#3d5a3a; border-color:#7fd07a; color:#c8ffc4; }
+  .snake-pad{ display:none; grid-template-columns:repeat(3, 56px); grid-template-rows:repeat(3, 48px); gap:6px; margin-top:14px; }
+  .snake-pad button{ border:1px solid var(--line); border-radius:10px; background:var(--board-2); color:rgba(var(--fg),0.85); font-size:1.2rem; cursor:pointer; touch-action:manipulation; }
+  .snake-pad button:active{ background:var(--teal); color:var(--ink); }
+  .snake-pad [data-dir="0,-1"]{ grid-column:2; grid-row:1; } .snake-pad [data-dir="-1,0"]{ grid-column:1; grid-row:2; }
+  .snake-pad [data-dir="1,0"]{ grid-column:3; grid-row:2; } .snake-pad [data-dir="0,1"]{ grid-column:2; grid-row:3; }
+  @media (pointer:coarse){
+    .ms-kit-btn{ display:inline-block; }
+    .snake-pad{ display:grid; }
+  }

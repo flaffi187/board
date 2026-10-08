@@ -3737,7 +3737,9 @@
   .snake-pad button:active{ background:var(--teal); color:var(--ink); }
   .snake-pad [data-dir="0,-1"]{ grid-column:2; grid-row:1; } .snake-pad [data-dir="-1,0"]{ grid-column:1; grid-row:2; }
   .snake-pad [data-dir="1,0"]{ grid-column:3; grid-row:2; } .snake-pad [data-dir="0,1"]{ grid-column:2; grid-row:3; }
-  @media (pointer:coarse){
+  @media (pointer:coarse), (hover:none), (max-width:700px){
     .ms-kit-btn{ display:inline-block; }
     .snake-pad{ display:grid; }
   }
+  /* kein Zoomen beim schnellen Tippen, kein Markier-Menü beim langen Drücken */
+  .ms-cell, .snake-pad button, .ms-kit-btn{ touch-action:manipulation; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }

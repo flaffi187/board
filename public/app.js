@@ -8058,7 +8058,7 @@ function msNewGame(){
   document.getElementById('cs-planted')?.classList.remove('on');
   document.getElementById('ms-timer')?.classList.remove('hot');
   msGrid.style.gridTemplateColumns = `repeat(${msSize}, 1fr)`;
-  msStatusEl.textContent = matchMedia('(pointer:coarse)').matches ? 'Die Bomben sind gelegt. Tippen: Feld prüfen, lange drücken: Entschärfer-Kit legen.' : 'Die Bomben sind gelegt. Linksklick: Feld prüfen, Rechtsklick: Entschärfer-Kit legen.';
+  msStatusEl.textContent = matchMedia('(pointer:coarse), (hover:none), (max-width:700px)').matches ? 'Die Bomben sind gelegt. Tippen: Feld prüfen, lange drücken: Entschärfer-Kit legen.' : 'Die Bomben sind gelegt. Linksklick: Feld prüfen, Rechtsklick: Entschärfer-Kit legen.';
   msRenderGrid();
 }
 
@@ -8190,9 +8190,11 @@ msGrid.addEventListener('click', (e) => {
   const r = Number(cell.dataset.r), c = Number(cell.dataset.c);
   if(msKitMode) msToggleFlag(r, c); else msReveal(r, c);
 });
+let msTouchX = 0, msTouchY = 0;
 msGrid.addEventListener('touchstart', (e) => {
   const cell = e.target.closest('.ms-cell');
   if(!cell) return;
+  msTouchX = e.touches[0].clientX; msTouchY = e.touches[0].clientY;
   msLongPressed = false;
   clearTimeout(msPressTimer);
   msPressTimer = setTimeout(() => {
@@ -8201,7 +8203,10 @@ msGrid.addEventListener('touchstart', (e) => {
     if(navigator.vibrate) navigator.vibrate(30);
   }, 450);
 }, { passive: true });
-['touchend', 'touchmove', 'touchcancel'].forEach(ev => msGrid.addEventListener(ev, () => clearTimeout(msPressTimer), { passive: true }));
+['touchend', 'touchcancel'].forEach(ev => msGrid.addEventListener(ev, () => clearTimeout(msPressTimer), { passive: true }));
+msGrid.addEventListener('touchmove', (e) => {   // nur abbrechen, wenn der Finger wirklich wegrutscht
+  if(Math.hypot(e.touches[0].clientX - msTouchX, e.touches[0].clientY - msTouchY) > 12) clearTimeout(msPressTimer);
+}, { passive: true });
 document.getElementById('ms-kit-btn')?.addEventListener('click', (e) => {
   msKitMode = !msKitMode;
   e.currentTarget.classList.toggle('on', msKitMode);
@@ -8518,7 +8523,7 @@ function snakeReset(){
   snakeRandomFood();
   snakeBuildGrid();
   snakeRender();
-  snakeStatusEl.textContent = matchMedia('(pointer:coarse)').matches ? 'Wischen oder Steuerkreuz zum Starten.' : 'Pfeiltasten zum Starten.';
+  snakeStatusEl.textContent = matchMedia('(pointer:coarse), (hover:none), (max-width:700px)').matches ? 'Wischen oder Steuerkreuz zum Starten.' : 'Pfeiltasten zum Starten.';
 }
 
 function snakeGameOver(){
@@ -8568,7 +8573,12 @@ function snakeTick(){
 
 function snakeSetDirection(dx, dy){
   if(snakeOver) return;
-  if(snakeBody.length > 1 && dx === -snakeDir.x && dy === -snakeDir.y) return;
+  if(snakeBody.length > 1 && dx === -snakeDir.x && dy === -snakeDir.y){
+    // vor dem Start darf man jede Richtung wählen: dann dreht sich die Schlange einfach um
+    if(snakeRunning) return;
+    snakeBody.reverse();
+    snakeDir = { x: dx, y: dy };
+  }
   snakeNextDir = { x: dx, y: dy };
   if(!snakeRunning) snakeStartLoop();
 }
@@ -8607,6 +8617,7 @@ snakeGridEl.addEventListener('touchend', (e) => {
 });
 document.querySelectorAll('#snake-pad button').forEach(b => b.addEventListener('click', () => {
   gameArrowFocus = 'snake';
+  if(snakeOver) snakeReset();   // nach Game Over startet ein Pfeil direkt eine neue Runde
   const [dx, dy] = b.dataset.dir.split(',').map(Number);
   snakeSetDirection(dx, dy);
 }));

@@ -6288,8 +6288,10 @@ chessMode = 'bot';
 chessReset();
 
 // Schiffe versenken
-const BS_SIZE = 8;
-const BS_SHIP_SIZES = [4, 3, 3, 2, 2];
+// wie im echten Brettspiel: 10×10 Raster, Flugzeugträger 5, Schlachtschiff 4, Kreuzer 3, U-Boot 3, Zerstörer 2
+const BS_SIZE = 10;
+const BS_SHIP_SIZES = [5, 4, 3, 3, 2];
+const BS_COLS = 'ABCDEFGHIJ';
 let bsBoardA, bsBoardB, bsMode, bsOver, bsAttacker, bsBotQueue;
 let bsPhase, bsPlacingSide, bsQueue, bsSelectedIdx, bsPending;
 const bsBoardAEl = document.getElementById('bs-board-a');
@@ -6335,7 +6337,7 @@ function bsPlaceShipsRandom(board, sizes){
       const c = Math.floor(Math.random() * BS_SIZE);
       const cells = bsShipCells(r, c, size, horizontal);
       if(bsCanPlace(board, cells)){
-        board.ships.push({ cells, hits: 0, sunk: false });
+        board.ships.push({ cells, hits: 0, sunk: false, type: bsTypeFor(board, size) });
         placed = true;
       }
     }
@@ -6359,39 +6361,468 @@ function bsAllSunk(board){
   return board.ships.every(s => s.sunk);
 }
 
+// Klassisches Brettspiel: Plastikschiffe, rote Stecker für Treffer, weisse für Fehlschüsse
+const BS_TYPES = { traeger: 'Flugzeugträger', schlacht: 'Schlachtschiff', kreuzer: 'Kreuzer', uboot: 'U-Boot', zerstoerer: 'Zerstörer' };
+// Schiffstyp nach Länge; das zweite 3er-Schiff ist das U-Boot
+function bsTypeFor(board, size){
+  if(size === 5) return 'traeger';
+  if(size === 4) return 'schlacht';
+  if(size === 2) return 'zerstoerer';
+  return board.ships.some(s => s.type === 'kreuzer') ? 'uboot' : 'kreuzer';
+}
+let bsFx = null;   // letzter Schuss: { key, r, c, result } für Spritzer/Explosion
+// Schiff von oben, je nach Typ eigene Form (Bug rechts): Kriegsschiffe mit spitzem Bug, flachem Heck, Deck,
+// Aufbauten mit Schatten, Schornsteinen und Masten; nur das U-Boot ist dunkel und rund. Steckerlöcher in der Mitte.
+function bsShipSvg(len, vertical, sunk, type){
+  type = type || ({ 5: 'traeger', 4: 'schlacht', 3: 'kreuzer', 2: 'zerstoerer' })[len];
+  const W = len * 40, H = 40, id = 'bsh' + Math.random().toString(36).slice(2, 8);
+  const shade = (a, b) => sunk ? b : a;
+  // Aufbau mit Schatten (wirkt erhöht)
+  const block = (x, y, w, h, r = 1.5) => `<rect x="${x + 1.6}" y="${y + 2}" width="${w}" height="${h}" rx="${r}" fill="rgba(0,0,0,0.35)"/>
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="url(#${id}b)" stroke="#4d555e" stroke-width="0.7"/>
+    <path d="M${x + 1} ${y + 1}h${w - 2}" stroke="rgba(255,255,255,0.6)" stroke-width="0.7"/>
+    <path d="M${x + 2} ${y + h - 2}h${w - 4}" stroke="#2a3038" stroke-width="0.9" stroke-dasharray="1.2 1.4"/>`;
+  const funnel = (x, y, w = 6, h = 5) => `<ellipse cx="${x + 1.2}" cy="${y + 1.6}" rx="${w / 2}" ry="${h / 2}" fill="rgba(0,0,0,0.35)"/>
+    <ellipse cx="${x}" cy="${y}" rx="${w / 2}" ry="${h / 2}" fill="#4b525a" stroke="#2a2f34" stroke-width="0.6"/><ellipse cx="${x}" cy="${y}" rx="${w / 2 - 1.2}" ry="${h / 2 - 1.2}" fill="#15181b"/>`;
+  const mast = (x, y, l = 9) => `<path d="M${x} ${y - l / 2}V${y + l / 2}M${x - 3} ${y - 2}h6" stroke="#3a4148" stroke-width="0.9"/><circle cx="${x}" cy="${y}" r="1.2" fill="#e8ecef"/>`;
+  const turret = (x, dir, n = 2, r = 5) => {
+    let barrels = '';
+    for(let k = 0; k < n; k++) barrels += `<rect x="${dir > 0 ? x + 2 : x - 13}" y="${20 - 0.8 + (k - (n - 1) / 2) * 2.4}" width="11" height="1.6" rx="0.8" fill="#3d454e"/>`;
+    return `${barrels}<circle cx="${x + 1.2}" cy="21.6" r="${r}" fill="rgba(0,0,0,0.3)"/><path d="M${x - r} 20a${r} ${r} 0 0 1 ${2 * r} 0v1a${r} ${r * 0.8} 0 0 1 -${2 * r} 0z" fill="url(#${id}b)" stroke="#4d555e" stroke-width="0.7"/>`;
+  };
+  let hull, deckPath, deck = '', hullFill = `url(#${id}g)`, deckFill = `url(#${id}d)`;   // Holzdeck wie bei echten Schlachtschiffen
+  if(type === 'uboot'){
+    hull = `M13 9H${W - 15}Q${W - 2} 10 ${W - 2} 20Q${W - 2} 30 ${W - 15} 31H13Q2 30 2 20Q2 10 13 9Z`;
+    deckPath = `M14 15H${W - 18}Q${W - 9} 16 ${W - 9} 20Q${W - 9} 24 ${W - 18} 25H14Q8 24 8 20Q8 16 14 15Z`;
+    hullFill = `url(#${id}u)`; deckFill = shade('#3a4047', '#22262a');
+    deck = `${block(W * 0.42, 14.5, W * 0.17, 11, 5)}<path d="M${W * 0.47} 20h${W * 0.07}" stroke="#2a2f34" stroke-width="1.6"/>
+      <path d="M${W * 0.5} 13V10M${W * 0.53} 13V11" stroke="#2a2f34" stroke-width="1"/>
+      <path d="M7 12l-4 -2.5M7 28l-4 2.5" stroke="#2c3238" stroke-width="2" stroke-linecap="round"/>`;
+  } else if(type === 'traeger'){
+    hull = `M4 6Q4 4 6 4H${W - 34}L${W - 3} 13V27L${W - 34} 36H6Q4 36 4 34Z`;
+    deckPath = `M7 7H${W - 35}L${W - 7} 14.5V25.5L${W - 35} 33H7Z`;
+    deckFill = shade('#5b636b', '#33373b');
+    deck = `<path d="M12 20H${W - 14}" stroke="#f2f4f6" stroke-width="0.9" stroke-dasharray="7 5"/>
+      <path d="M${W * 0.12} 11L${W * 0.6} 24" stroke="#f2c94c" stroke-width="0.7" stroke-dasharray="3 3"/>
+      <rect x="8" y="9" width="${W * 0.08}" height="22" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.6"/>
+      ${block(W * 0.56, 29, W * 0.17, 6)}${mast(W * 0.66, 32, 5)}${funnel(W * 0.6, 32, 4, 3)}
+      <path d="M${W * 0.28} 12l6 2.6-6 2.6-1.6-1.4h-3.4v-2.4h3.4z M${W * 0.4} 22l6 2.6-6 2.6-1.6-1.4h-3.4v-2.4h3.4z M${W * 0.82} 12l6 2.6-6 2.6-1.6-1.4h-3.4v-2.4h3.4z" fill="#c4cad0" stroke="#5a626b" stroke-width="0.4"/>`;
+  } else {
+    const t = type === 'zerstoerer' ? 3 : type === 'kreuzer' ? 1.5 : 0;
+    hull = `M3 ${9 + t}Q3 ${6 + t} 6 ${6 + t}H${W * 0.7}Q${W - 6} ${8 + t} ${W - 1.5} 20Q${W - 6} ${32 - t} ${W * 0.7} ${34 - t}H6Q3 ${34 - t} 3 ${31 - t}Z`;
+    deckPath = `M6 ${9.5 + t}H${W * 0.69}Q${W - 9} ${11 + t} ${W - 6} 20Q${W - 9} ${29 - t} ${W * 0.69} ${30.5 - t}H6Z`;
+    if(type === 'schlacht') deck = turret(W * 0.84, 1, 3, 5.4) + turret(W * 0.7, 1, 3, 5.4) + turret(W * 0.14, -1, 3, 5.4)
+      + block(W * 0.33, 13, W * 0.24, 14, 2) + block(W * 0.37, 15.5, W * 0.12, 9, 1.5) + funnel(W * 0.29, 20, 7, 6) + mast(W * 0.43, 20, 12);
+    else if(type === 'kreuzer') deck = turret(W * 0.82, 1, 2) + turret(W * 0.15, -1, 2) + block(W * 0.36, 14, W * 0.26, 12) + funnel(W * 0.31, 20) + mast(W * 0.5, 20, 11);
+    else deck = turret(W * 0.8, 1, 1, 4.4) + block(W * 0.32, 15, W * 0.28, 10) + funnel(W * 0.26, 20, 5, 4) + mast(W * 0.52, 20, 9);
+  }
+  let holes = '';
+  for(let k = 0; k < len; k++){
+    const hx = 20 + k * 40, hy = type === 'traeger' ? 16 : 20;
+    holes += `<circle cx="${hx}" cy="${hy}" r="2.6" fill="#2b3036" opacity="0.9"/><circle cx="${hx}" cy="${hy}" r="1.6" fill="#0e1012"/>`;
+  }
+  // kleine Bugwelle (nur wenn das Schiff noch schwimmt)
+  const wake = sunk || type === 'traeger' ? '' : `<path d="M${W - 10} 8.5Q${W - 1} 12 ${W} 20Q${W - 1} 28 ${W - 10} 31.5" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.2"/>`;
+  const inner = `<defs>
+      <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${shade('#7d8c9c', '#4a5058')}"/><stop offset="0.5" stop-color="${shade('#46546a', '#2e3338')}"/><stop offset="1" stop-color="${shade('#202a36', '#16191c')}"/></linearGradient>
+      <pattern id="${id}d" width="7" height="2.4" patternUnits="userSpaceOnUse"><rect width="7" height="2.4" fill="${shade('#b8976a', '#5b5245')}"/><path d="M0 2.25H7" stroke="${shade('#8c6d46', '#3d362d')}" stroke-width="0.35"/><path d="M3.5 0V1.2M0.5 1.2V2.4" stroke="${shade('#9e7f55', '#463e34')}" stroke-width="0.25"/></pattern>
+      <linearGradient id="${id}u" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${shade('#6b737b', '#3c4044')}"/><stop offset="0.5" stop-color="${shade('#3b4148', '#24272a')}"/><stop offset="1" stop-color="#16191c"/></linearGradient>
+      <linearGradient id="${id}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${shade('#c9d1d9', '#6b7076')}"/><stop offset="1" stop-color="${shade('#7d8894', '#41454a')}"/></linearGradient></defs>
+    <path d="${hull}" fill="rgba(0,10,30,0.4)" transform="translate(2 3)"/>
+    ${sunk ? '' : `<path d="${hull}" fill="none" stroke="rgba(235,248,255,0.55)" stroke-width="3" stroke-linejoin="round"/><path d="M4 14Q1 17 0 13M4 26Q1 23 0 27M5 20H0" stroke="rgba(235,248,255,0.6)" stroke-width="1.2" fill="none"/>`}
+    ${wake}
+    <path d="${hull}" fill="${hullFill}" stroke="#30363c" stroke-width="1.2"/>
+    <path d="${deckPath}" fill="${deckFill}"/>
+    <path d="${deckPath}" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="0.6"/>
+    ${deck}${holes}`;
+  return vertical
+    ? `<svg viewBox="0 0 ${H} ${W}" preserveAspectRatio="none"><g transform="rotate(90) translate(0 -${H})">${inner}</g></svg>`
+    : `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${inner}</svg>`;
+}
 function bsRenderBoard(board, el, clickable, onClick, revealShips, pendingCells){
   el.innerHTML = '';
+  const key = el === bsBoardAEl ? 'a' : 'b';
+  // Koordinaten wie auf der Konsole: A–H oben, 1–8 links
+  // alles fest ins Raster setzen, sonst verschieben Schiffe/Stecker die übrigen Felder
+  const at = (node, row, col) => { node.style.gridRow = row; node.style.gridColumn = col; el.appendChild(node); };
+  for(let c = 0; c < BS_SIZE; c++) at(Object.assign(document.createElement('span'), { className: 'bs-coord', textContent: BS_COLS[c] }), 1, c + 2);
   for(let r = 0; r < BS_SIZE; r++){
+    at(Object.assign(document.createElement('span'), { className: 'bs-coord', textContent: r + 1 }), r + 2, 1);
     for(let c = 0; c < BS_SIZE; c++){
       const btn = document.createElement('button');
       const state = board.grid[r][c];
       let cls = 'bs-cell';
-      if(state === 'hit'){
-        const ship = board.ships.find(s => s.cells.some(([sr, sc]) => sr === r && sc === c));
-        cls += ship && ship.sunk ? ' sunk' : ' hit';
-        btn.textContent = '✕';
-      } else if(state === 'miss'){
-        cls += ' miss';
-        btn.textContent = '·';
-      } else if(revealShips && board.ships.some(s => s.cells.some(([sr,sc]) => sr === r && sc === c))){
-        cls += ' ship-placed';
-      } else if(pendingCells && pendingCells.some(([pr,pc]) => pr === r && pc === c)){
-        cls += ' selecting';
-      }
+      if(state) cls += ' shot';
+      else if(pendingCells && pendingCells.some(([pr,pc]) => pr === r && pc === c)) cls += ' selecting';
       btn.className = cls;
+      btn.setAttribute('aria-label', BS_COLS[c] + (r + 1));
       btn.disabled = !clickable || !!state;
       if(clickable) btn.addEventListener('click', () => onClick(r, c));
-      el.appendChild(btn);
+      at(btn, r + 2, c + 2);
     }
   }
+  const place = (node, r, c, rs = 1, cs = 1) => { node.style.gridRow = `${r + 2} / span ${rs}`; node.style.gridColumn = `${c + 2} / span ${cs}`; el.appendChild(node); };
+  // Plastikschiffe (eigene Flotte immer, gegnerische erst wenn versenkt)
+  board.ships.forEach(ship => {
+    const sunkNow = ship.sunk && ship !== bsSinking;   // während des Jet-Angriffs noch nicht als Wrack zeigen
+    if(ship === bsSinking && bsSinkHide) return;
+    if(!revealShips && !sunkNow) return;
+    const rs = ship.cells.map(([r]) => r), cs = ship.cells.map(([, c]) => c);
+    const r0 = Math.min(...rs), c0 = Math.min(...cs), vertical = new Set(cs).size === 1 && ship.cells.length > 1;
+    const div = document.createElement('div');
+    div.className = 'bs-ship' + (sunkNow ? ' sunk' : '') + (vertical ? ' vert' : '');
+    // schwimmende Schiffe schaukeln leicht und qualmen aus dem Schornstein; das Wrack liegt unter Wasser mit Öl und Blasen
+    const funnelAt = { schlacht: [0.29, 0.5], kreuzer: [0.31, 0.5], zerstoerer: [0.26, 0.5], traeger: [0.6, 0.8] }[ship.type];
+    let extra = '';
+    if(sunkNow) extra = '<i class="bs-oil"></i><i class="bs-wbub"></i><i class="bs-wbub two"></i>';
+    else if(funnelAt){
+      const [fa, fb] = funnelAt;
+      const pos = vertical ? `left:${fb * 100}%; top:${fa * 100}%` : `left:${fa * 100}%; top:${fb * 100}%`;
+      extra = `<i class="bs-fsmoke" style="${pos}"></i><i class="bs-fsmoke two" style="${pos}"></i><i class="bs-fsmoke three" style="${pos}"></i>`;
+    }
+    div.innerHTML = bsShipSvg(ship.cells.length, vertical, sunkNow, ship.type) + extra;
+    if(!sunkNow) div.style.setProperty('--bob', (-(r0 * 7 + c0 * 3) % 10 * 0.37) + 's');
+    place(div, r0, c0, vertical ? ship.cells.length : 1, vertical ? 1 : ship.cells.length);
+  });
+  // Stecker: rot = Treffer, weiss = daneben
+  for(let r = 0; r < BS_SIZE; r++) for(let c = 0; c < BS_SIZE; c++){
+    const state = board.grid[r][c];
+    if(!state) continue;
+    const peg = document.createElement('i');
+    const fresh = bsFx && bsFx.key === key && bsFx.r === r && bsFx.c === c;
+    peg.className = 'bs-peg ' + (state === 'hit' ? 'red' : 'white') + (fresh ? ' fresh' : '');
+    // Treffer an einem noch schwimmenden Schiff brennt weiter
+    const hitShip = state === 'hit' && board.ships.find(sh => sh.cells.some(([sr, sc]) => sr === r && sc === c));
+    if(hitShip && (!hitShip.sunk || hitShip === bsSinking)){
+      const fire = document.createElement('i');
+      fire.className = 'bs-fire';
+      fire.style.setProperty('--d', (-(r * 3 + c) % 7 * 0.13) + 's');
+      fire.innerHTML = '<b></b><b></b><b></b><u></u>';
+      place(fire, r, c);
+    }
+    place(peg, r, c);
+    if(fresh){
+      const fx = document.createElement('i');
+      fx.className = 'bs-fx ' + (state === 'hit' ? 'boom' : 'splash');
+      fx.innerHTML = state === 'hit'
+        ? '<b></b><b></b><b></b><b></b><b></b><b></b><u></u><u></u><u></u>' + Array.from({ length: 8 }, (_, k) => `<s style="--a:${k * 45 + Math.random() * 30}deg; --d:${16 + Math.random() * 14}px"></s>`).join('')
+        : '<b></b><b></b><b></b>' + Array.from({ length: 9 }, (_, k) => `<s style="--x:${(Math.random() - 0.5) * 26}px; --h:${14 + Math.random() * 16}px; animation-delay:${Math.random() * 0.08}s"></s>`).join('');
+      place(fx, r, c);
+      // anfliegende Granate mit Leuchtspur
+      const shell = document.createElement('i');
+      shell.className = 'bs-shell';
+      place(shell, r, c);
+    }
+  }
+}
+
+// Ab und zu springt ein Orca irgendwo auf freiem Wasser aus dem Meer (meist auf deiner Seite)
+const BS_WHALE_SVG = `<svg viewBox="-38 -22 76 40" aria-hidden="true">
+  <defs>
+    <linearGradient id="bso-body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a4654"/><stop offset="0.35" stop-color="#151b22"/><stop offset="1" stop-color="#07090c"/></linearGradient>
+    <linearGradient id="bso-white" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfd9e0"/></linearGradient>
+  </defs>
+  <!-- Schwanzflosse -->
+  <path d="M-27 -1Q-31 -9 -37 -10Q-34 -4 -31 -1Q-35 4 -37 9Q-30 8 -27 2z" fill="url(#bso-body)"/>
+  <path d="M-31 1Q-34 5 -36 8Q-31 6 -28 2z" fill="#e4ecf1" opacity="0.85"/>
+  <!-- Körper -->
+  <path d="M-28 -1Q-20 -9 -4 -10.5Q14 -11.5 26 -6Q34 -2 33.5 1.5Q32 6 22 8.5Q6 11 -10 8Q-22 5 -28 1z" fill="url(#bso-body)" stroke="#05070a" stroke-width="0.6"/>
+  <!-- weisser Bauch -->
+  <path d="M-14 6.5Q-4 10 10 9Q22 8 31 3.5Q30 6.5 22 8.5Q6 11.5 -10 8.4z" fill="url(#bso-white)"/>
+  <path d="M14 5Q20 3 28 3.4Q24 6.5 16 7.4z" fill="url(#bso-white)"/>
+  <!-- Sattelfleck und Augenfleck -->
+  <path d="M-12 -8.8Q-6 -11 0 -10.2Q-3 -6.8 -9 -6.6z" fill="#8e9aa5" opacity="0.85"/>
+  <path d="M17 -5.6Q22 -7.4 26 -5.2Q23 -3.4 18 -3.6z" fill="url(#bso-white)"/>
+  <!-- Rückenfinne -->
+  <path d="M-6 -10.2Q-4 -16 -3 -21Q2 -15 5 -10.6z" fill="url(#bso-body)" stroke="#05070a" stroke-width="0.5"/>
+  <path d="M-4.4 -11Q-3.2 -16 -2.8 -19" stroke="rgba(255,255,255,0.35)" stroke-width="0.6" fill="none"/>
+  <!-- Brustflosse -->
+  <path d="M10 6Q8 13 3 15Q6 10 6 6.4z" fill="#0b0e12"/>
+  <!-- Auge, Maul, Glanz -->
+  <circle cx="21.2" cy="-2.6" r="0.9" fill="#05070a"/>
+  <path d="M33 1.6Q28 3.2 22 2.8" stroke="#05070a" stroke-width="0.6" fill="none"/>
+  <path d="M-18 -6Q0 -12 22 -8.4" stroke="rgba(255,255,255,0.4)" stroke-width="0.9" fill="none"/>
+  <!-- Wassertropfen, die vom Körper perlen -->
+  <g class="bso-drips"><circle cx="-14" cy="9" r="0.9"/><circle cx="-2" cy="11" r="0.8"/><circle cx="8" cy="11.5" r="1"/><circle cx="18" cy="10" r="0.8"/><circle cx="-24" cy="5" r="0.8"/></g>
+</svg>`;
+function bsWhaleJump(){
+  const boardEl = Math.random() < 0.75 ? bsBoardAEl : bsBoardBEl;
+  const board = boardEl === bsBoardAEl ? bsBoardA : bsBoardB;
+  const wrap = boardEl && boardEl.closest('.game-resize-wrap');
+  if(!wrap || !boardEl.offsetParent || !board) return;
+  const cells = boardEl.querySelectorAll('.bs-cell');
+  if(cells.length !== BS_SIZE * BS_SIZE) return;
+  // freies Wasser: kein Schiff, kein Stecker in der Nähe
+  let pick = null;
+  for(let tries = 0; tries < 30 && !pick; tries++){
+    const r = 2 + Math.floor(Math.random() * (BS_SIZE - 2)), c = 1 + Math.floor(Math.random() * (BS_SIZE - 2));   // nicht in der obersten Reihe, sonst springt er aus dem Raster
+    const near = [[r, c - 1], [r, c], [r, c + 1]];
+    if(near.every(([rr, cc]) => !board.grid[rr][cc] && !board.ships.some(sh => sh.cells.some(([a, b]) => a === rr && b === cc)))) pick = [r, c];
+  }
+  if(!pick) return;
+  const wr = wrap.getBoundingClientRect(), cr = cells[pick[0] * BS_SIZE + pick[1]].getBoundingClientRect();
+  const x = cr.left + cr.width / 2 - wr.left, y = cr.top + cr.height / 2 - wr.top;
+  const dir = Math.random() < 0.5 ? 1 : -1;
+  const layer = document.createElement('div');
+  layer.className = 'bs-whale-layer';
+  wrap.appendChild(layer);
+  const drops = (sx, sy, n, spread, height, cls = '') => {
+    const sp = document.createElement('div');
+    sp.className = 'bs-whale-splash ' + cls;
+    sp.style.left = sx + 'px'; sp.style.top = sy + 'px';
+    sp.innerHTML = '<b></b><b></b>' + Array.from({ length: n }, () => `<s style="--x:${(Math.random() - 0.5) * spread}px; --h:${height * (0.5 + Math.random() * 0.7)}px; animation-delay:${Math.random() * 0.12}s"></s>`).join('');
+    layer.appendChild(sp);
+    setTimeout(() => sp.remove(), 1500);
+  };
+  // Ablauf (ms): Schatten unter Wasser → Sprung auf einer Wurfparabel, Nase folgt der Flugrichtung → seitlicher Aufprall
+  const UNDER = 650, AIR = 1300, x0 = x - dir * 30, x1 = x + dir * 30, H = 34;
+  const shadow = document.createElement('div');
+  shadow.className = 'bs-orca-shadow';
+  layer.appendChild(shadow);
+  const whale = document.createElement('div');
+  whale.className = 'bs-whale';
+  whale.innerHTML = BS_WHALE_SVG;
+  whale.style.opacity = 0;
+  layer.appendChild(whale);
+  const start = performance.now();
+  let launched = false, landed = false, spouted = false, lastDrip = 0;
+  (function step(now){
+    const t = now - start;
+    if(t < UNDER){
+      // dunkle Silhouette gleitet unter der Oberfläche heran, Blasen steigen auf
+      const k = t / UNDER;
+      shadow.style.transform = `translate(${x0 - dir * 40 * (1 - k)}px, ${y}px) scale(${dir * (0.7 + 0.3 * k)}, ${0.7 + 0.3 * k})`;
+      shadow.style.opacity = (0.15 + 0.45 * k).toFixed(2);
+      if(t - lastDrip > 90){ lastDrip = t; const bub = document.createElement('i'); bub.className = 'bs-bubble'; bub.style.left = (x0 - dir * 40 * (1 - k) + (Math.random() - 0.5) * 20) + 'px'; bub.style.top = (y + (Math.random() - 0.5) * 8) + 'px'; bub.style.setProperty('--s', (2 + Math.random() * 3) + 'px'); layer.appendChild(bub); setTimeout(() => bub.remove(), 1200); }
+    } else if(t < UNDER + AIR){
+      if(!launched){ launched = true; drops(x0, y, 22, 40, 34, 'big'); }
+      const k = (t - UNDER) / AIR;
+      const px = x0 + (x1 - x0) * k, h = 4 * H * k * (1 - k);
+      const sc = 0.78 + 0.32 * Math.sin(Math.PI * k);
+      whale.style.opacity = Math.min(1, k * 8, (1 - k) * 7).toFixed(2);
+      // Nase zeigt in Flugrichtung: steil nach oben raus, oben waagrecht, dann kopfüber wieder rein (keine Rolle)
+      const ang = -55 + 120 * k;
+      whale.style.transform = `translate(${px}px, ${y - h}px) rotate(${ang * dir}deg) scale(${sc * dir}, ${sc})`;
+      shadow.style.transform = `translate(${px}px, ${y + 4}px) scale(${dir * (1 - h / H * 0.45)}, ${1 - h / H * 0.45})`;
+      shadow.style.opacity = (0.45 - h / H * 0.3).toFixed(2);
+      if(!spouted && k > 0.45){ spouted = true; const sp = document.createElement('div'); sp.className = 'bs-whale-spout'; sp.style.left = (px + dir * 10) + 'px'; sp.style.top = (y - h - 16) + 'px'; sp.innerHTML = Array.from({ length: 10 }, () => `<s style="--x:${(Math.random() - 0.5) * 14}px; --h:${10 + Math.random() * 12}px"></s>`).join(''); layer.appendChild(sp); }
+      if(t - lastDrip > 55){   // Wasser läuft vom Körper ab
+        lastDrip = t;
+        const d = document.createElement('i'); d.className = 'bs-orca-drop';
+        d.style.left = (px - dir * (6 + Math.random() * 14)) + 'px'; d.style.top = (y - h + 6) + 'px';
+        layer.appendChild(d); setTimeout(() => d.remove(), 700);
+      }
+    } else if(!landed){
+      landed = true;
+      whale.style.opacity = 0; shadow.style.opacity = 0;
+      drops(x1, y, 30, 56, 40, 'big');                     // grosser Platscher beim Aufprall
+      const foam = document.createElement('i'); foam.className = 'bs-orca-foam'; foam.style.left = x1 + 'px'; foam.style.top = y + 'px';
+      layer.appendChild(foam);
+      setTimeout(() => layer.remove(), 2200);
+      return;
+    }
+    requestAnimationFrame(step);
+  })(start);
+}
+(function bsWhaleLoop(){
+  setTimeout(() => { if(!document.hidden) bsWhaleJump(); bsWhaleLoop(); }, 7000 + Math.random() * 9000);
+})();
+
+function bsBanner(text, cls){
+  const el = document.getElementById('bsg-banner');
+  if(!el) return;
+  el.innerHTML = `<span class="${cls}">${text}</span>`;
+  clearTimeout(bsBanner.t);
+  bsBanner.t = setTimeout(() => { el.innerHTML = ''; }, 1100);
+}
+// Schuss-Effekt und Ansage für den letzten Schuss vormerken
+function bsMarkShot(key, r, c, outcome){
+  bsFx = { key, r, c };
+  bsBanner(outcome.result === 'miss' ? 'Daneben!' : 'Treffer!', outcome.result === 'miss' ? 'miss' : 'hit');
+  // letztes Feld getroffen: ein Kampfjet fliegt an und erledigt das Schiff
+  if(outcome.result === 'sunk'){
+    bsSinking = outcome.ship;
+    setTimeout(() => bsJetStrike(key, outcome.ship), 250);
+  }
+}
+let bsSinking = null;
+const BS_STRIKE_MS = 4800;   // so lange dauern Jet-Angriff, Durchbrechen und Sinken ungefähr
+let bsSinkHide = false;      // während das Schiff zerbricht, ist es nur als Animation zu sehen
+const BS_JET_SVG = `<svg viewBox="-46 -36 92 72" aria-hidden="true">
+  <defs>
+    <linearGradient id="bsj-body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9c2cc"/><stop offset="0.45" stop-color="#8994a0"/><stop offset="1" stop-color="#56606b"/></linearGradient>
+    <linearGradient id="bsj-wing" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6f7a86"/><stop offset="1" stop-color="#9ea8b3"/></linearGradient>
+    <radialGradient id="bsj-glass" cx="0.35" cy="0.3"><stop offset="0" stop-color="#f2e7c0"/><stop offset="0.35" stop-color="#c7a64a"/><stop offset="1" stop-color="#4a3a12"/></radialGradient>
+    <linearGradient id="bsj-fire" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#fffbe0"/><stop offset="0.25" stop-color="#ffd46a"/><stop offset="0.55" stop-color="#ff7a2a" stop-opacity="0.75"/><stop offset="1" stop-color="#5aa0ff" stop-opacity="0"/></linearGradient>
+  </defs>
+  <path d="M-33 -3.5L-46 -2.6M-33 3.5L-46 2.6" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>
+  <g class="bsj-burn"><path d="M-31 -5L-45 -3.6L-31 -1.6z" fill="url(#bsj-fire)"/><path d="M-31 1.6L-45 3.6L-31 5z" fill="url(#bsj-fire)"/></g>
+  <path d="M-4 -5.5L-15 -29H-9.5L11 -6z" fill="url(#bsj-wing)" stroke="#3f4852" stroke-width="0.7"/>
+  <path d="M-4 5.5L-15 29H-9.5L11 6z" fill="url(#bsj-wing)" stroke="#3f4852" stroke-width="0.7"/>
+  <path d="M-12 -25.5h4M-12 25.5h4" stroke="#4a545e" stroke-width="2.2"/>
+  <path d="M-6 -16L-1 -16M-6 16L-1 16" stroke="#e8ecef" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M-25 -5L-33 -15H-29L-19 -5.5z" fill="url(#bsj-wing)" stroke="#3f4852" stroke-width="0.6"/>
+  <path d="M-25 5L-33 15H-29L-19 5.5z" fill="url(#bsj-wing)" stroke="#3f4852" stroke-width="0.6"/>
+  <path d="M-31 -6H-2Q14 -6.5 22 -3.6L10 -3.2z" fill="#7e8995"/><path d="M-31 6H-2Q14 6.5 22 3.6L10 3.2z" fill="#6b7581"/>
+  <path d="M-32 -5H16Q32 -3.6 43 0Q32 3.6 16 5H-32z" fill="url(#bsj-body)" stroke="#3f4852" stroke-width="0.7"/>
+  <path d="M-30 -2.8H14" stroke="rgba(255,255,255,0.45)" stroke-width="0.7"/>
+  <path d="M-20 -5V5M-6 -5V5M6 -4.6V4.6" stroke="rgba(40,48,56,0.35)" stroke-width="0.5"/>
+  <path d="M-22 -2.6L-27 -9M-22 2.6L-27 9" stroke="#56606b" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M12 -2.4Q22 -3 27 0Q22 3 12 2.4Q9 0 12 -2.4z" fill="url(#bsj-glass)" stroke="#2a2f34" stroke-width="0.6"/>
+  <path d="M14 -1.3Q20 -1.8 24 -0.4" stroke="rgba(255,255,255,0.7)" stroke-width="0.6" fill="none"/>
+  <path d="M-30 -5.2V-3.4M-30 3.4V5.2" stroke="#2a2f34" stroke-width="1.8"/>
+  <circle cx="-13" cy="-19" r="1.8" fill="#2a3a52"/><circle cx="-13" cy="19" r="1.8" fill="#2a3a52"/>
+</svg>`;
+// Kampfjet fliegt übers Raster, wirft eine Bombe oder schiesst mit der Bordkanone, dann fliegt das Schiff in die Luft
+function bsJetStrike(key, ship){
+  const boardEl = key === 'a' ? bsBoardAEl : bsBoardBEl;
+  const wrap = boardEl.closest('.game-resize-wrap');
+  const cells = boardEl.querySelectorAll('.bs-cell');
+  if(!wrap || !cells.length){ bsSinking = null; bsRender(); return; }
+  const wr = wrap.getBoundingClientRect();
+  const boxes = ship.cells.map(([r, c]) => cells[r * BS_SIZE + c].getBoundingClientRect());
+  const tx = boxes.reduce((a, b) => a + b.left + b.width / 2, 0) / boxes.length - wr.left;
+  const ty = boxes.reduce((a, b) => a + b.top + b.height / 2, 0) / boxes.length - wr.top;
+  const layer = document.createElement('div');
+  layer.className = 'bs-air';
+  wrap.appendChild(layer);
+  const fromLeft = Math.random() < 0.5, useBomb = Math.random() < 0.5;
+  const sx = fromLeft ? -110 : wr.width + 110, ex = fromLeft ? wr.width + 110 : -110;
+  const sy = ty + (Math.random() - 0.5) * 60, ey = 2 * ty - sy;   // Flugbahn geht genau über das Schiff
+  const ang = Math.atan2(ey - sy, ex - sx) * 180 / Math.PI;
+  const dur = 1500, tHit = (tx - sx) / (ex - sx);
+  const jet = document.createElement('div');
+  jet.className = 'bs-jet';
+  jet.innerHTML = `<div class="bs-jet-shadow">${BS_JET_SVG}</div><div class="bs-jet-body">${BS_JET_SVG}</div>`;
+  layer.appendChild(jet);
+  jet.animate([
+    { transform: `translate(${sx}px, ${sy}px) rotate(${ang}deg) scale(0.9)` },
+    { transform: `translate(${ex}px, ${ey}px) rotate(${ang}deg) scale(1.05)` }
+  ], { duration: dur, easing: 'linear', fill: 'forwards' });
+  const at = (k) => [sx + (ex - sx) * k, sy + (ey - sy) * k];
+  const boom = () => {
+    const ex1 = document.createElement('div');
+    ex1.className = 'bs-bigboom';
+    ex1.style.left = tx + 'px'; ex1.style.top = ty + 'px';
+    ex1.innerHTML = '<b></b><b></b><b></b><b></b><b></b><b></b><b></b><i></i><i></i>' + Array.from({ length: 10 }, (_, k) => `<em style="--a:${k * 36 + Math.random() * 20}deg; --d:${30 + Math.random() * 30}px"></em>`).join('');
+    layer.appendChild(ex1);
+    boardEl.classList.remove('bs-shake'); void boardEl.offsetWidth; boardEl.classList.add('bs-shake');
+    bsBanner('Versenkt!', 'sunk');
+    // Schiff bricht in der Mitte durch, beide Hälften kippen weg und gehen unter
+    const x0 = Math.min(...boxes.map(b => b.left)) - wr.left, y0 = Math.min(...boxes.map(b => b.top)) - wr.top;
+    const x1 = Math.max(...boxes.map(b => b.right)) - wr.left, y1 = Math.max(...boxes.map(b => b.bottom)) - wr.top;
+    const vertical = new Set(ship.cells.map(([, c]) => c)).size === 1 && ship.cells.length > 1;
+    const sw = x1 - x0, sh = y1 - y0;
+    const sinker = document.createElement('div');
+    sinker.className = 'bs-sinker';
+    Object.assign(sinker.style, { left: x0 + 'px', top: y0 + 'px', width: sw + 'px', height: sh + 'px' });
+    const svg = bsShipSvg(ship.cells.length, vertical, false, ship.type);
+    const halves = [0, 1].map(k => {
+      const h = document.createElement('div');
+      h.className = 'bs-half' + (vertical ? ' vert' : '');
+      Object.assign(h.style, vertical
+        ? { left: 0, top: (k * sh / 2) + 'px', width: sw + 'px', height: (sh / 2) + 'px', transformOrigin: k ? '50% 0' : '50% 100%' }
+        : { left: (k * sw / 2) + 'px', top: 0, width: (sw / 2) + 'px', height: sh + 'px', transformOrigin: k ? '0 50%' : '100% 50%' });
+      h.innerHTML = `<div class="bs-half-in" style="width:${sw}px; height:${sh}px; ${vertical ? `top:${-k * sh / 2}px` : `left:${-k * sw / 2}px`}">${svg}</div><i class="bs-water"></i><i class="bs-break ${k ? 'a' : 'b'}"></i>`;
+      sinker.appendChild(h);
+      return h;
+    });
+    layer.appendChild(sinker);
+    bsSinkHide = true;
+    bsRender();
+    // erst Schlagseite, dann bricht es: beide Hälften kippen nach oben (3D), laufen voll Wasser und gehen unter
+    sinker.animate([{ transform: 'rotate(0deg)' }, { transform: `rotate(${vertical ? 0 : 2.5}deg) translate(${vertical ? 2 : 0}px, ${vertical ? 0 : 2}px)`, offset: 0.4 }, { transform: 'rotate(0deg)' }], { duration: 500, easing: 'ease-in-out' });
+    halves.forEach((h, k) => {
+      const dir = k ? 1 : -1;
+      const mv = (d) => vertical ? `translate(0, ${dir * d}px)` : `translate(${dir * d}px, 0)`;
+      const tilt = (deg) => vertical ? `rotateX(${-dir * deg}deg)` : `rotateY(${dir * deg}deg)`;
+      h.animate([
+        { transform: `perspective(260px) ${mv(0)} ${tilt(0)} scale(1)`, filter: 'brightness(1)' },
+        { transform: `perspective(260px) ${mv(3)} ${tilt(14)} scale(1)`, filter: 'brightness(0.9)', offset: 0.22 },
+        { transform: `perspective(260px) ${mv(6)} ${tilt(38)} scale(0.9)`, filter: 'brightness(0.7)', offset: 0.6 },
+        { transform: `perspective(260px) ${mv(8)} ${tilt(58)} scale(0.72)`, filter: 'brightness(0.45) blur(1px)', opacity: 0 }
+      ], { duration: 2400, delay: 300, easing: 'cubic-bezier(.4,0,.75,1)', fill: 'forwards' });
+      h.querySelector('.bs-water').animate([{ opacity: 0 }, { opacity: 0.25, offset: 0.3 }, { opacity: 0.9 }], { duration: 2400, delay: 300, easing: 'ease-in', fill: 'forwards' });
+    });
+    // Rauchsäule aus der Bruchstelle
+    for(let k = 0; k < 12; k++) setTimeout(() => {
+      const puff = document.createElement('i');
+      puff.className = 'bs-smokepuff';
+      puff.style.left = (x0 + sw / 2 + (Math.random() - 0.5) * 8) + 'px'; puff.style.top = (y0 + sh / 2 + (Math.random() - 0.5) * 8) + 'px';
+      layer.appendChild(puff);
+      setTimeout(() => puff.remove(), 1700);
+    }, 100 + k * 140);
+    // Luftblasen und Wasserringe, wo das Schiff versinkt
+    for(let k = 0; k < 16; k++){
+      setTimeout(() => {
+        const bub = document.createElement('i');
+        bub.className = 'bs-bubble';
+        bub.style.left = (x0 + Math.random() * sw) + 'px'; bub.style.top = (y0 + Math.random() * sh) + 'px';
+        bub.style.setProperty('--s', (3 + Math.random() * 5) + 'px');
+        layer.appendChild(bub);
+        setTimeout(() => bub.remove(), 1300);
+      }, 500 + k * 110);
+    }
+    [700, 1300].forEach(t => setTimeout(() => {
+      const ring = document.createElement('i');
+      ring.className = 'bs-sinkring';
+      Object.assign(ring.style, { left: (x0 + sw / 2) + 'px', top: (y0 + sh / 2) + 'px', width: (Math.max(sw, sh) * 0.9) + 'px', height: (Math.min(sw, sh) * 2) + 'px' });
+      layer.appendChild(ring);
+      setTimeout(() => ring.remove(), 1600);
+    }, t));
+    setTimeout(() => {
+      bsSinkHide = false; bsSinking = null;
+      bsRender();
+      sinker.remove();
+    }, 2750);
+  };
+  if(useBomb){
+    // Bombe kurz vor dem Ziel ausklinken, sie fällt (wird kleiner) und trifft genau das Schiff
+    const tDrop = Math.max(0.05, tHit - 0.16);
+    setTimeout(() => {
+      const [bx, by] = at(tDrop);
+      const bomb = document.createElement('i');
+      bomb.className = 'bs-bomb';
+      layer.appendChild(bomb);
+      bomb.animate([
+        { transform: `translate(${bx}px, ${by}px) rotate(${ang}deg) scale(1)` },
+        { transform: `translate(${tx}px, ${ty}px) rotate(${ang + 25}deg) scale(0.45)` }
+      ], { duration: 520, easing: 'cubic-bezier(.4,0,.9,.6)', fill: 'forwards' }).onfinish = () => { bomb.remove(); boom(); };
+    }, dur * tDrop);
+  } else {
+    // Bordkanone: Leuchtspuren vom Jet auf die Schiffsfelder, dann Explosion
+    const tFire = Math.max(0.05, tHit - 0.22);
+    for(let k = 0; k < 7; k++){
+      setTimeout(() => {
+        const [jx, jy] = at(tFire + k * 0.022);
+        const b = boxes[k % boxes.length];
+        const hx = b.left + b.width / 2 - wr.left + (Math.random() - 0.5) * 10, hy = b.top + b.height / 2 - wr.top + (Math.random() - 0.5) * 10;
+        const tr = document.createElement('i');
+        tr.className = 'bs-tracer';
+        const len = Math.hypot(hx - jx, hy - jy);
+        tr.style.left = jx + 'px'; tr.style.top = jy + 'px'; tr.style.width = len + 'px';
+        tr.style.transform = `rotate(${Math.atan2(hy - jy, hx - jx)}rad)`;
+        layer.appendChild(tr);
+        const sp = document.createElement('i');
+        sp.className = 'bs-spark'; sp.style.left = hx + 'px'; sp.style.top = hy + 'px';
+        layer.appendChild(sp);
+        setTimeout(() => { tr.remove(); sp.remove(); }, 400);
+      }, dur * (tFire + k * 0.022));
+    }
+    setTimeout(boom, dur * (tFire + 7 * 0.022) + 120);
+  }
+  setTimeout(() => layer.remove(), dur + 3600);
 }
 
 function bsRenderShipSelect(){
   const el = document.getElementById('bs-ship-select');
   if(bsPhase !== 'placing'){ el.innerHTML = ''; return; }
-  el.innerHTML = bsQueue.map((size, i) => `
-    <button class="ship-chip${i === bsSelectedIdx ? ' selected' : ''}" data-idx="${i}">${size} Felder</button>
-  `).join('');
+  const board = bsPlacingSide === 'a' ? bsBoardA : bsBoardB;
+  let threes = board.ships.filter(s => s.cells.length === 3).length;
+  el.innerHTML = bsQueue.map((size, i) => {
+    const type = size === 3 ? (threes++ === 0 ? 'kreuzer' : 'uboot') : bsTypeFor(board, size);
+    return `<button class="ship-chip${i === bsSelectedIdx ? ' selected' : ''}" data-idx="${i}"><span class="ship-chip-svg" style="--len:${size}">${bsShipSvg(size, false, false, type)}</span><span>${BS_TYPES[type]} · ${size}</span></button>`;
+  }).join('');
   el.querySelectorAll('.ship-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       bsSelectedIdx = parseInt(chip.dataset.idx, 10);
@@ -6400,11 +6831,20 @@ function bsRenderShipSelect(){
   });
 }
 
+// Ablage mit losen Steckern (weiss und rot) wie im Koffer
+function bsPegPile(){
+  if(!bsPegPile.html){
+    let pegs = '';
+    for(let k = 0; k < 22; k++) pegs += `<i class="${k < 7 ? 'r' : 'w'}" style="left:${k < 7 ? 3 + (k % 4) * 5 + (k > 3 ? 2.5 : 0) : 27 + ((k - 7) % 7) * 5.5 + (Math.floor((k - 7) / 7) % 2) * 2.5}px; top:${k < 7 ? (k > 3 ? 9 : 3) + Math.random() : 2 + Math.floor((k - 7) / 7) * 5 + Math.random()}px"></i>`;   // links rote, rechts weisse Stecker im Fach
+    bsPegPile.html = `<span class="bs-pegpile">${pegs}</span>`;
+  }
+  return bsPegPile.html;
+}
 function bsRenderFleetStatus(board, el){
   el.innerHTML = board.ships.slice()
     .sort((a, b) => b.cells.length - a.cells.length)
-    .map(ship => `<span class="bs-fleet-ship${ship.sunk ? ' sunk' : ''}">${ship.cells.length}</span>`)
-    .join('');
+    .map(ship => `<span class="bs-fleet-ship${ship.sunk ? ' sunk' : ''}" style="--len:${ship.cells.length}" title="${BS_TYPES[ship.type]}">${bsShipSvg(ship.cells.length, false, ship.sunk, ship.type)}</span>`)
+    .join('') + bsPegPile();
 }
 
 function bsRender(){
@@ -6428,8 +6868,9 @@ function bsRender(){
   const clickA = bsMode === 'friend' && bsAttacker === 'b' && !bsOver;
   const clickB = (bsMode === 'bot' && bsAttacker === 'a' && !bsOver) ||
                  (bsMode === 'friend' && bsAttacker === 'a' && !bsOver);
-  bsRenderBoard(bsBoardA, bsBoardAEl, clickA, (r, c) => bsHandleFire('a', r, c), bsOver);
+  bsRenderBoard(bsBoardA, bsBoardAEl, clickA, (r, c) => bsHandleFire('a', r, c), bsOver || bsMode === 'bot');   // eigene Flotte gegen den Bot immer sichtbar
   bsRenderBoard(bsBoardB, bsBoardBEl, clickB, (r, c) => bsHandleFire('b', r, c), bsOver);
+  bsFx = null;   // Effekt nur einmal abspielen
 }
 
 function bsToggleCell(side, r, c){
@@ -6505,7 +6946,7 @@ function bsConfirmPlacement(){
     return;
   }
   const board = bsPlacingSide === 'a' ? bsBoardA : bsBoardB;
-  board.ships.push({ cells: bsPending.slice(), hits: 0, sunk: false });
+  board.ships.push({ cells: bsPending.slice(), hits: 0, sunk: false, type: bsTypeFor(board, size) });
   bsQueue.splice(bsSelectedIdx, 1);
   bsSelectedIdx = 0;
   bsPending = [];
@@ -6556,13 +6997,15 @@ function bsHandleFire(targetKey, r, c){
   const targetBoard = targetKey === 'a' ? bsBoardA : bsBoardB;
   const outcome = bsFire(targetBoard, r, c);
   if(!outcome) return;
+  bsMarkShot(targetKey, r, c, outcome);
 
   const actorLabel = bsMode === 'bot' ? 'Du' : (bsAttacker === 'a' ? 'Spieler 1' : 'Spieler 2');
 
   if(bsAllSunk(targetBoard)){
     bsOver = true;
-    bsStatusEl.textContent = `🎉 ${actorLabel} hat alle Schiffe versenkt und gewinnt!`;
+    bsStatusEl.textContent = `${actorLabel === 'Du' ? 'Du hast' : actorLabel + ' hat'} die ganze Flotte versenkt und gewinnt!`;
     bsRender();
+    setTimeout(() => bsBanner(bsMode === 'bot' ? 'Sieg!' : actorLabel + ' gewinnt!', 'win'), BS_STRIKE_MS + 300);
     return;
   }
 
@@ -6575,7 +7018,7 @@ function bsHandleFire(targetKey, r, c){
   bsRender();
 
   if(bsMode === 'bot' && bsAttacker === 'b' && !bsOver){
-    setTimeout(bsBotTurn, 500);
+    setTimeout(bsBotTurn, 950);
   }
 }
 
@@ -6592,10 +7035,12 @@ function bsBotTurn(){
     } while(bsBoardA.grid[r][c]);
   }
   const outcome = bsFire(bsBoardA, r, c);
+  bsMarkShot('a', r, c, outcome);
   if(bsAllSunk(bsBoardA)){
     bsOver = true;
-    bsStatusEl.textContent = '💥 Der Bot hat deine Flotte versenkt. Verloren!';
+    bsStatusEl.textContent = 'Der Bot hat deine ganze Flotte versenkt. Verloren!';
     bsRender();
+    setTimeout(() => bsBanner('Verloren!', 'lose'), BS_STRIKE_MS + 300);
     return;
   }
   if(outcome.result === 'miss'){
@@ -6612,7 +7057,7 @@ function bsBotTurn(){
     }
     bsStatusEl.textContent = outcome.result === 'sunk' ? 'Bot hat ein Schiff von dir versenkt! Bot nochmal.' : 'Bot trifft! Bot nochmal.';
     bsRender();
-    setTimeout(bsBotTurn, 500);
+    setTimeout(bsBotTurn, outcome.result === 'sunk' ? BS_STRIKE_MS : 950);   // nach einem Versenken erst den Jet abwarten
   }
 }
 
@@ -6626,6 +7071,9 @@ function bsReset(){
   bsQueue = BS_SHIP_SIZES.slice();
   bsSelectedIdx = 0;
   bsPending = [];
+  bsFx = null;
+  bsSinking = null;
+  bsSinkHide = false;
   const who = bsMode === 'bot' ? 'Platziere deine Flotte' : 'Spieler 1: platziere deine Flotte';
   bsStatusEl.textContent = `${who} — wähle ein Schiff und Felder.`;
   bsRender();
@@ -6724,32 +7172,33 @@ function millHasAnyMove(board, player, canFly){
 
 // Valorant-Stil: Verteidiger (türkis, du) gegen Angreifer (rot)
 const vlName = (p) => p === 'w' ? 'Verteidiger' : 'Angreifer';
-// Jeder Stein ist ein eigener Agent (selbst gezeichnete Symbole in der Agentenfarbe)
+// Jeder Stein ist ein eigener Agent (Farbe = Ring ums Porträt)
 const VL_AGENTS = {
   w: [
-    { name: 'Sage',     c: '#4fe3d0', i: '<circle cx="10" cy="10" r="6.5"/><path d="M10 5.5l3 4.5-3 4.5-3-4.5z" fill="currentColor" stroke="none"/>' },
-    { name: 'Killjoy',  c: '#ffd23f', i: '<circle cx="10" cy="10" r="4.2"/><path d="M10 2.5v3M10 14.5v3M2.5 10h3M14.5 10h3M4.7 4.7l2.1 2.1M13.2 13.2l2.1 2.1M15.3 4.7l-2.1 2.1M6.8 13.2l-2.1 2.1"/>' },
-    { name: 'Cypher',   c: '#ece8e1', i: '<path d="M2.5 9h15M6 9l1.2-4.5h5.6L14 9"/><circle cx="10" cy="13.5" r="2.4" fill="currentColor" stroke="none"/>' },
-    { name: 'Chamber',  c: '#e2b85c', i: '<path d="M14.5 4.5H8L4.5 10 8 15.5h6.5"/><path d="M9 10h6" />' },
-    { name: 'Sova',     c: '#5aa9ff', i: '<path d="M3.5 16.5L16 4M16 4h-6M16 4v6"/>' },
-    { name: 'Viper',    c: '#4fd36b', i: '<path d="M10 2.5c3 4.6 5 6.8 5 9.8a5 5 0 0 1-10 0c0-3 2-5.2 5-9.8z" fill="currentColor" stroke="none"/>' },
-    { name: 'Astra',    c: '#b78cff', i: '<path d="M10 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="currentColor" stroke="none"/>' },
-    { name: 'Harbor',   c: '#2bc6d9', i: '<path d="M2.5 8c2.5-3.5 5-3.5 7.5 0s5 3.5 7.5 0M2.5 13.5c2.5-3.5 5-3.5 7.5 0s5 3.5 7.5 0"/>' },
-    { name: 'Deadlock', c: '#c9d3dc', i: '<path d="M10 2.5l6.5 3.75v7.5L10 17.5l-6.5-3.75v-7.5z"/><path d="M10 2.5v15M3.5 6.25l13 7.5M16.5 6.25l-13 7.5" stroke-width="0.9"/>' },
+    { name: 'Sage',     c: '#4fe3d0' },
+    { name: 'Killjoy',  c: '#ffd23f' },
+    { name: 'Cypher',   c: '#ece8e1' },
+    { name: 'Chamber',  c: '#e2b85c' },
+    { name: 'Sova',     c: '#5aa9ff' },
+    { name: 'Viper',    c: '#4fd36b' },
+    { name: 'Astra',    c: '#b78cff' },
+    { name: 'Harbor',   c: '#2bc6d9' },
+    { name: 'Deadlock', c: '#c9d3dc' },
   ],
   b: [
-    { name: 'Jett',     c: '#a8e3ff', i: '<path d="M10 2l2.6 9.5H7.4z" fill="currentColor" stroke="none"/><path d="M10 11.5V17M7.5 17h5"/>' },
-    { name: 'Phoenix',  c: '#ff8a3d', i: '<path d="M10 2c1 4 5 5.2 5 10a5 5 0 0 1-10 0c0-3 1.8-4 2-6 1 1 1.3 2 2 3 0-3-.2-5 1-7z" fill="currentColor" stroke="none"/>' },
-    { name: 'Raze',     c: '#ffb020', i: '<path d="M10 2l1.8 4.6 4.7-1.9-2.6 4.4 3.9 2.6-4.9.3-.7 5-2.2-4.3-3.9 3 .9-4.9-4.4-2.1 4.9-1z" fill="currentColor" stroke="none"/>' },
-    { name: 'Reyna',    c: '#d05bff', i: '<path d="M2 10c4-6 12-6 16 0-4 6-12 6-16 0z"/><circle cx="10" cy="10" r="2.6" fill="currentColor" stroke="none"/>' },
-    { name: 'Neon',     c: '#3fd0ff', i: '<path d="M11.5 2L4 11h5.2L8 18l7.5-9.5h-5.2z" fill="currentColor" stroke="none"/>' },
-    { name: 'Yoru',     c: '#5b7bff', i: '<path d="M12.5 2.8a7.3 7.3 0 1 0 4.8 11.4A6 6 0 1 1 12.5 2.8z" fill="currentColor" stroke="none"/>' },
-    { name: 'Breach',   c: '#ff6a3d', i: '<path d="M3 10h4.5M8.5 5.2a5.6 5.6 0 0 1 0 9.6M11.8 3a8.8 8.8 0 0 1 0 14"/>' },
-    { name: 'Skye',     c: '#7ad86b', i: '<path d="M3.5 16.5C3.5 8.5 8.5 4 17 3c-1 8.4-5.4 13.5-13.5 13.5z" fill="currentColor" stroke="none"/><path d="M4 16l7.5-7.5" stroke="#0f1923" stroke-width="1.4"/>' },
-    { name: 'Omen',     c: '#8a6bff', i: '<path d="M3.5 17.5c0-8.5 3-13.5 6.5-13.5s6.5 5 6.5 13.5z" fill="currentColor" stroke="none"/><path d="M7.5 11.5h5" stroke="#0f1923" stroke-width="1.6"/>' },
+    { name: 'Jett',     c: '#a8e3ff' },
+    { name: 'Phoenix',  c: '#ff8a3d' },
+    { name: 'Raze',     c: '#ffb020' },
+    { name: 'Reyna',    c: '#d05bff' },
+    { name: 'Neon',     c: '#3fd0ff' },
+    { name: 'Yoru',     c: '#5b7bff' },
+    { name: 'Breach',   c: '#ff6a3d' },
+    { name: 'Skye',     c: '#7ad86b' },
+    { name: 'Omen',     c: '#8a6bff' },
   ],
 };
-const vlAgentSvg = (a) => `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${a.i}</svg>`;
+// Porträt des Agenten (Bilder liegen in /public/agents)
+const vlAgentImg = (a) => `<img src="/agents/${a.name.toLowerCase()}.png" alt="${a.name}" draggable="false">`;
 let millAgent = Array(24).fill(null);
 function millAgentPlace(i, p){ millAgent[i] = VL_AGENTS[p][9 - millToPlace[p]]; }   // vor dem Herunterzählen aufrufen
 function millAgentMove(from, to){ millAgent[to] = millAgent[from]; millAgent[from] = null; }
@@ -6852,7 +7301,77 @@ function millAiBest(p){
   }
   return bestMove;
 }
-let vlRound = 1, vlLast = null, vlLastFrom = null;
+let vlRound = 1, vlLast = null, vlLastFrom = null, vlAnimPending = false;
+// Passende Bewegung pro Agent: m = Art (dash = Sprint, slide = gleiten, arc = Sprung, tele = Teleport), p = Partikel, end = Effekt bei der Ankunft
+const VL_MOVES = {
+  Sage:     { m: 'slide', p: 'crystal' },
+  Killjoy:  { m: 'slide', p: 'spark' },
+  Cypher:   { m: 'slide', p: 'spark', end: 'ring' },
+  Chamber:  { m: 'tele',  p: 'spark', end: 'ring' },
+  Sova:     { m: 'slide', p: 'spark', end: 'ring' },
+  Viper:    { m: 'slide', p: 'smoke' },
+  Astra:    { m: 'tele',  p: 'star' },
+  Harbor:   { m: 'slide', p: 'drop' },
+  Deadlock: { m: 'arc',   p: 'hex', end: 'ring' },
+  Jett:     { m: 'dash',  p: 'wind' },
+  Phoenix:  { m: 'dash',  p: 'flame' },
+  Raze:     { m: 'arc',   p: 'flame', end: 'boom' },
+  Reyna:    { m: 'tele',  p: 'smoke' },
+  Neon:     { m: 'dash',  p: 'bolt' },
+  Yoru:     { m: 'tele',  p: 'smoke', end: 'ring' },
+  Breach:   { m: 'arc',   p: 'spark', end: 'boom' },
+  Skye:     { m: 'slide', p: 'leaf' },
+  Omen:     { m: 'tele',  p: 'smoke' },
+};
+function vlParticle(shape, l, t, color, spread){
+  if(!vlFxEl) return;
+  const el = document.createElement('span');
+  el.className = 'vl-p ' + shape;
+  el.style.left = l + '%'; el.style.top = t + '%';
+  el.style.setProperty('--c', color);
+  el.style.setProperty('--dx', ((Math.random() - 0.5) * (spread || 26)) + 'px');
+  el.style.setProperty('--dy', ((Math.random() - 0.5) * (spread || 26) - 6) + 'px');
+  el.style.setProperty('--r', (Math.random() * 360) + 'deg');
+  vlFxEl.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+function vlBurst(kind, l, t, color){
+  if(kind === 'ring' || kind === 'boom'){
+    for(let k = 0; k < (kind === 'boom' ? 2 : 1); k++) setTimeout(() => vlParticle('ring', l, t, color, 0), k * 120);
+    if(kind === 'boom') for(let k = 0; k < 10; k++) vlParticle('flame', l, t, color, 60);
+  }
+}
+// Stein läuft vom alten zum neuen Punkt, mit Spur und Effekten im Stil des Agenten
+function vlAnimateMove(btn, from, to, ag){
+  const cfg = VL_MOVES[ag.name] || { m: 'slide', p: 'spark' };
+  const [fl, ft] = vlPos(from), [tl, tt] = vlPos(to);
+  const at = (k) => [fl + (tl - fl) * k, ft + (tt - ft) * k];
+  const dur = { dash: 300, slide: 560, arc: 620, tele: 700 }[cfg.m];
+  const pos = (l, t) => ({ left: l + '%', top: t + '%' });
+  let frames, easing = 'ease-in-out';
+  if(cfg.m === 'tele'){
+    frames = [{ ...pos(fl, ft), opacity: 1, transform: 'scale(1)' }, { ...pos(fl, ft), opacity: 0, transform: 'scale(0.1) rotate(90deg)', offset: 0.42 },
+              { ...pos(tl, tt), opacity: 0, transform: 'scale(0.1) rotate(-90deg)', offset: 0.58 }, { ...pos(tl, tt), opacity: 1, transform: 'scale(1)' }];
+  } else if(cfg.m === 'arc'){
+    const [ml, mt] = at(0.5);
+    frames = [{ ...pos(fl, ft), transform: 'translateY(0) scale(1)' }, { ...pos(ml, mt), transform: 'translateY(-34px) scale(1.3)', offset: 0.5 },
+              { ...pos(tl, tt), transform: 'translateY(0) scale(0.85)', offset: 0.9 }, { ...pos(tl, tt), transform: 'translateY(0) scale(1)' }];
+  } else {
+    frames = [{ ...pos(fl, ft), transform: 'scale(1)' }, { ...pos(tl, tt), transform: cfg.m === 'dash' ? 'scale(1.1, 0.9)' : 'scale(1)', offset: 0.9 }, { ...pos(tl, tt), transform: 'scale(1)' }];
+    if(cfg.m === 'dash') easing = 'cubic-bezier(.6,0,.2,1)';
+  }
+  btn.style.zIndex = 3;
+  btn.animate(frames, { duration: dur, easing }).onfinish = () => { btn.style.zIndex = ''; };
+  // Partikel: beim Teleport an Start und Ziel, sonst als Spur entlang des Wegs
+  if(cfg.m === 'tele'){
+    for(let k = 0; k < 9; k++) vlParticle(cfg.p, fl, ft, ag.c, 34);
+    setTimeout(() => { for(let k = 0; k < 9; k++) vlParticle(cfg.p, tl, tt, ag.c, 34); }, dur * 0.5);
+  } else {
+    const steps = cfg.m === 'dash' ? 10 : 12;
+    for(let k = 0; k <= steps; k++) setTimeout(() => { const [l, t] = at(k / steps); vlParticle(cfg.p, l, t, ag.c, cfg.m === 'dash' ? 12 : 20); }, k / steps * dur * 0.9);
+  }
+  if(cfg.end) setTimeout(() => vlBurst(cfg.end, tl, tt, ag.c), dur * (cfg.m === 'arc' ? 0.88 : 0.9));
+}
 const vlFxEl = document.getElementById('vl-fx');
 // HUD oben: lebende Agenten, Reserve (noch zu setzen) und eliminierte als Rauten
 function millRenderPiecesLeft(){
@@ -6867,7 +7386,7 @@ function millRenderPiecesLeft(){
   const fly = millPhase === 'moving' && millCountPieces(millBoard, millTurn) === 3;
   ph.textContent = millOver ? 'Match vorbei' : millRemoving ? 'Ziel ausschalten' : millPhase === 'placing' ? 'Kaufphase' : fly ? 'Letzter Stand' : 'Kampfphase';
   ph.className = millRemoving ? 'hot' : '';
-  document.getElementById('vl-round').textContent = 'Runde ' + vlRound;
+  document.getElementById('vl-round').textContent = 'Haven · Runde ' + vlRound;
   document.querySelector('.vl-hud .def')?.classList.toggle('turn', !millOver && millTurn === 'w');
   document.querySelector('.vl-hud .atk')?.classList.toggle('turn', !millOver && millTurn === 'b');
 }
@@ -6891,7 +7410,7 @@ function vlKill(killer, idx){
   if(feed){
     const row = document.createElement('div');
     row.className = 'vl-feed-row ' + (killer === 'w' ? 'by-def' : 'by-atk');
-    const tag = (a, p) => a ? `<span class="vl-feed-agent" style="color:${a.c}">${vlAgentSvg(a)}</span><b>${a.name}</b>` : `<b>${vlName(p)}</b>`;
+    const tag = (a, p) => a ? `<span class="vl-feed-agent" style="color:${a.c}">${vlAgentImg(a)}</span><b>${a.name}</b>` : `<b>${vlName(p)}</b>`;
     row.innerHTML = `${tag(ka, killer)}<svg viewBox="0 0 24 10"><path d="M1 4h13l2-2h5v2h2v2h-9l-2 3h-3l1-3H1z" fill="currentColor"/></svg>${tag(va, killer === 'w' ? 'b' : 'w')}`;
     feed.prepend(row);
     while(feed.children.length > 4) feed.lastChild.remove();
@@ -6913,6 +7432,232 @@ function vlBanner(text, side, stay, sub){
   if(!stay) vlBanner.t = setTimeout(() => { ov.innerHTML = ''; }, 1300);
 }
 
+// Haven von oben (wie ein Luftbild): dunkler Wald, Walmdächer aus Ziegeln, blühende Bäume, Laternen, ein Teich und der grosse Tempel in der Mitte
+// Feste Figuren auf der Karte (bleiben beim Neuzeichnen erhalten): Killjoys Geschütz und Skyes Spürhund
+const VL_TURRET = { x: 95, y: 197 };
+let vlBusy = false;
+const vlPropsSvg = (function(){
+  const map = document.querySelector('.vl-map');
+  if(!map) return null;
+  const layer = document.createElement('div');
+  layer.className = 'vl-props';
+  layer.innerHTML = `<svg viewBox="0 0 340 340" aria-hidden="true">
+    <defs>
+      <filter id="vlp-soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.1"/></filter>
+      <linearGradient id="vlp-kj-yellow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe680"/><stop offset="0.5" stop-color="#f2c230"/><stop offset="1" stop-color="#b8860b"/></linearGradient>
+      <linearGradient id="vlp-kj-white" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c9c4b6"/></linearGradient>
+      <linearGradient id="vlp-gun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a6069"/><stop offset="0.5" stop-color="#22262b"/><stop offset="1" stop-color="#0e1013"/></linearGradient>
+      <radialGradient id="vlp-light"><stop offset="0" stop-color="#d9fbff" stop-opacity="0.95"/><stop offset="0.4" stop-color="#54e0ff" stop-opacity="0.5"/><stop offset="1" stop-color="#2ec8ff" stop-opacity="0"/></radialGradient>
+      <radialGradient id="vlp-flash"><stop offset="0" stop-color="#fffbe0"/><stop offset="0.4" stop-color="#ffd24a"/><stop offset="1" stop-color="#ff8a1a" stop-opacity="0"/></radialGradient>
+      <linearGradient id="vlp-sh-orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcf6a"/><stop offset="0.4" stop-color="#f3a226"/><stop offset="1" stop-color="#b86a06"/></linearGradient>
+      <linearGradient id="vlp-sh-top" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0c4"/><stop offset="1" stop-color="#ffc85a"/></linearGradient>
+      <linearGradient id="vlp-sh-black" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#454850"/><stop offset="1" stop-color="#101113"/></linearGradient>
+      <linearGradient id="vlp-sh-grip" x1="0" y1="0" x2="1" y2="0.25"><stop offset="0" stop-color="#ffffff"/><stop offset="0.55" stop-color="#e6e8ec"/><stop offset="1" stop-color="#9ea5ae"/></linearGradient>
+      <linearGradient id="vlp-steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a7afb9"/><stop offset="0.45" stop-color="#3b4048"/><stop offset="1" stop-color="#15181c"/></linearGradient>
+      <linearGradient id="vlp-grip" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2d32"/><stop offset="1" stop-color="#0a0b0d"/></linearGradient>
+      <linearGradient id="vlp-frame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a5058"/><stop offset="0.3" stop-color="#26292e"/><stop offset="1" stop-color="#0f1113"/></linearGradient>
+    </defs>
+    <g transform="translate(${VL_TURRET.x} ${VL_TURRET.y})" class="vl-kj">
+      <ellipse cx="-2.5" cy="3.5" rx="11" ry="9" fill="rgba(4,12,6,0.55)" filter="url(#vlp-soft)"/>
+      ${[[-9, 6.5], [9, 6.5], [0, -10.5]].map(([lx, ly]) => `<path d="M0 0L${lx * 0.55} ${ly * 0.55}L${lx} ${ly}" stroke="#2b2f35" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="${lx * 0.55}" cy="${ly * 0.55}" r="1.3" fill="#4a5059"/><rect x="${lx - 1.8}" y="${ly - 1.1}" width="3.6" height="2.2" rx="0.8" fill="#f2c230" stroke="#6b5310" stroke-width="0.4"/>`).join('')}
+      <circle r="6.2" fill="#24282e" stroke="#4d535c" stroke-width="0.8"/>
+      <g class="vl-kj-head">
+        <rect x="4" y="-1.25" width="12" height="2.5" rx="0.6" fill="url(#vlp-gun)"/>
+        <rect x="13.5" y="-1.7" width="3.4" height="3.4" rx="0.6" fill="#15181c"/>
+        <path d="M7 -1.25v2.5M9 -1.25v2.5M11 -1.25v2.5" stroke="#6a717b" stroke-width="0.45"/>
+        <rect x="-7.5" y="-6.2" width="13" height="12.4" rx="3.6" fill="url(#vlp-kj-yellow)" stroke="#5c4510" stroke-width="0.7"/>
+        <rect x="-5.6" y="-4.4" width="8" height="8.8" rx="2.4" fill="url(#vlp-kj-white)"/>
+        <path d="M-5.6 -1.5h8M-5.6 1.5h8" stroke="rgba(0,0,0,0.15)" stroke-width="0.4"/>
+        <rect x="2.6" y="-3.6" width="3.4" height="7.2" rx="1.2" fill="#1b1f24"/>
+        <circle cx="4.3" cy="0" r="1.2" fill="#8ff3ff" class="vl-kj-eye"/>
+        <circle cx="4.3" cy="0" r="4.5" fill="url(#vlp-light)" class="vl-kj-eye"/>
+        <rect x="-4.6" y="-3.6" width="3" height="1.5" rx="0.6" fill="rgba(255,255,255,0.85)"/>
+        <circle cx="17.5" cy="0" r="5" fill="url(#vlp-flash)" class="vl-kj-flash"/>
+      </g>
+    </g>
+    <g class="vl-sheriff" transform="translate(197 101) rotate(-14) scale(0.42)">
+      <path d="M-27 4Q-27 -6 -18 -10L30 -12V7H-4L-7 6L-12 26H-28L-25 6z" fill="rgba(4,12,6,0.6)" filter="url(#vlp-soft)" transform="translate(-3 5)"/>
+      <path d="M-21 4.4H-9.2Q-8.2 4.6 -8.8 6.2Q-10.6 10 -11.4 13Q-12.6 17.6 -14.8 23.4Q-16 26.8 -19.4 27H-25.6Q-29 27 -28.2 23.4L-27.2 20.2Q-25.8 19.8 -25.6 18.4L-22.4 7.4Z" fill="url(#vlp-sh-grip)" stroke="#59606a" stroke-width="0.6"/>
+      <path d="M-21.6 8L-25.8 20.4" stroke="rgba(255,255,255,0.9)" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M-12.6 13.2Q-13.8 18.6 -16 24" stroke="rgba(80,90,100,0.35)" stroke-width="1.2" fill="none"/>
+      <rect x="-19.4" y="11" width="5" height="1.9" rx="0.95" transform="rotate(-72 -16.9 11.95)" fill="none" stroke="#8d949d" stroke-width="0.7"/>
+      <rect x="-22.4" y="18.6" width="5" height="1.9" rx="0.95" transform="rotate(-72 -19.9 19.55)" fill="none" stroke="#8d949d" stroke-width="0.7"/>
+      <path d="M-6.5 6.5V12.2H2.4V6.5" fill="none" stroke="#111214" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M-2.2 6.8Q-2.4 9 -3.8 10.4" fill="none" stroke="#f3a226" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M-27.6 3.6Q-27.4 -5.6 -18.6 -9.4L-8.6 -10.6V5.4H-21.6Z" fill="url(#vlp-sh-black)" stroke="#050607" stroke-width="0.6"/>
+      <path d="M-25.6 2.6Q-24.6 -4.4 -17.8 -6.8H-10" fill="none" stroke="#f3a226" stroke-width="2" stroke-linecap="round"/>
+      <path d="M-26.2 -1Q-24 -6.6 -18.4 -8.6" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>
+      <path d="M-10 -10.6H14V7.6H-3.6L-6 5.4H-10Z" fill="url(#vlp-sh-orange)" stroke="#6b3c05" stroke-width="0.6"/>
+      <path d="M-10 -10.6H14L15 -12.2H-8.8Z" fill="url(#vlp-sh-top)" stroke="#6b3c05" stroke-width="0.5"/>
+      <path d="M14 -11.6H27.4L30.4 -8.2V5.6L29.2 7.6H14Z" fill="url(#vlp-sh-orange)" stroke="#6b3c05" stroke-width="0.6"/>
+      <path d="M14 -11.6H27.4L28.4 -13H15Z" fill="url(#vlp-sh-top)" stroke="#6b3c05" stroke-width="0.5"/>
+      <path d="M21.4 -11.6V7.6" stroke="rgba(90,45,0,0.6)" stroke-width="0.6"/>
+      <path d="M-10 -3.2H11.6L12.8 -1.8V0.2H-10Z" fill="#141518"/>
+      <path d="M-8.6 -5.2V-8.6H3.4V-6.6H10.2V-3.2" fill="none" stroke="#141518" stroke-width="1"/>
+      <path d="M-4.6 -8.6V-5.6H0.6V-6.6" fill="none" stroke="#141518" stroke-width="1"/>
+      <path d="M-6.4 3.2H13.6M-3.6 5.8H13.6" stroke="#141518" stroke-width="0.8"/>
+      <path d="M-9.4 0.2L-6.4 3.2" stroke="#141518" stroke-width="0.8"/>
+      <path d="M-5 1.6H12" stroke="#ffe0a0" stroke-width="0.5" opacity="0.8"/>
+      <path d="M-8.6 -9.6H13" stroke="#ffe7b0" stroke-width="0.5" opacity="0.9"/>
+      <rect x="23.2" y="-8.8" width="5.2" height="8.6" rx="0.8" fill="#141518"/>
+      <path d="M24.3 -0.9L25.6 -8.1M26.3 -0.9L27.6 -8.1" stroke="#f5f5f5" stroke-width="1.2"/>
+      <path d="M24.3 -0.9L24.8 -3.2M26.3 -0.9L26.8 -3.2" stroke="#ff4655" stroke-width="1.2"/>
+      <path d="M15 2.6H29.6" stroke="#141518" stroke-width="0.8"/>
+      <path d="M15 5.2H29" stroke="#a65e06" stroke-width="1.4"/>
+      <path d="M-7 -12.2V-14.4H-3.4V-12.2Z" fill="#f3a226" stroke="#6b3c05" stroke-width="0.5"/>
+      <path d="M-6.4 -14.4H-4" stroke="#fff0c4" stroke-width="0.6"/>
+      <rect x="30.2" y="-6.8" width="1.2" height="6" rx="0.4" fill="#111214"/>
+      <path class="vl-glint" d="M-8 -11.4H28" stroke="#fffbe8" stroke-width="1.2" stroke-linecap="round"/>
+    </g>
+    ${[[209, 110, 30], [212, 105, -50]].map(([cx, cy, r]) => `<g transform="translate(${cx} ${cy}) rotate(${r}) scale(0.7)"><rect x="-1.6" y="-0.75" width="3.2" height="1.5" rx="0.5" fill="#d9a43a" stroke="#7a5214" stroke-width="0.3"/><rect x="-1.6" y="-0.75" width="0.8" height="1.5" fill="#f4d67a"/></g>`).join('')}
+  </svg>`;
+  map.insertBefore(layer, map.querySelector('.vl-petals'));
+  return layer.querySelector('svg');
+})();
+// Killjoys Geschütz zielt auf den Gegner, feuert drei Schüsse, dann wird er ausgeschaltet
+function vlTurretKill(killer, idx, done){
+  const head = vlPropsSvg?.querySelector('.vl-kj-head');
+  const [pl, pt] = vlPos(idx);
+  const tx = pl * 3.4, ty = pt * 3.4;
+  const ang = Math.atan2(ty - VL_TURRET.y, tx - VL_TURRET.x);
+  if(!head){ vlKill(killer, idx); done(); return; }
+  head.classList.add('aim');
+  head.style.transform = `rotate(${ang * 180 / Math.PI}deg)`;
+  const mx = VL_TURRET.x + Math.cos(ang) * 17.5, my = VL_TURRET.y + Math.sin(ang) * 17.5;
+  for(let k = 0; k < 3; k++){
+    setTimeout(() => {
+      head.classList.remove('fire'); void head.getBBox(); head.classList.add('fire');
+      const jx = (Math.random() - 0.5) * 6, jy = (Math.random() - 0.5) * 6;
+      const tr = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      tr.setAttribute('x1', mx); tr.setAttribute('y1', my); tr.setAttribute('x2', tx + jx); tr.setAttribute('y2', ty + jy);
+      tr.setAttribute('class', 'vl-tracer');
+      vlPropsSvg.appendChild(tr);
+      setTimeout(() => tr.remove(), 260);
+      for(let n = 0; n < 4; n++) vlParticle('spark', (tx + jx) / 3.4, (ty + jy) / 3.4, '#ffd24a', 22);
+    }, 330 + k * 120);
+  }
+  setTimeout(() => { vlKill(killer, idx); done(); }, 330 + 3 * 120 + 60);
+  setTimeout(() => { head.classList.remove('aim', 'fire'); head.style.transform = ''; }, 1500);
+}
+// Glühwürmchen über der Karte (einmal erzeugen, schweben per CSS)
+(function vlFireflies(){
+  const layer = document.querySelector('.vl-petals');
+  if(!layer) return;
+  for(let k = 0; k < 16; k++){
+    const f = document.createElement('i');
+    f.className = 'vl-firefly';
+    f.style.left = (5 + Math.random() * 90) + '%'; f.style.top = (5 + Math.random() * 90) + '%';
+    f.style.animationDelay = (-Math.random() * 8) + 's, ' + (-Math.random() * 3) + 's';
+    f.style.animationDuration = (6 + Math.random() * 6) + 's, ' + (1.6 + Math.random() * 2) + 's';
+    layer.appendChild(f);
+  }
+})();
+function vlHavenDecor(){
+  // Walmdach von oben: vier Dachflächen (oben hell, unten dunkel, Seiten dazwischen), Ziegelmuster, goldener First mit Zierspitzen
+  const roof = (cx, cy, w, h, hue, rot = 0) => {
+    const [cl, cm, cd] = hue;
+    const horiz = w >= h, x = -w / 2, y = -h / 2;
+    const r = (horiz ? h : w) / 2;                       // Firstlänge = lange Seite minus kurze Seite
+    const faces = horiz
+      ? [`M${x} ${y}h${w}l${-r} ${r}h${-(w - 2 * r)}z`, `M${x} ${y + h}h${w}l${-r} ${-r}h${-(w - 2 * r)}z`, `M${x} ${y}l${r} ${r}l${-r} ${r}z`, `M${x + w} ${y}l${-r} ${r}l${r} ${r}z`]
+      : [`M${x} ${y}h${w}l${-r} ${r}z`, `M${x} ${y + h}h${w}l${-r} ${-r}z`, `M${x} ${y}l${r} ${r}v${h - 2 * r}l${-r} ${r}z`, `M${x + w} ${y}l${-r} ${r}v${h - 2 * r}l${r} ${r}z`];
+    const cols = horiz ? [cl, cd, cm, cm] : [cm, cm, cl, cd];
+    const pats = ['v', 'v', 'h', 'h'];
+    const ridge = horiz ? [x + r, 0, x + w - r, 0] : [0, y + r, 0, y + h - r];
+    return `<g transform="translate(${cx} ${cy}) rotate(${rot})">
+      <rect x="${x + 2}" y="${y + 5}" width="${w + 4}" height="${h + 3}" rx="2" fill="rgba(4,12,6,0.55)"/>
+      <rect x="${x - 2.5}" y="${y - 2.5}" width="${w + 5}" height="${h + 5}" rx="1.5" fill="#efe8d8"/>
+      <rect x="${x - 2.5}" y="${y + h - 1}" width="${w + 5}" height="3.5" fill="#9c2f22"/>
+      ${faces.map((f, k) => `<path d="${f}" fill="${cols[k]}"/><path d="${f}" fill="url(#vl-tile-${pats[k]})"/>`).join('')}
+      <path d="M${ridge[0]} ${ridge[1]}L${ridge[2]} ${ridge[3]}" stroke="#3b170b" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M${ridge[0]} ${ridge[1]}L${ridge[2]} ${ridge[3]}" stroke="#e9b44a" stroke-width="0.9" stroke-linecap="round"/>
+      <circle cx="${ridge[0]}" cy="${ridge[1]}" r="1.8" fill="#f2c94c"/><circle cx="${ridge[2]}" cy="${ridge[3]}" r="1.8" fill="#f2c94c"/>
+    </g>`;
+  };
+  // Baumgruppe von oben: mehrere Kronen mit Licht oben links
+  // Baumgruppe von oben: viele unregelmässige Laubbüschel (feste Zufallszahlen je Baum), Licht von oben rechts
+  const tree = (cx, cy, r, base, mid, hi, blossom) => {
+    let seed = Math.round(cx * 31 + cy * 17);
+    const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+    const blobs = [[0, 0, 0.8]];
+    for(let k = 0; k < 7; k++){ const a = k / 7 * Math.PI * 2 + rnd() * 0.6, d = r * (0.45 + rnd() * 0.25); blobs.push([Math.cos(a) * d / r, Math.sin(a) * d / r, 0.42 + rnd() * 0.2]); }
+    let out = `<ellipse cx="${cx - 3}" cy="${cy + 4}" rx="${r * 1.3}" ry="${r * 1.15}" fill="rgba(4,12,6,0.5)"/>`;
+    for(const [dx, dy, k] of blobs) out += `<circle cx="${cx + dx * r}" cy="${cy + dy * r}" r="${r * k}" fill="${base}"/>`;
+    for(const [dx, dy, k] of blobs) out += `<circle cx="${cx + dx * r + r * k * 0.2}" cy="${cy + dy * r - r * k * 0.22}" r="${r * k * 0.68}" fill="${mid}"/>`;
+    for(const [dx, dy, k] of blobs) if(dx > -0.2 && dy < 0.2) out += `<circle cx="${cx + dx * r + r * k * 0.32}" cy="${cy + dy * r - r * k * 0.35}" r="${r * k * 0.3}" fill="${hi}" opacity="0.8"/>`;
+    if(blossom) for(let k = 0; k < 9; k++){ const a = rnd() * Math.PI * 2, d = r * rnd() * 0.85; out += `<circle cx="${cx + Math.cos(a) * d}" cy="${cy + Math.sin(a) * d}" r="${0.7 + rnd() * r * 0.09}" fill="${blossom}"/>`; }
+    return out;
+  };
+  const green = (x, y, r) => tree(x, y, r, '#1f4a22', '#2f6a2e', '#5f9c48');
+  const purple = (x, y, r) => tree(x, y, r, '#5e2f6a', '#8e4f93', '#d9a0dc', '#f4c9f0');
+  const pink = (x, y, r) => tree(x, y, r, '#8a3f63', '#c06a95', '#f2b6d0', '#ffe1ee');
+  // Laterne mit warmem, flackerndem Licht
+  const lantern = (x, y, k) => `<circle cx="${x}" cy="${y}" r="16" fill="url(#vl-glow)" class="vl-lamp" style="animation-delay:${-k * 0.37}s"/>
+    <rect x="${x - 2}" y="${y - 2}" width="4" height="4" rx="1" fill="#ffe2a0" stroke="#5a3214" stroke-width="0.8"/>`;
+  // kleiner Teich mit Seerosen
+  const pond = (x, y) => `<ellipse cx="${x + 1}" cy="${y + 2}" rx="17" ry="12" fill="rgba(4,12,6,0.5)"/>
+    <ellipse cx="${x}" cy="${y}" rx="16" ry="11" fill="#7d7769"/><ellipse cx="${x}" cy="${y}" rx="13.5" ry="8.8" fill="url(#vl-water)"/>
+    <path d="M${x - 8} ${y - 3}q5 -3 9 0M${x + 1} ${y + 4}q4 -2 7 0" stroke="rgba(255,255,255,0.35)" stroke-width="0.8" fill="none" class="vl-ripple"/>
+    <circle cx="${x - 6}" cy="${y + 3}" r="2.6" fill="#4f8a3c"/><circle cx="${x + 6}" cy="${y - 3}" r="2.2" fill="#4f8a3c"/><circle cx="${x + 6}" cy="${y - 3}" r="0.9" fill="#f4b6d6"/>
+    <path d="M${x - 2} ${y - 1}q1.6 -1.5 3 0" stroke="#e8823a" stroke-width="1.6" stroke-linecap="round" fill="none" class="vl-koi"/>`;
+  // Sovas Bogen liegt im Gras: Recurve-Bogen (dunkles Metall, blaue Technik-Leisten, Griff mit Wicklung), daneben ein Aufklärungspfeil
+  const sovaBow = (x, y) => `<g transform="translate(${x} ${y}) rotate(-32) scale(0.78)">
+    <path d="M-17 1Q-13 -9 0 -10Q13 -9 17 1" fill="none" stroke="rgba(4,12,6,0.45)" stroke-width="4" transform="translate(-1.5 3)" filter="url(#vl-soft)"/>
+    <path d="M-18 1.5Q-17.5 -1 -15 -2Q-12 -9.5 0 -10Q12 -9.5 15 -2Q17.5 -1 18 1.5" fill="none" stroke="url(#vl-bow-metal)" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M-13 -5.5Q-8 -9.2 -3 -9.8M3 -9.8Q8 -9.2 13 -5.5" fill="none" stroke="#4fb3ff" stroke-width="0.7" stroke-linecap="round"/>
+    <path d="M-14.5 -3.2Q-12 -8.6 -6 -9.6" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="0.5"/>
+    <rect x="-2.6" y="-11.6" width="5.2" height="3.6" rx="1.2" fill="#3a2a1c"/>
+    <path d="M-2 -11.4v3.2M-0.7 -11.4v3.2M0.6 -11.4v3.2M1.9 -11.4v3.2" stroke="#6b5136" stroke-width="0.5"/>
+    <path d="M-18 1.5L18 1.5" stroke="#dfe6ee" stroke-width="0.4" opacity="0.9"/>
+    <g transform="translate(-1 5.5)">
+      <path d="M-15 0H9" stroke="#2a3340" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M-15 0l-2.6 -1.6h2.4zM-15 0l-2.6 1.6h2.4z" fill="#d6dde6"/>
+      <path d="M8 -1.8L13.5 0L8 1.8L9 0z" fill="#8fd2ff" stroke="#2a6fb0" stroke-width="0.4"/>
+      <circle cx="11" cy="0" r="3.4" fill="url(#vl-recon)" class="vl-recon"/>
+    </g>
+  </g>`;
+  // grosser Tempel in der Mitte: Steinhof mit Platten, weisse Mauer, zwei gestufte Dächer, goldene Spitze
+  const hip = (s0, c1, c2, c3, c4) => {
+    const a = 170 - s0, b = 170 + s0, d = s0 * 0.42;
+    return `<path d="M${a} ${a}H${b}L${b - d} ${a + d}H${a + d}z" fill="${c1}"/><path d="M${a} ${b}H${b}L${b - d} ${b - d}H${a + d}z" fill="${c2}"/>
+      <path d="M${a} ${a}V${b}L${a + d} ${b - d}V${a + d}z" fill="${c3}"/><path d="M${b} ${a}V${b}L${b - d} ${b - d}V${a + d}z" fill="${c4}"/>
+      <path d="M${a} ${a}H${b}L${b - d} ${a + d}H${a + d}z" fill="url(#vl-tile-v)"/><path d="M${a} ${b}H${b}L${b - d} ${b - d}H${a + d}z" fill="url(#vl-tile-v)"/>
+      <path d="M${a} ${a}L${a + d} ${a + d}M${b} ${a}L${b - d} ${a + d}M${a} ${b}L${a + d} ${b - d}M${b} ${b}L${b - d} ${b - d}" stroke="#e9b44a" stroke-width="1"/>`;
+  };
+  const temple = `<rect x="127" y="127" width="86" height="86" rx="4" class="vl-court"/><rect x="127" y="127" width="86" height="86" rx="4" fill="url(#vl-paving)"/>
+    <rect x="140" y="143" width="64" height="64" fill="rgba(4,12,6,0.5)"/>
+    <rect x="135.5" y="135.5" width="69" height="69" fill="#efe8d8"/><rect x="135.5" y="199" width="69" height="5.5" fill="#9c2f22"/>
+    ${hip(31, '#c4553a', '#80301c', '#a8462c', '#953b24')}
+    <rect x="150" y="150" width="40" height="40" fill="#efe8d8"/>
+    ${hip(17, '#d26446', '#8e321d', '#b9502f', '#a44328')}
+    <circle cx="170" cy="170" r="6" fill="#f2c14e" stroke="#7a4a10" stroke-width="1.2"/><circle cx="170" cy="170" r="2.4" fill="#fff6cf"/>
+    ${[[131, 131], [209, 131], [131, 209], [209, 209]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.2" fill="#e9b44a"/>`).join('')}`;
+  return `<defs>
+      <pattern id="vl-tile-v" width="3.2" height="3" patternUnits="userSpaceOnUse"><rect width="1" height="3" fill="rgba(0,0,0,0.2)"/><rect y="2.4" width="3.2" height="0.6" fill="rgba(255,255,255,0.08)"/></pattern>
+      <pattern id="vl-tile-h" width="3" height="3.2" patternUnits="userSpaceOnUse"><rect width="3" height="1" fill="rgba(0,0,0,0.2)"/></pattern>
+      <pattern id="vl-paving" width="12" height="9" patternUnits="userSpaceOnUse"><path d="M0 0.5H12M0 5H12M6 0.5V5M0 5V9M12 5V9" stroke="rgba(40,35,28,0.28)" stroke-width="0.7" fill="none"/></pattern>
+      <radialGradient id="vl-glow"><stop offset="0" stop-color="#ffd27a" stop-opacity="0.95"/><stop offset="0.35" stop-color="#ffb347" stop-opacity="0.45"/><stop offset="1" stop-color="#ff9a2e" stop-opacity="0"/></radialGradient>
+      <filter id="vl-soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1"/></filter>
+      <linearGradient id="vl-bow-metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d6b80"/><stop offset="0.5" stop-color="#243042"/><stop offset="1" stop-color="#121822"/></linearGradient>
+      <radialGradient id="vl-recon"><stop offset="0" stop-color="#bfe6ff" stop-opacity="0.9"/><stop offset="1" stop-color="#3fa0ff" stop-opacity="0"/></radialGradient>
+      <radialGradient id="vl-water" cx="0.4" cy="0.35"><stop offset="0" stop-color="#6fb7b0"/><stop offset="1" stop-color="#245e66"/></radialGradient>
+    </defs>
+    ${green(10, 12, 13)}${green(36, 4, 9)}${pink(324, 328, 11)}${green(336, 302, 9)}${green(4, 330, 11)}${purple(330, 12, 8)}${green(4, 172, 8)}${green(336, 170, 8)}${pink(172, 3, 7)}${green(172, 338, 7)}
+    ${green(44, 43, 12)}${pink(56, 60, 6)}${green(296, 296, 12)}${purple(284, 303, 7)}${pink(44, 296, 11)}${green(58, 284, 6)}
+    ${roof(45, 117, 32, 46, ['#c0683c', '#a2552f', '#7c3e1e'])}${roof(45, 224, 32, 38, ['#b24e30', '#953f25', '#6e2c18'])}
+    ${roof(295, 113, 32, 48, ['#a8452b', '#8c3822', '#652414'])}${roof(295, 227, 30, 36, ['#c0683c', '#a2552f', '#7c3e1e'])}
+    ${roof(115, 45, 48, 30, ['#b24e30', '#953f25', '#6e2c18'])}${roof(225, 45, 44, 32, ['#c0683c', '#a2552f', '#7c3e1e'])}
+    ${roof(117, 295, 44, 30, ['#a8452b', '#8c3822', '#652414'])}${roof(223, 295, 48, 32, ['#b24e30', '#953f25', '#6e2c18'])}
+    <g><rect x="285" y="35" width="26" height="26" rx="2" fill="rgba(4,12,6,0.55)"/><rect x="281" y="31" width="27" height="27" rx="2" fill="#f2ecdd"/>
+      <path d="M284 34h21l-6 6h-9z" fill="#c4553a"/><path d="M284 55h21l-6-6h-9z" fill="#80301c"/><path d="M284 34v21l6-6v-9z" fill="#a8462c"/><path d="M305 34v21l-6-6v-9z" fill="#953b24"/>
+      <circle cx="294.5" cy="44.5" r="3" fill="#f2c14e" stroke="#7a4a10" stroke-width="0.8"/></g>
+    ${purple(95, 95, 10)}${green(245, 95, 10)}${pond(95, 245)}${pink(245, 245, 10)}
+    ${green(95, 143, 6)}${sovaBow(245, 146)}${purple(245, 198, 6)}${pink(143, 95, 6)}${green(143, 245, 6)}${purple(198, 245, 6)}
+    ${temple}
+    ${[[82, 82], [258, 82], [82, 258], [258, 258], [32, 95], [308, 245], [95, 32], [245, 308]].map(([x, y], k) => lantern(x, y, k)).join('')}`;
+}
+
 function millRender(){
   millRenderPiecesLeft();
   millBoardEl.innerHTML = '';
@@ -6920,20 +7665,21 @@ function millRender(){
   // Linien als SVG zeichnen
   const scale = 340 / 6.6; const offset = 20;
   function px(v){ return offset + v * (300/6); }
-  // Karte: Site-Markierungen A/B und die Spike in der Mitte
+  // Karte Haven (Deko), danach die Wege
   let svg = `<svg viewBox="0 0 340 340">
-    <text x="${px(0.5)}" y="${px(0.62)}" class="vl-site">A</text><text x="${px(5.5)}" y="${px(5.62)}" class="vl-site">B</text>
-    <g class="vl-spike" transform="translate(170 170)"><path d="M0-26l9 10v22l-9 14-9-14v-22z"/><path d="M0-16v28M-5-4h10" class="ln"/></g>`;
+    ${vlHavenDecor()}`;
   const edges = [];
   MILL_ADJ.forEach((neighbors, i) => {
     neighbors.forEach(n => {
       if(n > i) edges.push([i, n]);
     });
   });
-  edges.forEach(([a, b]) => {
+  // Wege: breite Steinpfade, darauf eine helle Mittellinie (damit man die Züge gut sieht)
+  const seg = (cls) => edges.map(([a, b]) => {
     const [ax, ay] = MILL_COORDS[a], [bx, by] = MILL_COORDS[b];
-    svg += `<line x1="${px(ax)}" y1="${px(ay)}" x2="${px(bx)}" y2="${px(by)}" stroke="rgba(236,232,225,0.55)" stroke-width="2" stroke-linecap="square"/>`;
-  });
+    return `<line x1="${px(ax)}" y1="${px(ay)}" x2="${px(bx)}" y2="${px(by)}" class="${cls}"/>`;
+  }).join('');
+  svg += seg('vl-path-bed') + seg('vl-path-stone') + seg('vl-path-seams') + seg('vl-path-hi') + seg('vl-path');
   svg += `</svg>`;
   millBoardEl.innerHTML = svg;
 
@@ -6947,7 +7693,7 @@ function millRender(){
     if(millBoard[i] === 'w') btn.classList.add('white');
     if(millBoard[i] === 'b') btn.classList.add('black');
     const ag = millBoard[i] && millAgent[i];
-    if(ag){ btn.innerHTML = `<span class="vl-agent" style="color:${ag.c}">${vlAgentSvg(ag)}</span>`; btn.title = ag.name; }
+    if(ag){ btn.innerHTML = `<span class="vl-agent" style="color:${ag.c}">${vlAgentImg(ag)}</span>`; btn.title = ag.name; }
     if(millSelected === i) btn.classList.add('selected');
     if(millRemoving && millBoard[i] && millGetRemovable(millBoard, millTurn === 'w' ? 'b' : 'w').includes(i)){
       btn.classList.add('removable');
@@ -6955,23 +7701,29 @@ function millRender(){
     const [pl, pt] = vlPos(i);
     btn.style.left = pl + '%';
     btn.style.top = pt + '%';
-    if(i === vlLast) btn.classList.add(vlLastFrom === null ? 'spawn' : 'moved');
+    if(i === vlLast && vlLastFrom === null) btn.classList.add('spawn');
+    if(i === vlLast && vlLastFrom !== null && vlAnimPending && ag){ vlAnimPending = false; const f = vlLastFrom; queueMicrotask(() => vlAnimateMove(btn, f, i, ag)); }   // nach dem Einfügen, vor dem Zeichnen
     btn.addEventListener('click', () => millHandleClick(i));
     millBoardEl.appendChild(btn);
   }
 }
 
 function millHandleClick(i){
-  if(millOver) return;
+  if(millOver || vlBusy) return;
   if(millMode === 'bot' && millTurn === 'b') return;
 
   if(millRemoving){
     const removable = millGetRemovable(millBoard, millTurn === 'w' ? 'b' : 'w');
     if(!removable.includes(i)) return;
-    vlKill(millTurn, i);
-    millBoard[i] = null;
-    millRemoving = false;
-    millAfterAction();
+    const gid = millGameId;
+    vlBusy = true;
+    vlTurretKill(millTurn, i, () => {
+      vlBusy = false;
+      if(gid !== millGameId) return;
+      millBoard[i] = null;
+      millRemoving = false;
+      millAfterAction();
+    });
     return;
   }
 
@@ -6983,9 +7735,8 @@ function millHandleClick(i){
     millToPlace[millTurn]--;
     if(millFormsMill(millBoard, i, millTurn)){
       millRemoving = true;
-      millStatusEl.textContent = `Mühle! ${vlName(millTurn)} schalten einen Gegner aus: Ziel wählen.`;
+      millStatusEl.textContent = `${vlName(millTurn)} schalten einen Gegner aus: Ziel wählen.`;
       millRender();
-      vlBanner('Mühle!', millTurn === 'w' ? 'def' : 'atk', false, 'Ziel ausschalten');
       return;
     }
     millAfterAction();
@@ -7017,15 +7768,14 @@ function millHandleClick(i){
   millBoard[i] = millTurn;
   millBoard[millSelected] = null;
   millAgentMove(millSelected, i);
-  vlLast = i; vlLastFrom = millSelected;
+  vlLast = i; vlLastFrom = millSelected; vlAnimPending = true;
   const movedFrom = millSelected;
   millSelected = null;
 
   if(millFormsMill(millBoard, i, millTurn)){
     millRemoving = true;
-    millStatusEl.textContent = `Mühle! ${vlName(millTurn)} schalten einen Gegner aus: Ziel wählen.`;
+    millStatusEl.textContent = `${vlName(millTurn)} schalten einen Gegner aus: Ziel wählen.`;
     millRender();
-    vlBanner('Mühle!', millTurn === 'w' ? 'def' : 'atk', false, 'Ziel ausschalten');
     return;
   }
   millAfterAction();
@@ -7075,18 +7825,19 @@ function millBotMove(){
   if(!m) return;
   if(m.from === null){ millAgentPlace(m.to, 'b'); millBoard[m.to] = 'b'; millToPlace.b--; }
   else { millBoard[m.to] = 'b'; millBoard[m.from] = null; millAgentMove(m.from, m.to); }
-  vlLast = m.to; vlLastFrom = m.from;
+  vlLast = m.to; vlLastFrom = m.from; vlAnimPending = m.from !== null;
   if(m.rem !== null){
     // Mühle des Bots: kurz zeigen, dann Abschuss
-    millStatusEl.textContent = `Mühle! ${vlName('b')} schalten einen Gegner aus.`;
+    millStatusEl.textContent = `${vlName('b')} schalten einen Gegner aus.`;
     millRender();
-    vlBanner('Mühle!', 'atk', false, 'Ziel ausschalten');
     setTimeout(() => {
       if(millOver || gid !== millGameId) return;
-      vlKill('b', m.rem);
-      millBoard[m.rem] = null;
-      millAfterAction();
-    }, 750);
+      vlTurretKill('b', m.rem, () => {
+        if(gid !== millGameId) return;
+        millBoard[m.rem] = null;
+        millAfterAction();
+      });
+    }, 600);
     return;
   }
   millAfterAction();
@@ -7102,6 +7853,7 @@ function millReset(){
   millToPlace = { w: 9, b: 9 };
   millAgent = Array(24).fill(null);
   millGameId++;
+  vlBusy = false;
   vlRound = 1; vlLast = null; vlLastFrom = null;
   millStatusEl.textContent = 'Verteidiger sind dran. Noch 9 Agenten zu setzen.';
   millRender();
@@ -7141,6 +7893,100 @@ const msMineCounterEl = document.getElementById('ms-mine-counter');
 const msTimerEl = document.getElementById('ms-timer');
 const msFaceBtn = document.getElementById('ms-face-btn');
 
+// CS:GO-Stil: Minen sind C4-Bomben, Markierungen sind Entschärfer-Kits
+const CS_C4 = `<svg viewBox="0 0 24 20" class="cs-c4" aria-hidden="true">
+  <rect x="1.5" y="4" width="21" height="13" rx="1.5" fill="#6b5a3a" stroke="#2a2214" stroke-width="0.8"/>
+  <rect x="3" y="5.5" width="6" height="10" rx="0.8" fill="#c9b27a"/><rect x="15" y="5.5" width="6" height="10" rx="0.8" fill="#c9b27a"/>
+  <path d="M3 8.5h6M3 12h6M15 8.5h6M15 12h6" stroke="#8a7446" stroke-width="0.6"/>
+  <rect x="9.5" y="5" width="5" height="11" rx="0.6" fill="#1c1f22"/>
+  <rect x="10.2" y="6" width="3.6" height="2.2" fill="#3c6b3a"/>
+  <g fill="#aab0b6"><rect x="10.2" y="9" width="1" height="1"/><rect x="11.5" y="9" width="1" height="1"/><rect x="12.8" y="9" width="1" height="1"/><rect x="10.2" y="10.6" width="1" height="1"/><rect x="11.5" y="10.6" width="1" height="1"/><rect x="12.8" y="10.6" width="1" height="1"/><rect x="10.2" y="12.2" width="1" height="1"/><rect x="11.5" y="12.2" width="1" height="1"/><rect x="12.8" y="12.2" width="1" height="1"/></g>
+  <path d="M5 4Q7 0 12 1.5Q17 3 19 4" fill="none" stroke="#c0392b" stroke-width="0.9"/><path d="M6 4Q9 1.5 13 2.8" fill="none" stroke="#2c6fbf" stroke-width="0.8"/>
+  <circle cx="12" cy="14.4" r="0.9" class="cs-led"/>
+</svg>`;
+const CS_KIT = `<svg viewBox="0 0 22 22" class="cs-kit" aria-hidden="true">
+  <rect x="3" y="6" width="16" height="12" rx="2.5" fill="#3d5a3a" stroke="#1d2b1c" stroke-width="0.8"/>
+  <rect x="3" y="6" width="16" height="4" rx="2" fill="#4d7049"/>
+  <path d="M7 6V4.5a4 4 0 0 1 8 0V6" fill="none" stroke="#1d2b1c" stroke-width="1.2"/>
+  <path d="M8 11.5l6 5M14 11.5l-6 5" stroke="#d8dde2" stroke-width="1.4" stroke-linecap="round"/>
+  <circle cx="8" cy="11.5" r="1.3" fill="#e0a43a"/><circle cx="14" cy="11.5" r="1.3" fill="#e0a43a"/>
+</svg>`;
+function csBanner(big, small, side){
+  const el = document.getElementById('cs-banner');
+  if(!el) return;
+  el.innerHTML = big ? `<div class="cs-ban ${side}"><b>${big}</b><span>${small}</span></div>` : '';
+}
+// Spielstand, Geld und HP bleiben zwischen den Runden erhalten
+let csState = { ct: 0, t: 0, money: 800 };
+try{ Object.assign(csState, JSON.parse(localStorage.getItem('cs_state') || '{}')); } catch(err){}
+function csSave(){ try{ localStorage.setItem('cs_state', JSON.stringify(csState)); } catch(err){} }
+function csHud(){
+  const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  set('cs-score-ct', csState.ct); set('cs-score-t', csState.t); set('cs-money', '$' + csState.money);
+}
+function csMoney(delta, label){
+  csState.money = Math.max(0, Math.min(16000, csState.money + delta));
+  csSave(); csHud();
+  if(typeof csRenderShop === 'function' && document.getElementById('cs-shop')) csRenderShop();
+  const pop = document.getElementById('cs-moneypop');
+  if(pop && delta){ pop.textContent = (delta > 0 ? '+$' : '-$') + Math.abs(delta) + (label ? ' ' + label : ''); pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show'); }
+}
+function csVitals(hp, armor){
+  const h = document.getElementById('cs-hp'), a = document.getElementById('cs-armor');
+  if(h){ h.textContent = hp; h.parentElement.classList.toggle('low', hp < 30); }
+  if(a) a.textContent = armor;
+}
+function csFeed(html){
+  const feed = document.getElementById('cs-feed');
+  if(!feed) return;
+  const row = document.createElement('div');
+  row.className = 'cs-feed-row';
+  row.innerHTML = html;
+  feed.prepend(row);
+  while(feed.children.length > 4) feed.lastChild.remove();
+  setTimeout(() => row.classList.add('out'), 4500);
+  setTimeout(() => row.remove(), 5000);
+}
+// Radar unten links: Kisten sandfarben, freie Fläche grau, Kits grün, explodierte Bombe rot
+function csRadar(){
+  const cv = document.getElementById('cs-radar');
+  if(!cv || !msBoard.length) return;
+  const g = cv.getContext('2d'), W = cv.width, cell = W / msSize;
+  g.clearRect(0, 0, W, W);
+  g.save(); g.beginPath(); g.arc(W / 2, W / 2, W / 2 - 1, 0, Math.PI * 2); g.clip();
+  g.fillStyle = '#1b1d1f'; g.fillRect(0, 0, W, W);
+  for(let r = 0; r < msSize; r++) for(let c = 0; c < msSize; c++){
+    const st = msBoard[msIndex(r, c)];
+    g.fillStyle = st.revealed ? (st.mine ? '#c0392b' : '#5c5e60') : st.flagged ? '#3fbf5a' : '#8d7650';
+    g.fillRect(c * cell + 0.5, r * cell + 0.5, cell - 1, cell - 1);
+  }
+  g.strokeStyle = 'rgba(255,255,255,0.08)';
+  for(let k = 1; k < 4; k++){ g.beginPath(); g.arc(W / 2, W / 2, W / 2 * k / 4, 0, Math.PI * 2); g.stroke(); }
+  g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(W / 2, W / 2 - 6); g.lineTo(W / 2 + 4, W / 2 + 4); g.lineTo(W / 2 - 4, W / 2 + 4); g.closePath(); g.fill();
+  g.restore();
+  g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 2; g.beginPath(); g.arc(W / 2, W / 2, W / 2 - 1, 0, Math.PI * 2); g.stroke();
+}
+function csDefuseBar(){
+  const el = document.getElementById('cs-defuse');
+  if(!el) return;
+  el.classList.remove('run'); void el.offsetWidth; el.classList.add('run');
+}
+const CS_FEED_C4 = '<svg viewBox="0 0 24 14" class="cs-ficon"><rect x="1" y="2" width="22" height="10" rx="1" fill="#e6e6e6"/><rect x="9" y="3" width="6" height="8" fill="#555"/></svg>';
+const CS_FEED_KIT = '<svg viewBox="0 0 20 14" class="cs-ficon"><path d="M3 2l14 10M17 2L3 12" stroke="#e6e6e6" stroke-width="2.4" stroke-linecap="round"/></svg>';
+
+function csExplode(cell){
+  const wrap = msGrid.closest('.ms-wrap'), fx = document.getElementById('cs-fx');
+  if(!wrap || !fx || !cell) return;
+  const wr = wrap.getBoundingClientRect(), cr = cell.getBoundingClientRect();
+  const boom = document.createElement('div');
+  boom.className = 'cs-boom';
+  boom.style.left = (cr.left + cr.width / 2 - wr.left) + 'px'; boom.style.top = (cr.top + cr.height / 2 - wr.top) + 'px';
+  boom.innerHTML = '<b></b><b></b><b></b><b></b><b></b><i></i>' + Array.from({ length: 12 }, (_, k) => `<em style="--a:${k * 30 + Math.random() * 20}deg; --d:${40 + Math.random() * 60}px"></em>`).join('');
+  fx.appendChild(boom);
+  wrap.classList.remove('cs-shake', 'cs-flash'); void wrap.offsetWidth; wrap.classList.add('cs-shake', 'cs-flash');
+  setTimeout(() => boom.remove(), 1600);
+}
+
 function msPad(n){ return String(Math.max(0, Math.min(999, n))).padStart(3, '0'); }
 
 function msUpdateMineCounter(){
@@ -7151,10 +7997,10 @@ function msUpdateMineCounter(){
 function msStartTimer(){
   clearInterval(msTimerInterval);
   msSeconds = 0;
-  msTimerEl.textContent = '000';
+  msTimerEl.textContent = '0:00';
   msTimerInterval = setInterval(() => {
     msSeconds++;
-    msTimerEl.textContent = msPad(msSeconds);
+    msTimerEl.textContent = Math.floor(msSeconds / 60) + ':' + String(msSeconds % 60).padStart(2, '0');   // Rundenuhr wie in CS
   }, 1000);
 }
 
@@ -7204,11 +8050,15 @@ function msNewGame(){
   msFirstClick = true;
   msRevealedCount = 0;
   msStopTimer();
-  msTimerEl.textContent = '000';
+  msTimerEl.textContent = '0:00';
   msMineCounterEl.textContent = msPad(msMines);
-  msFaceBtn.textContent = '🙂';
+  msFaceBtn.textContent = 'Neue Runde';
+  csBanner('');
+  csHud(); csVitals(100, 100);
+  document.getElementById('cs-planted')?.classList.remove('on');
+  document.getElementById('ms-timer')?.classList.remove('hot');
   msGrid.style.gridTemplateColumns = `repeat(${msSize}, 1fr)`;
-  msStatusEl.textContent = 'Linksklick zum Aufdecken, Rechtsklick zum Markieren';
+  msStatusEl.textContent = 'Die Bomben sind gelegt. Linksklick: Feld prüfen, Rechtsklick: Entschärfer-Kit legen.';
   msRenderGrid();
 }
 
@@ -7236,16 +8086,17 @@ function msUpdateCells(){
       cell.classList.add('revealed');
       if(state.mine){
         cell.classList.add(cell.dataset.hit ? 'mine-hit' : 'mine');
-        cell.textContent = '💣';
+        cell.innerHTML = CS_C4;
       } else if(state.count > 0){
         cell.classList.add('n' + state.count);
         cell.textContent = state.count;
       }
     } else if(state.flagged){
       cell.classList.add('flag');
-      cell.textContent = '🚩';
+      cell.innerHTML = CS_KIT;
     }
   });
+  csRadar();
 }
 
 function msFloodReveal(r, c){
@@ -7274,6 +8125,10 @@ function msReveal(r, c){
     msPlaceMines(r, c);
     msFirstClick = false;
     msStartTimer();
+    document.getElementById('cs-planted')?.classList.add('on');
+    document.getElementById('ms-timer')?.classList.add('hot');
+    csBanner('Die Bombe wurde gelegt', `${msMines} Sprengladungen im Sektor`, 't small');
+    setTimeout(() => { if(!msOver) csBanner(''); }, 1600);
   }
 
   if(state.mine){
@@ -7282,24 +8137,37 @@ function msReveal(r, c){
     if(hitCell) hitCell.dataset.hit = '1';
     msOver = true;
     msStopTimer();
-    msFaceBtn.textContent = '😵';
     msBoard.forEach(s => { if(s.mine) s.revealed = true; });
     msUpdateCells();
-    msStatusEl.textContent = 'Mine getroffen! Spiel vorbei.';
+    csExplode(hitCell);
+    csVitals(0, 0);
+    csState.t++; csMoney(1400, 'Niederlage-Bonus');
+    csFeed(`<b class="t">Terrorist</b>${CS_FEED_C4}<b class="ct">Du</b>`);
+    document.getElementById('cs-planted')?.classList.remove('on');
+    msStatusEl.textContent = 'Die Bombe ist explodiert.';
+    setTimeout(() => csBanner('Terroristen gewinnen', 'Die Bombe ist explodiert', 't'), 650);
     return;
   }
 
+  const before = msRevealedCount;
   msFloodReveal(r, c);
   msUpdateCells();
+  const gained = msRevealedCount - before;
+  if(gained > 0 && !msOver) csMoney(Math.min(300, gained * 10), gained > 8 ? 'Sektor gesichert' : '');
 
   if(msRevealedCount === msSize * msSize - msMines){
     msOver = true;
     msStopTimer();
-    msFaceBtn.textContent = '😎';
     msMineCounterEl.textContent = '000';
-    msStatusEl.textContent = 'Gewonnen! Alle Minen gefunden.';
+    msBoard.forEach(s => { if(s.mine && !s.flagged) s.flagged = true; });
+    msUpdateCells();
+    msStatusEl.textContent = 'Alle Bomben gefunden.';
+    csState.ct++; csMoney(3250, 'Rundensieg');
+    csFeed(`<b class="ct">Du</b>${CS_FEED_KIT}<b class="t">C4 entschärft</b>`);
+    document.getElementById('cs-planted')?.classList.remove('on');
+    csBanner('Counter-Terroristen gewinnen', 'Alle Bomben entschärft', 'ct');
   } else {
-    msStatusEl.textContent = `Aufgedeckt: ${msRevealedCount} von ${msSize * msSize - msMines}`;
+    msStatusEl.textContent = `Sektor gesichert: ${msRevealedCount} von ${msSize * msSize - msMines}`;
   }
 }
 
@@ -7308,6 +8176,7 @@ function msToggleFlag(r, c){
   const state = msBoard[msIndex(r,c)];
   if(state.revealed) return;
   state.flagged = !state.flagged;
+  if(state.flagged) csDefuseBar();
   msUpdateCells();
   msUpdateMineCounter();
 }
@@ -7333,6 +8202,158 @@ document.querySelectorAll('#ms-diff-select .diff-btn').forEach(btn => {
 });
 msFaceBtn.addEventListener('click', msNewGame);
 msNewGame();
+
+// Kisten (CS-Stil): im Shop mit Spielgeld kaufen → landen im Inventar → dort öffnen. Echte CS-Kisten und Skins (Bilder in /public/cs)
+const CS_RARITY = [
+  { id: 'mil',  name: 'Militärqualität',     color: '#4b69ff', chance: 0.7992, sell: 300 },
+  { id: 'res',  name: 'Limitiert',           color: '#8847ff', chance: 0.1598, sell: 800 },
+  { id: 'cla',  name: 'Geheim',              color: '#d32ce6', chance: 0.032,  sell: 2000 },
+  { id: 'cov',  name: 'Verdeckt',            color: '#eb4b4b', chance: 0.0064, sell: 5000 },
+  { id: 'gold', name: '★ Aussergewöhnlich', color: '#e4ae39', chance: 0.0026, sell: 12000 },
+];
+let CS_CASES = [];   // alle echten CS-Kisten, geladen aus /cs/cases.json
+let csShopFilter = '';
+let csTab = 'shop', csOpenId = null, csSpinning = false, csInv = [];
+try{ csInv = JSON.parse(localStorage.getItem('cs_inv') || '[]').filter(x => x && (x.kind === 'case' || x.kind === 'skin')); } catch(err){}
+const csRar = (id) => CS_RARITY.find(r => r.id === id);
+const csCase = (id) => CS_CASES.find(c => c.id === id);
+function csSaveInv(){ try{ localStorage.setItem('cs_inv', JSON.stringify(csInv)); } catch(err){} }
+const csImg = (file, cls = '') => `<img src="/cs/${file}" alt="" class="${cls}" loading="lazy" draggable="false">`;
+function csSplitName(n){ const [w, ...rest] = n.split(' | '); return [w, rest.join(' | ')]; }
+function csRollItem(cs, noGold){
+  let x = Math.random() * (noGold ? 1 - CS_RARITY[4].chance : 1), rar = CS_RARITY[0];
+  for(const r of CS_RARITY){ if(x < r.chance){ rar = r; break; } x -= r.chance; }
+  let pool = cs.items.filter(it => it[1] === rar.id);
+  if(!pool.length) pool = cs.items.filter(it => it[1] === 'mil');
+  const it = pool[Math.floor(Math.random() * pool.length)];
+  return { kind: 'skin', n: it[0], r: it[1], i: it[2] };
+}
+function csCardHtml(it, cls = ''){
+  const r = csRar(it.r), [w, sk] = csSplitName(it.n);
+  return `<div class="cs-card ${cls}" style="--rc:${r.color}">${it.r === 'gold' && cls !== 'win' && cls !== 'show' ? '<div class="cs-gold">★</div>' : csImg(it.i, 'cs-skin')}<span>${w}</span><b>${sk}</b></div>`;
+}
+// Tabs Shop / Inventar
+function csRenderTabs(){
+  document.querySelectorAll('.cs-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === csTab));
+  document.getElementById('cs-shopwrap').style.display = csTab === 'shop' ? '' : 'none';
+  document.getElementById('cs-invpane').style.display = csTab === 'inv' ? '' : 'none';
+  const cnt = csInv.filter(x => x.kind === 'case').length;
+  const badge = document.getElementById('cs-inv-badge');
+  if(badge){ badge.textContent = cnt; badge.style.display = cnt ? '' : 'none'; }
+}
+function csRenderShop(){
+  const el = document.getElementById('cs-shop');
+  if(!el) return;
+  const q = csShopFilter.trim().toLowerCase();
+  const list = CS_CASES.filter(cs => !q || cs.name.toLowerCase().includes(q));
+  if(!CS_CASES.length){ el.innerHTML = '<div class="cs-inv-empty">Kisten werden geladen …</div>'; return; }
+  if(!list.length){ el.innerHTML = '<div class="cs-inv-empty">Keine Kiste gefunden.</div>'; return; }
+  el.innerHTML = list.map(cs => `<div class="cs-shop-item">${csImg(cs.img, 'cs-case-img')}<span>${cs.name}</span>${cs.usd != null ? `<small class="cs-real">Steam-Markt: ${cs.usd.toFixed(2)} US$</small>` : ''}
+    <button data-id="${cs.id}"${csState.money < cs.price ? ' class="poor"' : ''}>Kaufen $${cs.price}</button></div>`).join('');
+  el.querySelectorAll('button[data-id]').forEach(b => b.addEventListener('click', () => {
+    const cs = csCase(b.dataset.id), msg = document.getElementById('cs-case-msg');
+    if(csState.money < cs.price){ msg.className = 'cs-case-msg'; msg.textContent = 'Zu wenig Geld! Spiel Minesweeper-Runden für mehr $.'; return; }
+    msg.className = 'cs-case-msg ok';
+    msg.textContent = `${cs.name} gekauft – sie liegt jetzt in deinem Inventar.`;
+    csMoney(-cs.price, cs.name);
+    csInv.unshift({ kind: 'case', id: cs.id });
+    csSaveInv();
+    b.closest('.cs-shop-item').classList.remove('bought'); void b.offsetWidth; b.closest('.cs-shop-item').classList.add('bought');
+    csRenderAll();
+  }));
+}
+function csRenderInv(){
+  const el = document.getElementById('cs-inv'), cnt = document.getElementById('cs-inv-count');
+  if(!el) return;
+  if(cnt) cnt.textContent = csInv.length + (csInv.length === 1 ? ' Gegenstand' : ' Gegenstände');
+  el.innerHTML = csInv.length ? csInv.map((it, i) => {
+    if(it.kind === 'case'){
+      const cs = csCase(it.id);
+      if(!cs) return '';
+      return `<div class="cs-inv-item case" title="${cs.name}">${csImg(cs.img, 'cs-inv-img')}<span>${cs.name}</span><button class="open" data-open="${i}">Öffnen</button></div>`;
+    }
+    const r = csRar(it.r), [w, sk] = csSplitName(it.n);
+    return `<div class="cs-inv-item" style="--rc:${r.color}" title="${it.n}">${csImg(it.i, 'cs-inv-img')}<span>${w}<br>${sk}</span><button data-sell="${i}">$${r.sell}</button></div>`;
+  }).join('') : '<div class="cs-inv-empty">Leer. Kauf eine Kiste im Shop!</div>';
+  el.querySelectorAll('button[data-sell]').forEach(b => b.addEventListener('click', () => {
+    if(csSpinning) return;
+    const it = csInv.splice(Number(b.dataset.sell), 1)[0];
+    csSaveInv(); csMoney(csRar(it.r).sell, 'verkauft'); csRenderAll();
+  }));
+  el.querySelectorAll('button[data-open]').forEach(b => b.addEventListener('click', () => csOpenCase(Number(b.dataset.open))));
+}
+function csRenderAll(){ csRenderTabs(); csRenderShop(); csRenderInv(); }
+// Kiste aus dem Inventar öffnen: Walze mit dem Inhalt dieser Kiste dreht und bleibt auf dem Fund stehen
+function csOpenCase(invIdx){
+  if(csSpinning) return;
+  const entry = csInv[invIdx];
+  if(!entry || entry.kind !== 'case') return;
+  const cs = csCase(entry.id);
+  csInv.splice(invIdx, 1); csSaveInv();
+  document.getElementById('cs-case-msg').textContent = '';
+  csSpinning = true;
+  const stage = document.getElementById('cs-stage'), reel = document.getElementById('cs-reel'), wrap = reel.parentElement;
+  stage.classList.add('show');
+  stage.querySelector('.cs-stage-title').textContent = cs.name + ' wird geöffnet …';
+  csRenderAll();
+  const N = 46, WIN = 40, win = csRollItem(cs);
+  const items = Array.from({ length: N }, (_, i) => i === WIN ? win : csRollItem(cs, true));   // Gold (★) erscheint nur, wenn man es wirklich bekommt
+  reel.style.transition = 'none'; reel.style.transform = 'translateX(0)';
+  reel.innerHTML = items.map((it, i) => csCardHtml(it, i === WIN ? 'win' : '')).join('');
+  requestAnimationFrame(() => {
+    const card = reel.children[WIN], cw = card.offsetWidth + 6;
+    const target = card.offsetLeft + card.offsetWidth / 2 - wrap.clientWidth / 2 + (Math.random() - 0.5) * card.offsetWidth * 0.7;
+    void reel.offsetWidth;
+    reel.style.transition = 'transform 5.6s cubic-bezier(.08,.6,.12,1)';
+    reel.style.transform = `translateX(${-target}px)`;
+    const line = wrap.querySelector('.cs-reel-line'), t0 = performance.now();
+    let lastIdx = -1, done = false, timer = null;
+    (function tick(){
+      const m = new DOMMatrixReadOnly(getComputedStyle(reel).transform);
+      const idx = Math.floor((-m.m41 + wrap.clientWidth / 2) / cw);
+      if(idx !== lastIdx){ lastIdx = idx; line.classList.remove('tick'); void line.offsetWidth; line.classList.add('tick'); }
+      if(!done && performance.now() - t0 < 5700) requestAnimationFrame(tick);
+    })();
+    const finish = () => {
+      if(done) return;
+      done = true;
+      clearTimeout(timer);
+      csSkip = null;
+      reel.style.transition = 'none'; reel.style.transform = `translateX(${-target}px)`;   // sofort auf den Fund springen
+      card.classList.add('landed');
+      csInv.unshift(win); csSaveInv();
+      const r = csRar(win.r), [w, sk] = csSplitName(win.n), drop = document.getElementById('cs-drop');
+      drop.innerHTML = `<div class="cs-drop-in" style="--rc:${r.color}"><small>${r.name}</small>${csImg(win.i, 'cs-skin big')}<b>${w} | ${sk}</b>
+        <div class="cs-drop-btns"><button class="keep">Behalten</button><button class="sell">Verkaufen $${r.sell}</button></div></div>`;
+      drop.classList.add('show');
+      const close = () => { drop.classList.remove('show'); stage.classList.remove('show'); csSpinning = false; csTab = 'inv'; csRenderAll(); };
+      drop.querySelector('.keep').onclick = close;
+      drop.querySelector('.sell').onclick = () => { const i = csInv.indexOf(win); if(i >= 0) csInv.splice(i, 1); csSaveInv(); csMoney(r.sell, 'verkauft'); close(); };
+    };
+    timer = setTimeout(finish, 5800);
+    csSkip = finish;
+  });
+}
+// Öffnen mit Esc überspringen; ist der Fund schon da, schliesst Esc die Anzeige (= behalten)
+let csSkip = null;
+document.addEventListener('keydown', (e) => {
+  if(e.key !== 'Escape') return;
+  if(csSkip){ e.preventDefault(); csSkip(); return; }
+  const keep = document.querySelector('#cs-drop.show .keep');
+  if(keep){ e.preventDefault(); keep.click(); }
+});
+document.querySelectorAll('.cs-tab').forEach(t => t.addEventListener('click', () => { if(csSpinning) return; csTab = t.dataset.tab; csRenderAll(); }));
+document.getElementById('cs-search')?.addEventListener('input', (e) => { csShopFilter = e.target.value; csRenderShop(); });
+// alte Bildnamen (.png) auf .webp umstellen
+csInv.forEach(it => { if(it.i) it.i = it.i.replace(/\.png$/, '.webp'); });
+csRenderAll(); csHud();
+fetch('/cs/cases.json').then(r => r.json()).then(list => {
+  CS_CASES = list;
+  csInv = csInv.filter(it => it.kind !== 'case' || csCase(it.id));
+  const cnt = document.getElementById('cs-shop-count');
+  if(cnt) cnt.textContent = list.length + ' Kisten';
+  csRenderAll();
+}).catch(() => {});
 
 // Snake
 const SNAKE_SIZE = 16;
@@ -7752,3 +8773,5 @@ buildCitySelect();
 loadFullWeather(activeCity);
 updateClocks();
 setInterval(updateClocks, 1000);
+// Knopf ganz unten: weich ganz nach oben scrollen
+document.getElementById('to-top-btn')?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));

@@ -393,12 +393,10 @@
   #game-jump-row [data-target="game-label-bs"]::before{ content:'⚓'; }
   /* Minesweeper → altes Windows */
   #game-jump-row [data-target="game-label-ms"]{
-    font-family:'Inter', sans-serif; font-weight:700; font-size:0.8rem; color:#000; border-radius:0;
-    background:#c0c0c0; border:3px solid; border-color:#ffffff #808080 #808080 #ffffff;
+    font-family:'Oswald', sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#e3b04a;
+    background:#16181b; border:1px solid #3a4046; border-left:3px solid #e3b04a; border-radius:2px;
   }
-  #game-jump-row [data-target="game-label-ms"]:hover{ transform:none; }
-  #game-jump-row [data-target="game-label-ms"]:active{ border-color:#808080 #ffffff #ffffff #808080; }
-  #game-jump-row [data-target="game-label-ms"]::before{ content:'💣'; }
+  #game-jump-row [data-target="game-label-ms"]::before{ content:''; display:inline-block; width:12px; height:9px; margin-right:2px; background:#6b5a3a; border:1px solid #2a2214; box-shadow:inset 3px 0 0 #c9b27a, inset -3px 0 0 #c9b27a; vertical-align:-1px; }
   /* Snake → Nokia-Display */
   #game-jump-row [data-target="game-label-snake"]{
     font-family:'VT323', monospace; font-size:1.15rem; color:#1e2b14; letter-spacing:0.04em;
@@ -519,7 +517,7 @@
     animation: wx-fog-drift 14s ease-in-out infinite alternate;
   }
   @media (prefers-reduced-motion: reduce){
-    .wx-now, .wx-now::after, .wx-now-temp, .wx-fx, .day-block, .day-block .hour-card, .day-hours{ animation:none !important; }
+    .wx-now, .wx-now::after, .wx-now-temp, .wx-fx, .day-block, .day-block .hour-card, .day-hours{ animation:none; }
   }
   .wx-now-desc{ font-family:'JetBrains Mono'; font-size:0.78rem; letter-spacing:0.02em; text-shadow:0 1px 3px rgba(0,0,0,0.25); }
   .wx-now-time{ font-family:'Oswald'; font-weight:600; font-size:1.2rem; text-shadow:0 1px 3px rgba(0,0,0,0.25); }
@@ -598,8 +596,8 @@
   }
   /* Nebel: grauer Schleier */
   /* Wetterkarten einheitlich schwarz, ohne Bilder, Wolken und Animationen */
-  .wx-now{ background: url("/wetter-collage.png") center / 100% 100% no-repeat, #000 !important; color:#fff !important; }
-  .wx-now::after, .wx-now .wx-fx{ display:none !important; }
+  .wx-now{ background: url("/wetter-collage.png") center / 100% 100% no-repeat, #000 !important; color:#fff; }
+  .wx-now::after, .wx-now .wx-fx{ display:none; }
   .wx-theme-fog::after, .wx-theme-fog .wx-fx{ display:none; animation:none; }
   .wx-theme-fog .wx-now-temp{ background:none; }
 
@@ -1041,71 +1039,216 @@
     .fn-victory strong{ font-size:2rem; }
   }
 
+  /* Minesweeper im CS:GO-Stil: de_dust2-Kisten, Betonboden, C4, Entschärfer-Kits, CT/T-HUD */
+  .csgo-ms{ --cs-ct:#5d9de0; --cs-t:#e3b04a; --cs-hud:rgba(14,16,18,0.88); max-width:100%; }
+  .csgo-ms .diff-btn{ font-family:'Oswald', sans-serif; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; background:#1b1e21; color:#c9ced3; border:1px solid #3a4046; border-radius:2px; }
+  .csgo-ms .diff-btn.active{ background:var(--cs-t); color:#1a1408; border-color:var(--cs-t); }
   .ms-wrap{
-    width:100%; max-width:400px; background:var(--board-2); border:1px solid var(--line);
-    border-radius:8px; padding:12px; box-shadow:3px 3px 0 rgba(0,0,0,0.22);
+    position:relative; width:100%; max-width:440px; padding:10px; border-radius:4px;
+    background: linear-gradient(180deg, #2a2620, #17150f); border:1px solid #4a4130;
+    box-shadow:0 10px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
   }
-  .ms-hud{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    margin-bottom:12px;
-  }
-  .ms-counter{
-    background: linear-gradient(180deg, #221f18 0%, #0d0b08 100%);
-    color:var(--amber);
-    font-family:'JetBrains Mono'; font-weight:700; font-size:1.3rem;
-    letter-spacing:0.06em; padding:6px 10px; border-radius:4px; min-width:56px; text-align:center;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 2px 3px rgba(0,0,0,0.25);
-  }
+  .ms-hud{ display:flex; align-items:stretch; justify-content:space-between; gap:6px; margin-bottom:10px; }
+  .cs-team{ display:flex; align-items:center; gap:7px; padding:5px 8px; background:var(--cs-hud); border-radius:2px; flex:1; min-width:0; }
+  .cs-team.ct{ box-shadow:inset 3px 0 0 var(--cs-ct); } .cs-team.t{ box-shadow:inset -3px 0 0 var(--cs-t); justify-content:flex-end; }
+  .cs-team-tag{ font-family:'Oswald', sans-serif; font-weight:700; font-size:0.85rem; padding:1px 6px; border-radius:2px; color:#0e1012; }
+  .ct .cs-team-tag{ background:var(--cs-ct); } .t .cs-team-tag{ background:var(--cs-t); }
+  .cs-team-lbl{ font-family:'Oswald', sans-serif; font-size:0.62rem; letter-spacing:0.14em; text-transform:uppercase; color:#8a9096; }
+  .cs-map{ font-family:'Oswald', sans-serif; font-size:0.85rem; color:#d9dde1; white-space:nowrap; }
+  .ms-counter{ font-family:'Oswald', sans-serif; font-weight:700; font-size:1.25rem; letter-spacing:0.04em; color:var(--cs-ct); background:none; padding:0; min-width:0; box-shadow:none; }
+  .cs-mid{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px 10px; background:var(--cs-hud); border-radius:2px; }
+  .cs-clock{ color:#f2f2f2; font-size:1.35rem; line-height:1; }
   .ms-face{
-    width:42px; height:42px; border-radius:50%; border:none; cursor:pointer;
-    background:#EFE7D3; font-size:1.3rem; line-height:1;
-    display:flex; align-items:center; justify-content:center;
-    box-shadow: inset 2px 2px 0 rgba(255,255,255,0.65), inset -2px -2px 0 rgba(0,0,0,0.22);
-    transition: filter 0.1s ease;
+    width:auto; height:auto; border-radius:2px; border:none; cursor:pointer; padding:2px 8px;
+    font-family:'Oswald', sans-serif; font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase;
+    background:#3a4046; color:#e6e8ea; box-shadow:none;
   }
-  .ms-face:hover{ filter:brightness(1.05); }
-  .ms-face:active{
-    box-shadow: inset -2px -2px 0 rgba(255,255,255,0.65), inset 2px 2px 0 rgba(0,0,0,0.22);
-  }
-  .ms-grid{
-    display:grid; gap:2px; background:var(--ink);
-    width:100%;
-    border:3px solid var(--ink); border-radius:6px; overflow:hidden;
-  }
+  .ms-face:hover{ background:var(--cs-t); color:#1a1408; }
+  .ms-grid{ display:grid; gap:1px; width:100%; background:#1a150d; border:2px solid #120f09; border-radius:2px; overflow:hidden; cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg stroke='%23000' stroke-width='3.4'%3E%3Cpath d='M12 2v6M12 16v6M2 12h6M16 12h6'/%3E%3C/g%3E%3Cg stroke='%234dff4d' stroke-width='1.6'%3E%3Cpath d='M12 2v6M12 16v6M2 12h6M16 12h6'/%3E%3C/g%3E%3C/svg%3E") 12 12, crosshair; }
+  /* verdeckt: Sandstein-Kisten wie auf de_dust2 */
   .ms-cell{
-    --cell: #201f1c; --cell-lit: rgba(255,255,255,0.14); --cell-sh: rgba(0,0,0,0.6);
-    aspect-ratio:1; border:none; padding:0; cursor:pointer; width:100%;
-    font-family:'JetBrains Mono'; font-weight:700; font-size:0.9rem;
-    display:flex; align-items:center; justify-content:center;
-    background:var(--cell); color:#fff; user-select:none;
-    box-shadow: inset 3px 3px 0 var(--cell-lit), inset -3px -3px 0 var(--cell-sh);
+    aspect-ratio:1; border:none; padding:0; width:100%; cursor:inherit;
+    font-family:'Oswald', sans-serif; font-weight:700; font-size:0.95rem;
+    display:flex; align-items:center; justify-content:center; user-select:none; color:#fff;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.18), transparent 40%, rgba(0,0,0,0.22)),
+      repeating-linear-gradient(0deg, transparent 0 45%, rgba(90,60,25,0.25) 45% 50%),
+      #c9a66b;
+    box-shadow: inset 2px 2px 0 rgba(255,240,200,0.35), inset -2px -2px 0 rgba(70,45,15,0.55);
     transition: filter 0.1s ease;
   }
-  .ms-cell.alt{ --cell:#141312; }
-  .ms-cell:hover:not(.revealed){ filter:brightness(1.04); }
-  .ms-cell:active:not(.revealed){
-    box-shadow: inset -2px -2px 0 var(--cell-lit), inset 2px 2px 0 var(--cell-sh);
-  }
+  .ms-cell.alt{ background:
+      linear-gradient(135deg, rgba(255,255,255,0.16), transparent 40%, rgba(0,0,0,0.24)),
+      repeating-linear-gradient(90deg, transparent 0 45%, rgba(90,60,25,0.25) 45% 50%),
+      #bf9a5d; }
+  .ms-cell:hover:not(.revealed){ filter:brightness(1.12); box-shadow: inset 0 0 0 2px rgba(77,255,77,0.6); }
+  /* aufgedeckt: Betonboden */
   .ms-cell.revealed{
-    --cell:#FBF8EF; background:var(--cell); cursor:default;
-    box-shadow: inset 1px 1px 0 rgba(0,0,0,0.1);
+    cursor:default; animation: cs-reveal 0.18s ease-out;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.05), transparent 60%), #4a4740;
+    box-shadow: inset 1px 1px 2px rgba(0,0,0,0.45);
   }
-  .ms-cell.revealed.alt{ --cell:#F1EBD6; }
-  .ms-cell.flag{ font-size:1rem; }
-  .ms-cell.mine{ background:var(--brick); color:#fff; box-shadow:none; }
-  .ms-cell.mine-hit{ background:#8a251e; color:#fff; box-shadow:none; }
-  .ms-cell.n1{ color:#2F6FED; }
-  .ms-cell.n2{ color:#1a7a4c; }
-  .ms-cell.n3{ color:var(--brick); }
-  .ms-cell.n4{ color:#5B2E9E; }
-  .ms-cell.n5{ color:#8B4513; }
-  .ms-cell.n6{ color:#1FB6A6; }
-  .ms-cell.n7{ color:#111; }
-  .ms-cell.n8{ color:#666; }
+  .ms-cell.revealed.alt{ background: radial-gradient(circle at 70% 60%, rgba(255,255,255,0.04), transparent 60%), #43403a; }
+  @keyframes cs-reveal{ from{ filter:brightness(1.6); transform:scale(0.92); } }
+  .ms-cell svg{ width:82%; height:82%; display:block; filter:drop-shadow(0 1px 1px rgba(0,0,0,0.6)); }
+  .ms-cell.flag svg{ animation: cs-kit 0.25s cubic-bezier(.3,1.6,.5,1); }
+  @keyframes cs-kit{ from{ transform:translateY(-6px) scale(1.3); opacity:0; } }
+  .ms-cell.mine{ background:#5a2a22; box-shadow:inset 0 0 0 1px rgba(255,80,60,0.4); }
+  .ms-cell.mine-hit{ background:radial-gradient(circle, #ffb04a, #c0391b 70%); box-shadow:none; }
+  .cs-led{ fill:#ff3030; animation: cs-led 0.6s steps(2) infinite; }
+  @keyframes cs-led{ 50%{ fill:#5a0c0c; } }
+  .ms-cell.n1{ color:#6cb4ff; } .ms-cell.n2{ color:#7ee07e; } .ms-cell.n3{ color:#ff6b5a; } .ms-cell.n4{ color:#c38cff; }
+  .ms-cell.n5{ color:#ffb347; } .ms-cell.n6{ color:#4fe3d0; } .ms-cell.n7{ color:#f2f2f2; } .ms-cell.n8{ color:#aaa; }
+  .ms-cell[class*=" n"]{ text-shadow:0 1px 2px rgba(0,0,0,0.8); }
+  /* Spielfeld wie ein Bombenplatz auf de_dust2: Sandsteinmauer mit gesprühtem „A“ */
+  .cs-site{ position:relative; padding:8px; border-radius:2px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(255,230,170,0.25), transparent 60%), repeating-linear-gradient(0deg, rgba(90,60,25,0.25) 0 2px, transparent 2px 22px), repeating-linear-gradient(90deg, rgba(90,60,25,0.18) 0 2px, transparent 2px 44px), #a88a58;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4), inset 0 0 24px rgba(60,35,10,0.5); }
+  .cs-site::before{ content:'A'; position:absolute; right:12px; top:-4px; z-index:3; font-family:'Black Ops One', 'Oswald', sans-serif; font-size:2.2rem; color:rgba(200,30,30,0.75); transform:rotate(-8deg); text-shadow:0 0 2px rgba(120,0,0,0.4); pointer-events:none; }
+  /* Score und Bombe-gelegt-Anzeige */
+  .cs-score{ display:flex; align-items:center; gap:8px; }
+  .cs-score > b{ font-family:'Oswald', sans-serif; font-size:1.15rem; min-width:16px; text-align:center; }
+  .cs-score > b.ct{ color:var(--cs-ct); } .cs-score > b.t{ color:var(--cs-t); }
+  .cs-clockrow{ display:flex; align-items:center; gap:4px; }
+  .cs-planted{ display:none; width:15px; height:11px; border-radius:1px; background:#c0392b; box-shadow:inset 4px 0 0 #7a1a10, inset -4px 0 0 #7a1a10; animation: cs-led 0.8s steps(2) infinite; }
+  .cs-planted.on{ display:inline-block; }
+  .cs-clock.hot{ color:#ff5a4a; }
+  /* untere HUD-Leiste: Radar, HP/Rüstung, Geld */
+  .cs-bottom{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-top:8px; }
+  .cs-radar{ width:74px; height:74px; border-radius:50%; background:#111; box-shadow:0 2px 6px rgba(0,0,0,0.5); flex-shrink:0; }
+  .cs-vitals{ display:flex; gap:14px; padding:6px 12px; background:var(--cs-hud); border-radius:2px; }
+  .cs-vitals span{ display:flex; align-items:center; gap:6px; font-family:'Oswald', sans-serif; font-size:1.3rem; font-weight:700; color:#eef0f2; }
+  .cs-hp i{ width:14px; height:14px; background:linear-gradient(#eef0f2, #eef0f2) center / 4px 100% no-repeat, linear-gradient(#eef0f2, #eef0f2) center / 100% 4px no-repeat; }
+  .cs-hp.low{ color:#ff4a3a; } .cs-hp.low i{ filter:hue-rotate(0) drop-shadow(0 0 3px #ff4a3a); }
+  .cs-armor i{ width:13px; height:15px; background:#eef0f2; clip-path:polygon(50% 0, 100% 18%, 92% 65%, 50% 100%, 8% 65%, 0 18%); }
+  .cs-money{ position:relative; padding:6px 12px; background:var(--cs-hud); border-radius:2px; font-family:'Oswald', sans-serif; font-size:1.3rem; font-weight:700; color:#8fe08f; }
+  .cs-moneypop{ position:absolute; right:4px; bottom:100%; white-space:nowrap; font-size:0.75rem; color:#8fe08f; opacity:0; text-shadow:0 1px 2px #000; }
+  .cs-moneypop.show{ animation: cs-money 1.6s ease-out forwards; }
+  @keyframes cs-money{ 0%{ opacity:0; transform:translateY(6px); } 15%, 70%{ opacity:1; transform:translateY(0); } 100%{ opacity:0; transform:translateY(-8px); } }
+  /* Killfeed oben rechts über dem Feld */
+  .cs-feed{ position:absolute; right:14px; top:66px; z-index:6; display:flex; flex-direction:column; align-items:flex-end; gap:3px; pointer-events:none; }
+  .cs-feed-row{ display:flex; align-items:center; gap:6px; padding:3px 8px; background:rgba(10,12,14,0.85); border:1px solid rgba(255,70,60,0.7); border-radius:2px; font-family:'Oswald', sans-serif; font-size:0.78rem; animation: vl-feed-in 0.25s ease-out; transition:opacity 0.4s ease; }
+  .cs-feed-row.out{ opacity:0; }
+  .cs-feed-row b.ct{ color:var(--cs-ct); } .cs-feed-row b.t{ color:var(--cs-t); }
+  .cs-ficon{ width:22px; height:13px; }
+  /* Entschärfen-Balken */
+  .cs-defuse{ position:absolute; left:50%; bottom:96px; z-index:6; width:180px; margin-left:-90px; padding:5px 8px 7px; background:rgba(10,12,14,0.85); border-radius:2px; text-align:center; opacity:0; pointer-events:none; }
+  .cs-defuse span{ display:block; font-family:'Oswald', sans-serif; font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; color:#e6e8ea; margin-bottom:4px; }
+  .cs-defuse i{ display:block; height:5px; background:#2a2e32; position:relative; overflow:hidden; }
+  .cs-defuse i::after{ content:''; position:absolute; inset:0; background:#5d9de0; transform-origin:0 50%; transform:scaleX(0); }
+  .cs-defuse.run{ animation: cs-def-box 0.75s ease forwards; }
+  .cs-defuse.run i::after{ animation: cs-def-bar 0.5s linear forwards; }
+  @keyframes cs-def-box{ 0%{ opacity:1; } 75%{ opacity:1; } 100%{ opacity:0; } }
+  @keyframes cs-def-bar{ to{ transform:scaleX(1); } }
+  .cs-ban.small b{ font-size:1.15rem; color:#ff5a4a; }
+  /* Minesweeper links, Kisten rechts daneben */
+  .cs-row{ display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
+  .cs-cases{ position:relative; width:340px; max-width:100%; min-height:470px; box-sizing:border-box; padding:12px; border-radius:4px; background:linear-gradient(180deg, #1f2226, #121417); border:1px solid #3a4046; box-shadow:0 10px 24px rgba(0,0,0,0.45); }
+  .cs-cases-head, .cs-inv-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .cs-cases-head b, .cs-inv-head b{ font-family:'Oswald', sans-serif; font-size:1.05rem; letter-spacing:0.1em; text-transform:uppercase; color:#e6e8ea; }
+  .cs-cases-head span, .cs-inv-head span{ font-family:'Oswald', sans-serif; font-size:0.75rem; color:#8a9096; }
+  .cs-cases-head em{ font-style:normal; color:#8fe08f; }
+  .cs-case-list{ display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:10px; }
+  .cs-case{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 4px; cursor:pointer; background:#1a1d20; border:1px solid #33393f; border-radius:3px; font-family:'Oswald', sans-serif; font-size:0.72rem; color:#cfd3d7; transition:transform 0.15s ease, border-color 0.15s ease; }
+  .cs-case:hover{ transform:translateY(-2px); border-color:#6a7178; }
+  .cs-case.sel{ border-color:#e3b04a; box-shadow:0 0 10px rgba(227,176,74,0.35); color:#e3b04a; }
+  .cs-case-svg{ width:56px; height:38px; filter:drop-shadow(0 3px 3px rgba(0,0,0,0.5)); }
+  .cs-case-msg.ok{ color:#8fe08f; }
+  .cs-tabs{ display:flex; gap:4px; margin-bottom:10px; border-bottom:2px solid #2a2f34; }
+  .cs-tab{ position:relative; padding:7px 16px; cursor:pointer; border:none; background:none; font-family:'Oswald', sans-serif; font-size:0.95rem; letter-spacing:0.12em; text-transform:uppercase; color:#8a9096; }
+  .cs-tab.active{ color:#fff; box-shadow:inset 0 -3px 0 #e3b04a; }
+  .cs-badge{ display:inline-grid; place-items:center; min-width:16px; height:16px; margin-left:4px; padding:0 4px; border-radius:8px; background:#e3b04a; color:#1a1408; font-style:normal; font-size:0.65rem; vertical-align:2px; }
+  .cs-shop{ display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; max-height:390px; overflow-y:auto; padding-right:4px; scrollbar-width:thin; scrollbar-color:#e3b04a #1a1d20; }
+  .cs-shop-top{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .cs-search{ flex:1; min-width:0; padding:7px 10px; border-radius:2px; border:1px solid #3a4046; background:#101214; color:#e6e8ea; font-family:'Inter', sans-serif; font-size:0.82rem; outline:none; }
+  .cs-search:focus{ border-color:#e3b04a; }
+  .cs-shop-top span{ font-family:'Oswald', sans-serif; font-size:0.75rem; color:#8a9096; white-space:nowrap; }
+  .cs-shop-item{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 6px; border-radius:3px; background:radial-gradient(ellipse at 50% 30%, #2c3238, #17191c 75%); border:1px solid #33393f; text-align:center; }
+  .cs-shop-item span{ font-family:'Oswald', sans-serif; font-size:0.78rem; color:#e6e8ea; line-height:1.15; min-height:2.3em; display:flex; align-items:center; }
+  .cs-shop-item button{ width:100%; padding:6px; cursor:pointer; border:none; border-radius:2px; font-family:'Oswald', sans-serif; font-weight:600; font-size:0.85rem; letter-spacing:0.05em; color:#fff; background:linear-gradient(180deg, #5fa94a, #3c7a2c); }
+  .cs-shop-item button:hover{ filter:brightness(1.12); }
+  .cs-shop-item button.poor{ background:#3a4046; color:#9aa1a8; }
+  .cs-shop-item.bought{ animation: cs-bought 0.5s ease-out; }
+  @keyframes cs-bought{ 40%{ transform:scale(1.05); box-shadow:0 0 16px rgba(95,169,74,0.7); } }
+  .cs-case-img{ width:110px; height:78px; object-fit:contain; filter:drop-shadow(0 6px 6px rgba(0,0,0,0.55)); transition:transform 0.2s ease; }
+  .cs-shop-item:hover .cs-case-img{ transform:translateY(-3px) rotate(-2deg); }
+  .cs-skin{ width:74px; height:44px; object-fit:contain; margin-bottom:auto; filter:drop-shadow(0 3px 3px rgba(0,0,0,0.6)); }
+  .cs-skin.big{ width:200px; height:120px; margin:0; filter:drop-shadow(0 8px 10px rgba(0,0,0,0.7)); }
+  .cs-gold{ margin-bottom:auto; font-size:2rem; line-height:44px; color:#e4ae39; text-shadow:0 0 10px #e4ae39; }
+  .cs-inv-img{ width:64px; height:42px; object-fit:contain; filter:drop-shadow(0 2px 3px rgba(0,0,0,0.6)); }
+  .cs-inv-item.case{ --rc:#e3b04a; background:radial-gradient(ellipse at 50% 30%, #2c3238, #1c1f22 75%); }
+  .cs-inv-item span{ white-space:normal !important; text-align:center; line-height:1.15; }
+  .cs-inv-item button.open{ background:#e3b04a; color:#1a1408; font-weight:600; }
+  .cs-inv-item button.open:hover{ background:#ffc95a; }
+  .cs-stage{ position:absolute; inset:0; z-index:4; display:none; flex-direction:column; justify-content:center; gap:10px; padding:14px; border-radius:4px; background:rgba(10,11,13,0.94); }
+  .cs-stage.show{ display:flex; }
+  .cs-stage-title{ text-align:center; font-family:'Oswald', sans-serif; font-size:0.95rem; letter-spacing:0.1em; text-transform:uppercase; color:#e3b04a; }
+  .cs-reel-wrap{ position:relative; height:96px; overflow:hidden; border-radius:3px; background:linear-gradient(180deg, #0c0e10, #1a1d20 50%, #0c0e10); box-shadow:inset 0 0 0 1px #33393f; }
+  .cs-reel-wrap::before, .cs-reel-wrap::after{ content:''; position:absolute; top:0; bottom:0; width:40px; z-index:2; pointer-events:none; }
+  .cs-reel-wrap::before{ left:0; background:linear-gradient(90deg, #0c0e10, transparent); } .cs-reel-wrap::after{ right:0; background:linear-gradient(270deg, #0c0e10, transparent); }
+  .cs-reel{ display:flex; gap:6px; padding:8px 6px; width:max-content; will-change:transform; }
+  .cs-reel-line{ position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px; z-index:3; background:#e3b04a; box-shadow:0 0 8px #e3b04a; }
+  .cs-reel-line::before, .cs-reel-line::after{ content:''; position:absolute; left:-5px; border:6px solid transparent; }
+  .cs-reel-line::before{ top:0; border-top-color:#e3b04a; } .cs-reel-line::after{ bottom:0; border-bottom-color:#e3b04a; }
+  .cs-reel-line.tick{ animation: cs-tick 0.08s ease-out; }
+  @keyframes cs-tick{ 50%{ transform:scaleX(2); } }
+  .cs-card{ flex:0 0 auto; width:86px; height:80px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:1px; padding:4px; box-sizing:border-box;
+    background:linear-gradient(180deg, #2a2e33, #1c1f22); border-bottom:4px solid var(--rc); border-radius:2px; box-shadow:inset 0 -18px 18px -14px var(--rc); }
+  .cs-card span{ font-family:'Oswald', sans-serif; font-size:0.62rem; color:#9aa1a8; line-height:1; }
+  .cs-card b{ font-family:'Oswald', sans-serif; font-size:0.66rem; font-weight:600; color:#e6e8ea; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+  .cs-gun{ width:64px; height:33px; margin-bottom:auto; filter:drop-shadow(0 2px 2px rgba(0,0,0,0.6)); }
+  .cs-card.landed{ animation: cs-landed 0.9s ease-out; box-shadow:inset 0 -30px 24px -14px var(--rc), 0 0 14px var(--rc); }
+  @keyframes cs-landed{ 30%{ transform:scale(1.08); } }
+  .cs-open-btn{ width:100%; margin:10px 0 4px; padding:10px; cursor:pointer; border:none; border-radius:2px; font-family:'Oswald', sans-serif; font-weight:700; font-size:1rem; letter-spacing:0.12em; text-transform:uppercase; color:#fff;
+    background:linear-gradient(180deg, #5fa94a, #3c7a2c); box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 0 #23471a; }
+  .cs-open-btn:hover:not(:disabled){ filter:brightness(1.1); }
+  .cs-open-btn:disabled{ opacity:0.5; cursor:default; }
+  .cs-case-msg{ min-height:1em; font-family:'Inter', sans-serif; font-size:0.75rem; color:#ff6b5a; margin-bottom:8px; }
+  .cs-inv{ display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; max-height:330px; overflow-y:auto; }
+  .cs-inv-item{ display:flex; flex-direction:column; align-items:center; gap:2px; padding:4px; background:#1c1f22; border-bottom:3px solid var(--rc); border-radius:2px; }
+  .cs-inv-item .cs-gun{ width:54px; height:28px; }
+  .cs-inv-item span{ font-family:'Oswald', sans-serif; font-size:0.62rem; color:#cfd3d7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+  .cs-inv-item button{ padding:1px 6px; border:none; border-radius:2px; cursor:pointer; background:#2d3a2a; color:#8fe08f; font-family:'Oswald', sans-serif; font-size:0.62rem; }
+  .cs-inv-item button:hover{ background:#3c7a2c; color:#fff; }
+  .cs-inv-empty{ grid-column:1 / -1; padding:10px; text-align:center; font-family:'Inter', sans-serif; font-size:0.78rem; color:#6a7178; }
+  /* Fund-Anzeige */
+  .cs-drop{ position:absolute; inset:0; z-index:5; display:none; place-items:center; background:rgba(8,9,11,0.82); border-radius:4px; }
+  .cs-drop.show{ display:grid; }
+  .cs-drop-in{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 18px; text-align:center; border-radius:4px; background:radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--rc) 35%, transparent), transparent 70%), #16181b; border:1px solid var(--rc); box-shadow:0 0 30px color-mix(in srgb, var(--rc) 55%, transparent); animation: cs-drop 0.5s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes cs-drop{ from{ transform:scale(0.6); opacity:0; } }
+  .cs-drop-in small{ font-family:'Oswald', sans-serif; font-size:0.75rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--rc); }
+  .cs-drop-in b{ font-family:'Oswald', sans-serif; font-size:1.05rem; color:#fff; }
+  .cs-gun.big{ width:200px; height:104px; margin:0; filter:drop-shadow(0 6px 8px rgba(0,0,0,0.7)); }
+  .cs-drop-btns{ display:flex; gap:8px; margin-top:4px; }
+  .cs-drop-btns button{ padding:7px 14px; border:none; border-radius:2px; cursor:pointer; font-family:'Oswald', sans-serif; font-size:0.85rem; letter-spacing:0.06em; }
+  .cs-drop-btns .keep{ background:#3a4046; color:#fff; } .cs-drop-btns .sell{ background:#3c7a2c; color:#fff; }
+  /* Explosion */
+  .cs-fx{ position:absolute; inset:0; pointer-events:none; z-index:5; overflow:visible; }
+  .cs-boom{ position:absolute; width:0; height:0; }
+  .cs-boom b{ position:absolute; left:-22px; top:-22px; width:44px; height:44px; border-radius:50%; background:radial-gradient(circle, #fffbe0, #ffc23a 30%, #ff5a1a 60%, rgba(80,30,10,0.5) 75%, transparent 78%); animation: bs-ball 1.2s ease-out forwards; }
+  .cs-boom b:nth-child(1){ --dx:0px; --dy:0px; --s:3.4; } .cs-boom b:nth-child(2){ --dx:30px; --dy:-18px; --s:2; animation-delay:0.05s; }
+  .cs-boom b:nth-child(3){ --dx:-28px; --dy:-14px; --s:2.1; animation-delay:0.1s; } .cs-boom b:nth-child(4){ --dx:18px; --dy:24px; --s:1.8; animation-delay:0.14s; } .cs-boom b:nth-child(5){ --dx:-20px; --dy:22px; --s:1.7; animation-delay:0.18s; }
+  .cs-boom i{ position:absolute; left:-40px; top:-40px; width:80px; height:80px; border-radius:50%; border:3px solid rgba(255,240,200,0.9); animation: bs-shock 0.8s ease-out forwards; }
+  .cs-boom em{ position:absolute; left:-3px; top:-3px; width:6px; height:6px; background:#c9a66b; clip-path:polygon(0 0, 100% 30%, 70% 100%); animation: bs-debris 1s cubic-bezier(.2,.7,.4,1) forwards; }
+  .ms-wrap.cs-shake{ animation: bs-shake 0.5s ease-out; }
+  .ms-wrap.cs-flash::after{ content:''; position:absolute; inset:0; background:#fff; pointer-events:none; animation: cs-flash 0.9s ease-out forwards; z-index:6; }
+  @keyframes cs-flash{ from{ opacity:0.85; } to{ opacity:0; } }
+  /* Rundenende-Banner */
+  .cs-banner{ position:absolute; left:0; right:0; top:38%; z-index:7; pointer-events:none; display:flex; justify-content:center; }
+  .cs-ban{ display:flex; flex-direction:column; align-items:center; gap:2px; width:100%; padding:12px 0; background:linear-gradient(90deg, transparent, rgba(10,12,14,0.92) 15% 85%, transparent); animation: cs-ban 0.45s ease-out; }
+  .cs-ban b{ font-family:'Oswald', sans-serif; font-size:1.55rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; }
+  .cs-ban.ct b{ color:var(--cs-ct); } .cs-ban.t b{ color:var(--cs-t); }
+  .cs-ban span{ font-family:'Oswald', sans-serif; font-size:0.78rem; letter-spacing:0.16em; text-transform:uppercase; color:#cfd3d7; }
+  @keyframes cs-ban{ from{ transform:scaleY(0.1); opacity:0; } }
+  .cs-status{ display:flex; gap:8px; align-items:baseline; width:fit-content; max-width:100%; margin-top:12px; padding:6px 12px; background:rgba(14,16,18,0.85); border-radius:2px; }
+  .cs-status b{ font-family:'Oswald', sans-serif; font-size:0.75rem; color:var(--cs-t); }
+  .cs-status #ms-status{ margin:0; padding:0; font-family:'Inter', sans-serif; font-size:0.85rem; color:#e8eaec; }
   @media (max-width:420px){
-    .ms-wrap{ max-width:320px; }
-    .ms-cell{ font-size:0.72rem; }
-    .ms-counter{ font-size:1.05rem; min-width:46px; }
+    .ms-wrap{ max-width:340px; padding:7px; }
+    .ms-cell{ font-size:0.75rem; }
+    .cs-team-lbl{ display:none; } .cs-map{ font-size:0.7rem; } .ms-counter{ font-size:1.05rem; }
+    .cs-ban b{ font-size:1.1rem; }
+    .cs-radar{ width:58px; height:58px; } .cs-vitals{ gap:8px; padding:5px 8px; } .cs-vitals span, .cs-money{ font-size:1rem; } .cs-money{ padding:5px 8px; } .cs-feed{ top:56px; right:8px; } .cs-site{ padding:5px; } .cs-site::before{ font-size:1.6rem; }
   }
 
   .snake-wrap{
@@ -2105,7 +2248,7 @@
     background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20640%2080%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23ffd400%22/%3E%3Cpolygon%20points%3D%220%2C0%2040%2C0%2034%2C6%206%2C6%22%20fill%3D%22%23ffe772%22/%3E%3Cpolygon%20points%3D%220%2C0%206%2C6%206%2C34%200%2C40%22%20fill%3D%22%23ffdd38%22/%3E%3Cpolygon%20points%3D%2240%2C0%2040%2C40%2034%2C34%2034%2C6%22%20fill%3D%22%23b79800%22/%3E%3Cpolygon%20points%3D%220%2C40%2040%2C40%2034%2C34%206%2C34%22%20fill%3D%22%238c7400%22/%3E%3Crect%20x%3D%229%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%2240%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23ffd400%22/%3E%3Cpolygon%20points%3D%2240%2C0%2080%2C0%2074%2C6%2046%2C6%22%20fill%3D%22%23ffe772%22/%3E%3Cpolygon%20points%3D%2240%2C0%2046%2C6%2046%2C34%2040%2C40%22%20fill%3D%22%23ffdd38%22/%3E%3Cpolygon%20points%3D%2280%2C0%2080%2C40%2074%2C34%2074%2C6%22%20fill%3D%22%23b79800%22/%3E%3Cpolygon%20points%3D%2240%2C40%2080%2C40%2074%2C34%2046%2C34%22%20fill%3D%22%238c7400%22/%3E%3Crect%20x%3D%2249%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%220%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23ffd400%22/%3E%3Cpolygon%20points%3D%220%2C40%2040%2C40%2034%2C46%206%2C46%22%20fill%3D%22%23ffe772%22/%3E%3Cpolygon%20points%3D%220%2C40%206%2C46%206%2C74%200%2C80%22%20fill%3D%22%23ffdd38%22/%3E%3Cpolygon%20points%3D%2240%2C40%2040%2C80%2034%2C74%2034%2C46%22%20fill%3D%22%23b79800%22/%3E%3Cpolygon%20points%3D%220%2C80%2040%2C80%2034%2C74%206%2C74%22%20fill%3D%22%238c7400%22/%3E%3Crect%20x%3D%229%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%2240%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23ffd400%22/%3E%3Cpolygon%20points%3D%2240%2C40%2080%2C40%2074%2C46%2046%2C46%22%20fill%3D%22%23ffe772%22/%3E%3Cpolygon%20points%3D%2240%2C40%2046%2C46%2046%2C74%2040%2C80%22%20fill%3D%22%23ffdd38%22/%3E%3Cpolygon%20points%3D%2280%2C40%2080%2C80%2074%2C74%2074%2C46%22%20fill%3D%22%23b79800%22/%3E%3Cpolygon%20points%3D%2240%2C80%2080%2C80%2074%2C74%2046%2C74%22%20fill%3D%22%238c7400%22/%3E%3Crect%20x%3D%2249%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%2280%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%232a5cff%22/%3E%3Cpolygon%20points%3D%2280%2C0%20120%2C0%20114%2C6%2086%2C6%22%20fill%3D%22%2389a5ff%22/%3E%3Cpolygon%20points%3D%2280%2C0%2086%2C6%2086%2C34%2080%2C40%22%20fill%3D%22%23587fff%22/%3E%3Cpolygon%20points%3D%22120%2C0%20120%2C40%20114%2C34%20114%2C6%22%20fill%3D%22%231e42b7%22/%3E%3Cpolygon%20points%3D%2280%2C40%20120%2C40%20114%2C34%2086%2C34%22%20fill%3D%22%2317328c%22/%3E%3Crect%20x%3D%2289%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%2280%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%232a5cff%22/%3E%3Cpolygon%20points%3D%2280%2C40%20120%2C40%20114%2C46%2086%2C46%22%20fill%3D%22%2389a5ff%22/%3E%3Cpolygon%20points%3D%2280%2C40%2086%2C46%2086%2C74%2080%2C80%22%20fill%3D%22%23587fff%22/%3E%3Cpolygon%20points%3D%22120%2C40%20120%2C80%20114%2C74%20114%2C46%22%20fill%3D%22%231e42b7%22/%3E%3Cpolygon%20points%3D%2280%2C80%20120%2C80%20114%2C74%2086%2C74%22%20fill%3D%22%2317328c%22/%3E%3Crect%20x%3D%2289%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22120%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%232a5cff%22/%3E%3Cpolygon%20points%3D%22120%2C40%20160%2C40%20154%2C46%20126%2C46%22%20fill%3D%22%2389a5ff%22/%3E%3Cpolygon%20points%3D%22120%2C40%20126%2C46%20126%2C74%20120%2C80%22%20fill%3D%22%23587fff%22/%3E%3Cpolygon%20points%3D%22160%2C40%20160%2C80%20154%2C74%20154%2C46%22%20fill%3D%22%231e42b7%22/%3E%3Cpolygon%20points%3D%22120%2C80%20160%2C80%20154%2C74%20126%2C74%22%20fill%3D%22%2317328c%22/%3E%3Crect%20x%3D%22129%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22160%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%232a5cff%22/%3E%3Cpolygon%20points%3D%22160%2C40%20200%2C40%20194%2C46%20166%2C46%22%20fill%3D%22%2389a5ff%22/%3E%3Cpolygon%20points%3D%22160%2C40%20166%2C46%20166%2C74%20160%2C80%22%20fill%3D%22%23587fff%22/%3E%3Cpolygon%20points%3D%22200%2C40%20200%2C80%20194%2C74%20194%2C46%22%20fill%3D%22%231e42b7%22/%3E%3Cpolygon%20points%3D%22160%2C80%20200%2C80%20194%2C74%20166%2C74%22%20fill%3D%22%2317328c%22/%3E%3Crect%20x%3D%22169%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22120%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23ff8c00%22/%3E%3Cpolygon%20points%3D%22120%2C0%20160%2C0%20154%2C6%20126%2C6%22%20fill%3D%22%23ffbf72%22/%3E%3Cpolygon%20points%3D%22120%2C0%20126%2C6%20126%2C34%20120%2C40%22%20fill%3D%22%23ffa538%22/%3E%3Cpolygon%20points%3D%22160%2C0%20160%2C40%20154%2C34%20154%2C6%22%20fill%3D%22%23b76400%22/%3E%3Cpolygon%20points%3D%22120%2C40%20160%2C40%20154%2C34%20126%2C34%22%20fill%3D%22%238c4d00%22/%3E%3Crect%20x%3D%22129%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22160%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23ff8c00%22/%3E%3Cpolygon%20points%3D%22160%2C0%20200%2C0%20194%2C6%20166%2C6%22%20fill%3D%22%23ffbf72%22/%3E%3Cpolygon%20points%3D%22160%2C0%20166%2C6%20166%2C34%20160%2C40%22%20fill%3D%22%23ffa538%22/%3E%3Cpolygon%20points%3D%22200%2C0%20200%2C40%20194%2C34%20194%2C6%22%20fill%3D%22%23b76400%22/%3E%3Cpolygon%20points%3D%22160%2C40%20200%2C40%20194%2C34%20166%2C34%22%20fill%3D%22%238c4d00%22/%3E%3Crect%20x%3D%22169%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22200%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23ff8c00%22/%3E%3Cpolygon%20points%3D%22200%2C0%20240%2C0%20234%2C6%20206%2C6%22%20fill%3D%22%23ffbf72%22/%3E%3Cpolygon%20points%3D%22200%2C0%20206%2C6%20206%2C34%20200%2C40%22%20fill%3D%22%23ffa538%22/%3E%3Cpolygon%20points%3D%22240%2C0%20240%2C40%20234%2C34%20234%2C6%22%20fill%3D%22%23b76400%22/%3E%3Cpolygon%20points%3D%22200%2C40%20240%2C40%20234%2C34%20206%2C34%22%20fill%3D%22%238c4d00%22/%3E%3Crect%20x%3D%22209%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22200%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23ff8c00%22/%3E%3Cpolygon%20points%3D%22200%2C40%20240%2C40%20234%2C46%20206%2C46%22%20fill%3D%22%23ffbf72%22/%3E%3Cpolygon%20points%3D%22200%2C40%20206%2C46%20206%2C74%20200%2C80%22%20fill%3D%22%23ffa538%22/%3E%3Cpolygon%20points%3D%22240%2C40%20240%2C80%20234%2C74%20234%2C46%22%20fill%3D%22%23b76400%22/%3E%3Cpolygon%20points%3D%22200%2C80%20240%2C80%20234%2C74%20206%2C74%22%20fill%3D%22%238c4d00%22/%3E%3Crect%20x%3D%22209%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22240%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%2300c8e8%22/%3E%3Cpolygon%20points%3D%22240%2C0%20280%2C0%20274%2C6%20246%2C6%22%20fill%3D%22%2372e0f2%22/%3E%3Cpolygon%20points%3D%22240%2C0%20246%2C6%20246%2C34%20240%2C40%22%20fill%3D%22%2338d4ed%22/%3E%3Cpolygon%20points%3D%22280%2C0%20280%2C40%20274%2C34%20274%2C6%22%20fill%3D%22%230090a7%22/%3E%3Cpolygon%20points%3D%22240%2C40%20280%2C40%20274%2C34%20246%2C34%22%20fill%3D%22%23006e7f%22/%3E%3Crect%20x%3D%22249%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22280%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%2300c8e8%22/%3E%3Cpolygon%20points%3D%22280%2C0%20320%2C0%20314%2C6%20286%2C6%22%20fill%3D%22%2372e0f2%22/%3E%3Cpolygon%20points%3D%22280%2C0%20286%2C6%20286%2C34%20280%2C40%22%20fill%3D%22%2338d4ed%22/%3E%3Cpolygon%20points%3D%22320%2C0%20320%2C40%20314%2C34%20314%2C6%22%20fill%3D%22%230090a7%22/%3E%3Cpolygon%20points%3D%22280%2C40%20320%2C40%20314%2C34%20286%2C34%22%20fill%3D%22%23006e7f%22/%3E%3Crect%20x%3D%22289%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22320%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%2300c8e8%22/%3E%3Cpolygon%20points%3D%22320%2C0%20360%2C0%20354%2C6%20326%2C6%22%20fill%3D%22%2372e0f2%22/%3E%3Cpolygon%20points%3D%22320%2C0%20326%2C6%20326%2C34%20320%2C40%22%20fill%3D%22%2338d4ed%22/%3E%3Cpolygon%20points%3D%22360%2C0%20360%2C40%20354%2C34%20354%2C6%22%20fill%3D%22%230090a7%22/%3E%3Cpolygon%20points%3D%22320%2C40%20360%2C40%20354%2C34%20326%2C34%22%20fill%3D%22%23006e7f%22/%3E%3Crect%20x%3D%22329%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22360%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%2300c8e8%22/%3E%3Cpolygon%20points%3D%22360%2C0%20400%2C0%20394%2C6%20366%2C6%22%20fill%3D%22%2372e0f2%22/%3E%3Cpolygon%20points%3D%22360%2C0%20366%2C6%20366%2C34%20360%2C40%22%20fill%3D%22%2338d4ed%22/%3E%3Cpolygon%20points%3D%22400%2C0%20400%2C40%20394%2C34%20394%2C6%22%20fill%3D%22%230090a7%22/%3E%3Cpolygon%20points%3D%22360%2C40%20400%2C40%20394%2C34%20366%2C34%22%20fill%3D%22%23006e7f%22/%3E%3Crect%20x%3D%22369%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22240%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23ff2a2a%22/%3E%3Cpolygon%20points%3D%22240%2C40%20280%2C40%20274%2C46%20246%2C46%22%20fill%3D%22%23ff8989%22/%3E%3Cpolygon%20points%3D%22240%2C40%20246%2C46%20246%2C74%20240%2C80%22%20fill%3D%22%23ff5858%22/%3E%3Cpolygon%20points%3D%22280%2C40%20280%2C80%20274%2C74%20274%2C46%22%20fill%3D%22%23b71e1e%22/%3E%3Cpolygon%20points%3D%22240%2C80%20280%2C80%20274%2C74%20246%2C74%22%20fill%3D%22%238c1717%22/%3E%3Crect%20x%3D%22249%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22280%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23ff2a2a%22/%3E%3Cpolygon%20points%3D%22280%2C40%20320%2C40%20314%2C46%20286%2C46%22%20fill%3D%22%23ff8989%22/%3E%3Cpolygon%20points%3D%22280%2C40%20286%2C46%20286%2C74%20280%2C80%22%20fill%3D%22%23ff5858%22/%3E%3Cpolygon%20points%3D%22320%2C40%20320%2C80%20314%2C74%20314%2C46%22%20fill%3D%22%23b71e1e%22/%3E%3Cpolygon%20points%3D%22280%2C80%20320%2C80%20314%2C74%20286%2C74%22%20fill%3D%22%238c1717%22/%3E%3Crect%20x%3D%22289%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22320%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23ff2a2a%22/%3E%3Cpolygon%20points%3D%22320%2C40%20360%2C40%20354%2C46%20326%2C46%22%20fill%3D%22%23ff8989%22/%3E%3Cpolygon%20points%3D%22320%2C40%20326%2C46%20326%2C74%20320%2C80%22%20fill%3D%22%23ff5858%22/%3E%3Cpolygon%20points%3D%22360%2C40%20360%2C80%20354%2C74%20354%2C46%22%20fill%3D%22%23b71e1e%22/%3E%3Cpolygon%20points%3D%22320%2C80%20360%2C80%20354%2C74%20326%2C74%22%20fill%3D%22%238c1717%22/%3E%3Crect%20x%3D%22329%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22360%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23ff2a2a%22/%3E%3Cpolygon%20points%3D%22360%2C40%20400%2C40%20394%2C46%20366%2C46%22%20fill%3D%22%23ff8989%22/%3E%3Cpolygon%20points%3D%22360%2C40%20366%2C46%20366%2C74%20360%2C80%22%20fill%3D%22%23ff5858%22/%3E%3Cpolygon%20points%3D%22400%2C40%20400%2C80%20394%2C74%20394%2C46%22%20fill%3D%22%23b71e1e%22/%3E%3Cpolygon%20points%3D%22360%2C80%20400%2C80%20394%2C74%20366%2C74%22%20fill%3D%22%238c1717%22/%3E%3Crect%20x%3D%22369%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22400%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%2300d43a%22/%3E%3Cpolygon%20points%3D%22400%2C0%20440%2C0%20434%2C6%20406%2C6%22%20fill%3D%22%2372e792%22/%3E%3Cpolygon%20points%3D%22400%2C0%20406%2C6%20406%2C34%20400%2C40%22%20fill%3D%22%2338dd65%22/%3E%3Cpolygon%20points%3D%22440%2C0%20440%2C40%20434%2C34%20434%2C6%22%20fill%3D%22%23009829%22/%3E%3Cpolygon%20points%3D%22400%2C40%20440%2C40%20434%2C34%20406%2C34%22%20fill%3D%22%2300741f%22/%3E%3Crect%20x%3D%22409%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22440%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%2300d43a%22/%3E%3Cpolygon%20points%3D%22440%2C0%20480%2C0%20474%2C6%20446%2C6%22%20fill%3D%22%2372e792%22/%3E%3Cpolygon%20points%3D%22440%2C0%20446%2C6%20446%2C34%20440%2C40%22%20fill%3D%22%2338dd65%22/%3E%3Cpolygon%20points%3D%22480%2C0%20480%2C40%20474%2C34%20474%2C6%22%20fill%3D%22%23009829%22/%3E%3Cpolygon%20points%3D%22440%2C40%20480%2C40%20474%2C34%20446%2C34%22%20fill%3D%22%2300741f%22/%3E%3Crect%20x%3D%22449%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22400%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%2300d43a%22/%3E%3Cpolygon%20points%3D%22400%2C40%20440%2C40%20434%2C46%20406%2C46%22%20fill%3D%22%2372e792%22/%3E%3Cpolygon%20points%3D%22400%2C40%20406%2C46%20406%2C74%20400%2C80%22%20fill%3D%22%2338dd65%22/%3E%3Cpolygon%20points%3D%22440%2C40%20440%2C80%20434%2C74%20434%2C46%22%20fill%3D%22%23009829%22/%3E%3Cpolygon%20points%3D%22400%2C80%20440%2C80%20434%2C74%20406%2C74%22%20fill%3D%22%2300741f%22/%3E%3Crect%20x%3D%22409%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22440%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%2300d43a%22/%3E%3Cpolygon%20points%3D%22440%2C40%20480%2C40%20474%2C46%20446%2C46%22%20fill%3D%22%2372e792%22/%3E%3Cpolygon%20points%3D%22440%2C40%20446%2C46%20446%2C74%20440%2C80%22%20fill%3D%22%2338dd65%22/%3E%3Cpolygon%20points%3D%22480%2C40%20480%2C80%20474%2C74%20474%2C46%22%20fill%3D%22%23009829%22/%3E%3Cpolygon%20points%3D%22440%2C80%20480%2C80%20474%2C74%20446%2C74%22%20fill%3D%22%2300741f%22/%3E%3Crect%20x%3D%22449%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22480%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23a020f0%22/%3E%3Cpolygon%20points%3D%22480%2C0%20520%2C0%20514%2C6%20486%2C6%22%20fill%3D%22%23ca84f6%22/%3E%3Cpolygon%20points%3D%22480%2C0%20486%2C6%20486%2C34%20480%2C40%22%20fill%3D%22%23b451f3%22/%3E%3Cpolygon%20points%3D%22520%2C0%20520%2C40%20514%2C34%20514%2C6%22%20fill%3D%22%237317ac%22/%3E%3Cpolygon%20points%3D%22480%2C40%20520%2C40%20514%2C34%20486%2C34%22%20fill%3D%22%23581184%22/%3E%3Crect%20x%3D%22489%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22520%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23a020f0%22/%3E%3Cpolygon%20points%3D%22520%2C0%20560%2C0%20554%2C6%20526%2C6%22%20fill%3D%22%23ca84f6%22/%3E%3Cpolygon%20points%3D%22520%2C0%20526%2C6%20526%2C34%20520%2C40%22%20fill%3D%22%23b451f3%22/%3E%3Cpolygon%20points%3D%22560%2C0%20560%2C40%20554%2C34%20554%2C6%22%20fill%3D%22%237317ac%22/%3E%3Cpolygon%20points%3D%22520%2C40%20560%2C40%20554%2C34%20526%2C34%22%20fill%3D%22%23581184%22/%3E%3Crect%20x%3D%22529%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22560%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23a020f0%22/%3E%3Cpolygon%20points%3D%22560%2C0%20600%2C0%20594%2C6%20566%2C6%22%20fill%3D%22%23ca84f6%22/%3E%3Cpolygon%20points%3D%22560%2C0%20566%2C6%20566%2C34%20560%2C40%22%20fill%3D%22%23b451f3%22/%3E%3Cpolygon%20points%3D%22600%2C0%20600%2C40%20594%2C34%20594%2C6%22%20fill%3D%22%237317ac%22/%3E%3Cpolygon%20points%3D%22560%2C40%20600%2C40%20594%2C34%20566%2C34%22%20fill%3D%22%23581184%22/%3E%3Crect%20x%3D%22569%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22480%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23a020f0%22/%3E%3Cpolygon%20points%3D%22480%2C40%20520%2C40%20514%2C46%20486%2C46%22%20fill%3D%22%23ca84f6%22/%3E%3Cpolygon%20points%3D%22480%2C40%20486%2C46%20486%2C74%20480%2C80%22%20fill%3D%22%23b451f3%22/%3E%3Cpolygon%20points%3D%22520%2C40%20520%2C80%20514%2C74%20514%2C46%22%20fill%3D%22%237317ac%22/%3E%3Cpolygon%20points%3D%22480%2C80%20520%2C80%20514%2C74%20486%2C74%22%20fill%3D%22%23581184%22/%3E%3Crect%20x%3D%22489%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22520%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%232a5cff%22/%3E%3Cpolygon%20points%3D%22520%2C40%20560%2C40%20554%2C46%20526%2C46%22%20fill%3D%22%2389a5ff%22/%3E%3Cpolygon%20points%3D%22520%2C40%20526%2C46%20526%2C74%20520%2C80%22%20fill%3D%22%23587fff%22/%3E%3Cpolygon%20points%3D%22560%2C40%20560%2C80%20554%2C74%20554%2C46%22%20fill%3D%22%231e42b7%22/%3E%3Cpolygon%20points%3D%22520%2C80%20560%2C80%20554%2C74%20526%2C74%22%20fill%3D%22%2317328c%22/%3E%3Crect%20x%3D%22529%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22560%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%232a5cff%22/%3E%3Cpolygon%20points%3D%22560%2C40%20600%2C40%20594%2C46%20566%2C46%22%20fill%3D%22%2389a5ff%22/%3E%3Cpolygon%20points%3D%22560%2C40%20566%2C46%20566%2C74%20560%2C80%22%20fill%3D%22%23587fff%22/%3E%3Cpolygon%20points%3D%22600%2C40%20600%2C80%20594%2C74%20594%2C46%22%20fill%3D%22%231e42b7%22/%3E%3Cpolygon%20points%3D%22560%2C80%20600%2C80%20594%2C74%20566%2C74%22%20fill%3D%22%2317328c%22/%3E%3Crect%20x%3D%22569%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22600%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%232a5cff%22/%3E%3Cpolygon%20points%3D%22600%2C40%20640%2C40%20634%2C46%20606%2C46%22%20fill%3D%22%2389a5ff%22/%3E%3Cpolygon%20points%3D%22600%2C40%20606%2C46%20606%2C74%20600%2C80%22%20fill%3D%22%23587fff%22/%3E%3Cpolygon%20points%3D%22640%2C40%20640%2C80%20634%2C74%20634%2C46%22%20fill%3D%22%231e42b7%22/%3E%3Cpolygon%20points%3D%22600%2C80%20640%2C80%20634%2C74%20606%2C74%22%20fill%3D%22%2317328c%22/%3E%3Crect%20x%3D%22609%22%20y%3D%2249%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Crect%20x%3D%22600%22%20y%3D%220%22%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%232a5cff%22/%3E%3Cpolygon%20points%3D%22600%2C0%20640%2C0%20634%2C6%20606%2C6%22%20fill%3D%22%2389a5ff%22/%3E%3Cpolygon%20points%3D%22600%2C0%20606%2C6%20606%2C34%20600%2C40%22%20fill%3D%22%23587fff%22/%3E%3Cpolygon%20points%3D%22640%2C0%20640%2C40%20634%2C34%20634%2C6%22%20fill%3D%22%231e42b7%22/%3E%3Cpolygon%20points%3D%22600%2C40%20640%2C40%20634%2C34%20606%2C34%22%20fill%3D%22%2317328c%22/%3E%3Crect%20x%3D%22609%22%20y%3D%229%22%20width%3D%229.799999999999999%22%20height%3D%225.04%22%20rx%3D%222%22%20fill%3D%22%23fff%22%20opacity%3D%22.35%22/%3E%3Cpath%20d%3D%22M0%200H40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M0%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M40%200H80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M80%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M0%2080H40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M0%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M40%2080H80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M80%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M80%200H120%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M80%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M120%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M80%2080H120%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M80%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M120%2040H160%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M120%2080H160%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M160%2040H200%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M160%2080H200%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M200%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M120%200H160%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M120%2040H160%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M120%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M160%200H200%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M160%2040H200%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M200%200H240%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M240%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M200%2080H240%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M200%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M240%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M240%200H280%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M240%2040H280%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M240%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M280%200H320%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M280%2040H320%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M320%200H360%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M320%2040H360%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M360%200H400%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M360%2040H400%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M400%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M240%2040H280%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M240%2080H280%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M240%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M280%2040H320%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M280%2080H320%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M320%2040H360%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M320%2080H360%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M360%2040H400%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M360%2080H400%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M400%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M400%200H440%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M400%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M440%200H480%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M480%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M400%2080H440%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M400%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M440%2080H480%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M480%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M480%200H520%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M480%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M520%200H560%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M520%2040H560%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M560%200H600%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M560%2040H600%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M600%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M480%2080H520%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M480%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M520%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M520%2040H560%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M520%2080H560%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M520%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M560%2040H600%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M560%2080H600%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M600%2080H640%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M640%2040V80%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M600%200H640%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M600%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3Cpath%20d%3D%22M640%200V40%22%20stroke%3D%22%230b0b1a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22square%22/%3E%3C/svg%3E") center / 100% 100% no-repeat, #0b0b1a;
     box-shadow: 0 0 26px color-mix(in srgb, var(--tt-glow) 45%, transparent), 0 6px 0 4px #000;
   }
-  .tt-c4 .sudoku-controls{ margin-top:16px !important; }
+  .tt-c4 .sudoku-controls{ margin-top:16px; }
   @media (max-width:420px){ .tt-c4 #c4-reset-btn{ font-size:0.6rem; } }
   .tt-c4 #c4-reset-btn:hover{ filter:brightness(1.15); }
   .tt-c4 #c4-reset-btn:active{ transform:translateY(3px); }
@@ -2295,52 +2438,136 @@
   .vl-mid span.hot{ color:var(--vl-red); animation: vl-blink 0.6s steps(2) infinite; }
   @keyframes vl-blink{ 50%{ opacity:0.4; } }
   .vl-mid em{ font-style:normal; font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; color:rgba(236,232,225,0.55); }
+  /* Karte Haven von oben: dunkler Wald im Abendlicht, Steinwege, Dächer und blühende Bäume */
   .vl-map{
-    position:relative; width:fit-content; max-width:100%; padding:14px;
+    position:relative; width:fit-content; max-width:100%; padding:14px; overflow:hidden;
     background:
-      linear-gradient(rgba(236,232,225,0.04) 1px, transparent 1px) 0 0 / 22px 22px,
-      linear-gradient(90deg, rgba(236,232,225,0.04) 1px, transparent 1px) 0 0 / 22px 22px,
-      radial-gradient(ellipse at 50% 40%, #1e2d3b, #0f1923 75%);
+      radial-gradient(ellipse at 70% 0%, rgba(170,130,200,0.4), transparent 50%),
+      radial-gradient(ellipse at 0% 100%, rgba(255,170,90,0.12), transparent 45%),
+      radial-gradient(circle, rgba(120,170,90,0.10) 1px, transparent 1.5px) 0 0 / 7px 7px,
+      radial-gradient(circle, rgba(0,0,0,0.12) 1px, transparent 1.5px) 3px 4px / 9px 9px,
+      radial-gradient(circle at 20% 30%, #3d6a37 0 6%, transparent 18%),
+      radial-gradient(circle at 80% 65%, #3a6634 0 5%, transparent 16%),
+      radial-gradient(circle at 35% 85%, #2f5a2c 0 7%, transparent 20%),
+      radial-gradient(circle at 60% 20%, #35602f 0 5%, transparent 15%),
+      linear-gradient(160deg, #2c4a2a, #203b22 55%, #172c19);
     clip-path:polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
-    box-shadow:inset 0 0 0 1px rgba(236,232,225,0.12);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12), inset 0 0 60px rgba(0,0,0,0.55);
   }
+  /* leichter Nebel und fallende Blüten */
+  .vl-petals{
+    position:absolute; inset:0; z-index:2; pointer-events:none; overflow:hidden;
+    background-image:
+      radial-gradient(ellipse 3px 2px, #f2a6d8 90%, transparent), radial-gradient(ellipse 2.4px 1.6px, #fbd0ec 90%, transparent),
+      radial-gradient(ellipse at 15% 20%, rgba(220,210,240,0.16), transparent 40%), radial-gradient(ellipse at 85% 80%, rgba(220,210,240,0.12), transparent 40%);
+    background-size: 90px 80px, 61px 67px, 100% 100%, 100% 100%;
+    background-position: 10px 0, 40px 20px, 0 0, 0 0;
+    animation: vl-petals 14s linear infinite;
+  }
+  @keyframes vl-petals{ to{ background-position: 100px 80px, -21px 87px, 0 0, 0 0; } }
+  /* ziehende Wolkenschatten und warmes Abendlicht */
+  .vl-petals::before{
+    content:''; position:absolute; inset:-40%; pointer-events:none;
+    background: radial-gradient(ellipse 22% 14% at 30% 40%, rgba(5,10,20,0.28), transparent 70%), radial-gradient(ellipse 18% 12% at 70% 70%, rgba(5,10,20,0.22), transparent 70%);
+    animation: vl-clouds 38s linear infinite;
+  }
+  @keyframes vl-clouds{ from{ transform:translate(-25%, -10%); } to{ transform:translate(25%, 10%); } }
+  .vl-petals::after{
+    content:''; position:absolute; inset:0; pointer-events:none; mix-blend-mode:soft-light;
+    background: linear-gradient(215deg, rgba(255,190,110,0.75), rgba(255,160,90,0.2) 40%, rgba(70,60,140,0.35) 100%);
+  }
+  .vl-firefly{
+    position:absolute; width:3px; height:3px; border-radius:50%; background:#fff6a8;
+    box-shadow:0 0 4px 2px rgba(255,236,120,0.75), 0 0 10px 4px rgba(255,210,80,0.35);
+    animation: vl-fly 9s ease-in-out infinite alternate, vl-blink 2.5s ease-in-out infinite;
+  }
+  @keyframes vl-fly{ 0%{ transform:translate(0, 0); } 33%{ transform:translate(14px, -10px); } 66%{ transform:translate(-8px, -18px); } 100%{ transform:translate(10px, 6px); } }
+  @keyframes vl-blink{ 0%, 100%{ opacity:0.15; } 50%{ opacity:1; } }
+  .mill-board .vl-path-bed{ stroke:rgba(10,20,12,0.55); stroke-width:17; stroke-linecap:square; }
+  .mill-board .vl-path-stone{ stroke:#b7ae9b; stroke-width:12; stroke-linecap:square; }
+  .mill-board .vl-path-hi{ stroke:rgba(255,248,230,0.35); stroke-width:4; transform:translate(-3px, -3px); }
+  .mill-board .vl-path-seams{ stroke:rgba(60,52,40,0.35); stroke-width:12; stroke-dasharray:1 7; }
+  .mill-board .vl-path{ stroke:#fff8e8; stroke-width:2; stroke-linecap:square; opacity:0.85; }
+  .mill-board .vl-lamp{ animation: vl-lamp 2.2s ease-in-out infinite alternate; transform-box:fill-box; transform-origin:center; }
+  @keyframes vl-lamp{ 0%{ opacity:0.75; transform:scale(0.92); } 40%{ opacity:1; } 55%{ opacity:0.82; } 100%{ opacity:1; transform:scale(1.08); } }
+  .mill-board .vl-koi{ transform-box:view-box; animation: vl-koi 7s linear infinite; }
+  @keyframes vl-koi{ 0%{ transform:translate(0, 0); } 25%{ transform:translate(5px, 2px); } 50%{ transform:translate(0, 4px); } 75%{ transform:translate(-5px, 1px); } 100%{ transform:translate(0, 0); } }
+  /* Figuren-Ebene über der Karte, unter den Steinen */
+  .vl-props{ position:absolute; inset:14px; z-index:1; pointer-events:none; }
+  .vl-props svg{ display:block; width:100%; height:100%; overflow:visible; }
+  .vl-kj-head{ animation: vl-kj-scan 4s ease-in-out infinite; transition: transform 0.28s cubic-bezier(.3,1.4,.5,1); }
+  .vl-kj-head.aim{ animation:none; }
+  @keyframes vl-kj-scan{ 0%, 100%{ transform:rotate(-40deg); } 45%, 55%{ transform:rotate(55deg); } }
+  .vl-kj-flash{ opacity:0; }
+  .vl-kj-head.fire .vl-kj-flash{ animation: vl-flash 0.1s ease-out; }
+  .vl-kj-head.fire > rect:first-child{ animation: vl-recoil 0.1s ease-out; }
+  @keyframes vl-flash{ from{ opacity:1; } to{ opacity:0; } }
+  @keyframes vl-recoil{ from{ transform:translateX(-2px); } }
+  .vl-tracer{ stroke:#fff3a0; stroke-width:1.6; stroke-linecap:round; filter:drop-shadow(0 0 2px #ffcc33); animation: vl-tracer 0.25s ease-out forwards; }
+  @keyframes vl-tracer{ from{ opacity:1; } to{ opacity:0; stroke-width:0.4; } }
+  .vl-kj-eye{ animation: vl-kj-eye 1.2s steps(2) infinite; }
+  /* Chambers Sheriff liegt im Gras, ab und zu blitzt das Metall */
+  .vl-glint{ opacity:0; animation: vl-glint 4.5s ease-in-out infinite; }
+  @keyframes vl-glint{ 0%, 80%, 100%{ opacity:0; transform:translateX(-4px); } 88%{ opacity:0.9; } 95%{ opacity:0; transform:translateX(4px); } }
+  @keyframes vl-kj-eye{ 50%{ opacity:0.35; } }
+  .mill-board .vl-recon{ transform-box:fill-box; transform-origin:center; animation: vl-recon 1.8s ease-in-out infinite; }
+  @keyframes vl-recon{ 0%, 100%{ opacity:0.5; transform:scale(0.7); } 50%{ opacity:1; transform:scale(1.3); } }
+  .mill-board .vl-ripple{ animation: vl-ripple 3s ease-in-out infinite alternate; }
+  @keyframes vl-ripple{ to{ opacity:0.2; } }
+  .mill-board .vl-court{ fill:#a39d90; stroke:rgba(10,20,12,0.5); stroke-width:3; }
   .vl-map::before, .vl-map::after{ content:''; position:absolute; width:22px; height:22px; pointer-events:none; border:2px solid var(--vl-red); }
   .vl-map::before{ right:6px; top:6px; border-left:none; border-bottom:none; }
   .vl-map::after{ left:6px; bottom:6px; border-right:none; border-top:none; }
   .mill-board{ position:relative; width:340px; height:340px; max-width:100%; }
   .mill-board svg{ position:absolute; top:0; left:0; width:100%; height:100%; overflow:visible; }
-  .mill-board .vl-site{ font-family:'Oswald', sans-serif; font-weight:700; font-size:22px; fill:rgba(236,232,225,0.12); text-anchor:middle; }
-  .mill-board .vl-spike path{ fill:rgba(255,70,85,0.12); stroke:rgba(255,70,85,0.45); stroke-width:1.2; }
-  .mill-board .vl-spike .ln{ fill:none; stroke:rgba(255,70,85,0.6); }
-  .vl-spike{ animation: vl-spike 2.4s ease-in-out infinite; }
-  @keyframes vl-spike{ 50%{ opacity:0.45; } }
-  .mill-point{
-    position:absolute; width:32px; height:32px; margin-left:-16px; margin-top:-16px; padding:0;
-    background:none; border:none; cursor:pointer; display:grid; place-items:center;
+    .mill-point{
+    position:absolute; width:40px; height:40px; margin-left:-20px; margin-top:-20px; padding:0;
+    background:none; border:none; cursor:pointer; display:grid; place-items:center; z-index:3;
   }
   /* leerer Punkt: kleine Raute */
   .mill-point::before{
-    content:''; width:9px; height:9px; transform:rotate(45deg); background:var(--vl-ink); border:1.5px solid rgba(236,232,225,0.6);
+    content:''; width:10px; height:10px; transform:rotate(45deg); background:#2a2622; border:2px solid #fff6e4; box-shadow:0 1px 3px rgba(0,0,0,0.5);
     transition: transform 0.15s ease, border-color 0.15s ease;
   }
   .mill-point:hover::before{ transform:rotate(45deg) scale(1.4); border-color:var(--vl-bone); }
   /* Agenten: grosse leuchtende Raute mit Kern */
   /* Agenten-Stein: dunkle Raute mit Teamfarbe als Rahmen, Agentensymbol in der Mitte */
-  .mill-point.white::before, .mill-point.black::before{ width:23px; height:23px; border:2px solid; background:radial-gradient(circle, #1d2c3a, #0b131b); }
-  .mill-point.white::before{ border-color:var(--vl-cyan); box-shadow:0 0 12px rgba(47,230,200,0.7), inset 0 0 6px rgba(47,230,200,0.4); }
-  .mill-point.black::before{ border-color:var(--vl-red); box-shadow:0 0 12px rgba(255,70,85,0.7), inset 0 0 6px rgba(255,70,85,0.4); }
-  .vl-agent{ position:absolute; left:50%; top:50%; width:17px; height:17px; transform:translate(-50%, -50%); pointer-events:none; filter:drop-shadow(0 0 3px currentColor); }
-  .vl-agent svg{ display:block; width:100%; height:100%; }
+  /* Stein: grosse Raute ganz in Teamfarbe, darin ein dunkles Abzeichen mit dem Agentensymbol */
+  .mill-point.white::before, .mill-point.black::before{ width:32px; height:32px; border:2px solid #fff; }
+  .mill-point.white::before{ background:linear-gradient(135deg, #a5fff0, var(--vl-cyan) 40%, #0c9a85); box-shadow:0 0 0 2px #06463d, 0 0 14px rgba(47,230,200,0.85), 0 4px 6px rgba(0,0,0,0.5); }
+  .mill-point.black::before{ background:linear-gradient(135deg, #ffb3b9, var(--vl-red) 40%, #b0101f); box-shadow:0 0 0 2px #5a0710, 0 0 14px rgba(255,70,85,0.85), 0 4px 6px rgba(0,0,0,0.5); }
+  .vl-agent{
+    position:absolute; left:50%; top:50%; width:30px; height:30px; border-radius:50%; overflow:hidden;
+    transform:translate(-50%, -50%); pointer-events:none; background:radial-gradient(circle at 50% 35%, #2a3b4b, #0f1923);
+    box-shadow:0 0 0 2px #fff, 0 0 0 3.5px currentColor, 0 2px 6px rgba(0,0,0,0.6);
+  }
+  .vl-agent img{ display:block; width:100%; height:100%; object-fit:cover; user-select:none; }
   .mill-point.spawn .vl-agent{ animation: vl-agent-in 0.5s ease-out; }
   @keyframes vl-agent-in{ from{ opacity:0; transform:translate(-50%, -50%) scale(0.2); } }
-  .vl-feed-agent{ display:inline-block; width:12px; height:12px; } .vl-feed-agent svg{ width:100%; height:100%; display:block; }
+  .vl-feed-agent{ display:inline-block; width:16px; height:16px; border-radius:50%; overflow:hidden; box-shadow:0 0 0 1px currentColor; background:#0f1923; } .vl-feed-agent img{ width:100%; height:100%; display:block; object-fit:cover; }
   .mill-point.white:hover::before, .mill-point.black:hover::before{ transform:rotate(45deg) scale(1.12); }
   .mill-point.selected::before{ animation: vl-sel 0.8s ease-in-out infinite alternate; }
   @keyframes vl-sel{ from{ transform:rotate(45deg) scale(1.05); } to{ transform:rotate(45deg) scale(1.3); outline:2px solid var(--vl-bone); outline-offset:4px; } }
   .mill-point.spawn::before{ animation: vl-spawn 0.5s cubic-bezier(.2,1.6,.4,1); }
   @keyframes vl-spawn{ from{ transform:rotate(45deg) scale(2.4); opacity:0; } }
-  .mill-point.moved::before{ animation: vl-moved 0.45s ease-out; }
-  @keyframes vl-moved{ from{ transform:rotate(225deg) scale(0.4); } }
+  /* Bewegungs-Partikel der Agenten */
+  .vl-p{ position:absolute; width:8px; height:8px; margin:-4px 0 0 -4px; pointer-events:none; background:var(--c); animation: vl-p 0.75s ease-out forwards; }
+  @keyframes vl-p{ from{ transform:translate(0, 0) rotate(var(--r)) scale(1); opacity:0.95; } to{ transform:translate(var(--dx), var(--dy)) rotate(var(--r)) scale(0.2); opacity:0; } }
+  .vl-p.spark{ width:6px; height:6px; transform:rotate(45deg); box-shadow:0 0 6px var(--c); }
+  .vl-p.crystal{ width:6px; height:13px; margin:-6px 0 0 -3px; clip-path:polygon(50% 0, 100% 50%, 50% 100%, 0 50%); box-shadow:0 0 8px var(--c); opacity:0.9; }
+  .vl-p.smoke{ width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%; background:radial-gradient(circle, var(--c), transparent 70%); opacity:0.7; animation: vl-smoke 0.9s ease-out forwards; }
+  @keyframes vl-smoke{ from{ transform:scale(0.4); opacity:0.75; } to{ transform:translate(var(--dx), var(--dy)) scale(1.8); opacity:0; } }
+  .vl-p.wind{ width:18px; height:2px; margin:-1px 0 0 -9px; border-radius:2px; background:linear-gradient(90deg, transparent, #fff, var(--c)); animation: vl-wind 0.5s ease-out forwards; }
+  @keyframes vl-wind{ from{ transform:rotate(var(--r)) scaleX(0.3); opacity:1; } to{ transform:translate(var(--dx), var(--dy)) rotate(var(--r)) scaleX(1.4); opacity:0; } }
+  .vl-p.flame{ width:10px; height:10px; margin:-5px 0 0 -5px; border-radius:50% 0 50% 50%; background:radial-gradient(circle at 60% 40%, #fff3b0, #ffb020 40%, var(--c) 70%); box-shadow:0 0 8px #ff7a1a; }
+  .vl-p.star{ width:11px; height:11px; margin:-5px 0 0 -5px; clip-path:polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter:drop-shadow(0 0 4px var(--c)); background:#fff; }
+  .vl-p.star:nth-child(odd){ background:var(--c); }
+  .vl-p.drop{ width:7px; height:9px; margin:-4px 0 0 -3px; border-radius:50% 50% 50% 50% / 60% 60% 40% 40%; background:linear-gradient(180deg, #d8fbff, var(--c)); }
+  .vl-p.leaf{ width:10px; height:6px; margin:-3px 0 0 -5px; border-radius:0 100% 0 100%; background:var(--c); animation-duration:0.95s; }
+  .vl-p.hex{ width:12px; height:12px; margin:-6px 0 0 -6px; clip-path:polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%); background:transparent; box-shadow:inset 0 0 0 2px var(--c); outline:1px solid transparent; background:linear-gradient(var(--c), var(--c)) center / 2px 100% no-repeat; }
+  .vl-p.bolt{ width:4px; height:16px; margin:-8px 0 0 -2px; clip-path:polygon(60% 0, 0 55%, 45% 55%, 30% 100%, 100% 40%, 55% 40%); background:#fff; filter:drop-shadow(0 0 4px var(--c)) drop-shadow(0 0 2px var(--c)); animation-duration:0.4s; }
+  .vl-p.ring{ width:40px; height:40px; margin:-20px 0 0 -20px; border-radius:50%; background:none; border:2px solid var(--c); box-shadow:0 0 10px var(--c), inset 0 0 10px var(--c); animation: vl-ring 0.7s ease-out forwards; }
+  @keyframes vl-ring{ from{ transform:scale(0.3); opacity:1; } to{ transform:scale(2.2); opacity:0; } }
   /* Ziel zum Ausschalten: rotes Fadenkreuz */
   .mill-point.removable{ cursor:crosshair; }
   .mill-point.removable::after{
@@ -2403,59 +2630,259 @@
   .vl-mill .action-btn:hover{ filter:brightness(1.12); transform:translateY(-2px); }
   @media (max-width:400px){
     .mill-board{ width:280px; height:280px; }
-    .vl-map{ padding:10px; } .vl-fx{ inset:10px; }
-    .mill-point{ width:28px; height:28px; margin-left:-14px; margin-top:-14px; }
-    .mill-point.white::before, .mill-point.black::before{ width:20px; height:20px; } .vl-agent{ width:14px; height:14px; }
-    .vl-mid{ min-width:104px; padding:4px 6px; } .vl-mid span{ font-size:0.72rem; letter-spacing:0.06em; } .vl-side{ padding:6px 8px; gap:6px; } .vl-pips i{ width:6px; height:6px; } .vl-side b{ font-size:1.5rem; }
+    .vl-map{ padding:10px; } .vl-fx, .vl-props{ inset:10px; }
+    .mill-point{ width:34px; height:34px; margin-left:-17px; margin-top:-17px; }
+    .mill-point.white::before, .mill-point.black::before{ width:26px; height:26px; } .vl-agent{ width:25px; height:25px; }
+    .vl-mid{ min-width:104px; padding:4px 6px; } .vl-mid span{ font-size:0.72rem; letter-spacing:0.06em; } .vl-mid em{ white-space:nowrap; font-size:0.6rem; letter-spacing:0.08em; } .vl-side{ padding:6px 8px; gap:6px; } .vl-pips i{ width:6px; height:6px; } .vl-side b{ font-size:1.5rem; }
     .vl-banner b{ font-size:1.7rem; } .vl-banner.stay b{ font-size:2.3rem; }
   }
 
-  .bs-boards{ display:flex; gap:36px; flex-wrap:wrap; margin-bottom:10px; }
+  /* Schiffe versenken im Stil des klassischen Brettspiels: graue Plastikkonsolen, Lochraster, Stecker, Plastikschiffe */
+  .bsg{ --bs-navy:#0e2a4a; --bs-red:#d7262e; max-width:100%; }
+  .bsg-logo{ display:inline-flex; flex-direction:column; align-items:flex-start; margin-bottom:14px; line-height:0.95; transform:rotate(-2deg); }
+  .bsg-logo span, .bsg-logo b{ font-family:'Black Ops One', 'Oswald', sans-serif; font-weight:400; text-transform:uppercase; letter-spacing:0.04em; }
+  .bsg-logo span{ font-size:1.05rem; color:#fff; background:var(--bs-navy); padding:3px 10px; box-shadow:3px 3px 0 var(--bs-red); }
+  .bsg-logo b{ font-size:2rem; color:var(--bs-red); -webkit-text-stroke:1.5px #fff; paint-order:stroke fill; text-shadow:3px 3px 0 var(--bs-navy), 0 0 14px rgba(215,38,46,0.35); margin-top:2px; }
+  .bsg .mode-select{ background:#1d2a38; border:2px solid #3b4a5a; }
+  .bsg .mode-btn{ font-family:'Black Ops One', 'Oswald', sans-serif; letter-spacing:0.06em; }
+  .bsg .mode-btn.active{ background:var(--bs-red); color:#fff; }
+  .bsg .action-btn{
+    font-family:'Black Ops One', 'Oswald', sans-serif; letter-spacing:0.05em; text-transform:uppercase; font-size:0.85rem;
+    color:#fff; background:linear-gradient(180deg, #2b5a8c, var(--bs-navy)); border:2px solid #081a2e; border-radius:6px;
+    box-shadow:0 3px 0 #081a2e, inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .bsg .action-btn:hover{ filter:brightness(1.15); }
+  #bs-reset-btn{ background:linear-gradient(180deg, #ee4a50, #a8161d); border-color:#5e0b10; box-shadow:0 3px 0 #5e0b10, inset 0 1px 0 rgba(255,255,255,0.3); }
+  .bs-boards{ display:flex; gap:26px; flex-wrap:wrap; margin-bottom:10px; }
+  /* Konsole: graues Plastik mit Schrauben und Namensschild */
+  .bsg-console{
+    position:relative; padding:12px 12px 10px; border-radius:16px;
+    background:
+      radial-gradient(circle, rgba(255,255,255,0.06) 0.6px, transparent 1px) 0 0 / 4px 4px,
+      linear-gradient(160deg, #c3c8cd, #8d949b 55%, #6e757c);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(0,0,0,0.25), 0 8px 18px rgba(0,0,0,0.45);
+  }
+  .bsg-console::before, .bsg-console::after{
+    content:''; position:absolute; top:9px; width:7px; height:7px; border-radius:50%;
+    background:radial-gradient(circle at 35% 35%, #eef0f2, #6a7178 70%); box-shadow:inset 0 0 0 1px rgba(0,0,0,0.35);
+  }
+  .bsg-console::before{ left:9px; } .bsg-console::after{ right:9px; }
+  .bsg-console.target{ background: radial-gradient(circle, rgba(255,255,255,0.06) 0.6px, transparent 1px) 0 0 / 4px 4px, linear-gradient(160deg, #d8dde2, #9aa1a8 55%, #7a8188); }
   .bs-board-label{
-    font-family:'JetBrains Mono'; font-size:0.72rem; letter-spacing:0.1em;
-    text-transform:uppercase; color:rgba(var(--fg),0.6); margin-bottom:10px;
+    display:block; width:fit-content; margin:0 auto 9px; padding:3px 14px; border-radius:4px;
+    font-family:'Black Ops One', 'Oswald', sans-serif; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase;
+    color:#fff; background:var(--bs-navy); box-shadow:inset 0 -2px 0 rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.4);
   }
+  .bsg-console.target .bs-board-label{ background:var(--bs-red); }
   .bs-board{
-    display:grid; grid-template-columns:repeat(8, 34px); grid-auto-rows:34px;
-    gap:3px; background:var(--blue); padding:6px; border-radius:8px; width:fit-content;
+    position:relative; display:grid; grid-template-columns:16px repeat(10, 30px); grid-template-rows:16px repeat(10, 30px);
+    gap:0; padding:6px 8px 8px 4px; border-radius:8px; width:fit-content;
+    background:linear-gradient(180deg, #1c5f9e, #0f3f73); box-shadow:inset 0 3px 8px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.5);
   }
+  /* eigenes Meer: Wellen; Zielraster: dunkles Blau mit feinen Linien */
+  /* Wasser: tiefes Meerblau mit wandernden Wellen, Lichtreflexen und Glitzern */
+  #bs-board-a{ overflow:hidden; background: radial-gradient(ellipse at 22% 12%, rgba(170,235,255,0.45), transparent 50%), radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(2,20,45,0.45)), linear-gradient(180deg, #2f97cf, #1769a8 45%, #0c4278 80%, #082f58); }
+  #bs-board-b{ overflow:hidden; background: radial-gradient(ellipse at 70% 10%, rgba(80,140,200,0.25), transparent 60%), linear-gradient(180deg, #1e3550, #0c1a2b 60%, #08121e); }
+  /* Wellen: zwei Schichten Wellenlinien, die unterschiedlich schnell treiben und auf und ab wogen */
+  #bs-board-a::before, #bs-board-b::before{
+    content:''; position:absolute; inset:-60px; z-index:0; pointer-events:none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='26'%3E%3Cpath d='M0 13 Q10 5 20 13 T40 13 T60 13 T80 13' fill='none' stroke='white' stroke-opacity='0.28' stroke-width='1.6'/%3E%3Cpath d='M0 22 Q10 17 20 22 T40 22 T60 22 T80 22' fill='none' stroke='white' stroke-opacity='0.14' stroke-width='1.1'/%3E%3C/svg%3E") 0 0 / 80px 26px, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='40'%3E%3Cpath d='M0 20 Q16 10 32 20 T65 20 T97 20 T130 20' fill='none' stroke='white' stroke-opacity='0.16' stroke-width='2.2'/%3E%3Cpath d='M20 34 Q30 30 40 34' fill='none' stroke='white' stroke-opacity='0.3' stroke-width='1.2'/%3E%3Cpath d='M85 7 Q93 3 101 7' fill='none' stroke='white' stroke-opacity='0.35' stroke-width='1.2'/%3E%3C/svg%3E") 20px 8px / 130px 40px;
+    animation: bs-waves 7s linear infinite, bs-swell 3.2s ease-in-out infinite alternate;
+  }
+  #bs-board-b::before{ opacity:0.5; }
+  @keyframes bs-waves{ from{ background-position: 0 0, 20px 8px; } to{ background-position: -80px 26px, 150px 48px; } }
+  @keyframes bs-swell{ from{ transform:translateY(-3px) scaleY(1); } to{ transform:translateY(3px) scaleY(1.06); } }
+  /* Lichtnetz (Kaustik) wie Sonnenlicht im Wasser, dazu Glitzer */
+  #bs-board-a::after{
+    content:''; position:absolute; inset:0; z-index:0; pointer-events:none; mix-blend-mode:soft-light; opacity:0.85;
+    background:
+      radial-gradient(circle, rgba(255,255,255,0.95) 0 1px, transparent 1.6px) 13px 21px / 83px 71px,
+      radial-gradient(circle, rgba(255,255,255,0.9) 0 0.8px, transparent 1.4px) 47px 9px / 61px 97px,
+      radial-gradient(circle, rgba(255,255,255,0.85) 0 1px, transparent 1.5px) 29px 53px / 109px 59px,
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.018' numOctaves='2' seed='7' stitchTiles='stitch'%3E%3Canimate attributeName='baseFrequency' dur='14s' values='0.016%3B0.022%3B0.016' repeatCount='indefinite'/%3E%3C/feTurbulence%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1 0 0 0 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0 0 0 0.9 0 0 0 0.6 0 0 0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='220' height='220' filter='url%28%23f%29'/%3E%3C/svg%3E") 0 0 / 220px 220px;
+    animation: bs-glint 2.6s ease-in-out infinite alternate, bs-caust 22s linear infinite;
+  }
+  @keyframes bs-caust{ to{ background-position: 20px 25px, 40px 14px, 36px 49px, 220px 110px; } }
+  @keyframes bs-glint{ 0%{ opacity:0.2; background-position: 13px 21px, 47px 9px, 29px 53px; } 100%{ opacity:0.9; background-position: 20px 25px, 40px 14px, 36px 49px; } }
+  .bs-coord{ position:relative; z-index:1; }
+  /* Wal springt aus dem Wasser */
+  .bs-whale-layer{ position:absolute; inset:0; z-index:7; pointer-events:none; overflow:hidden; }
+  .bs-whale{ position:absolute; width:84px; height:44px; margin:-22px 0 0 -42px; transform-origin:50% 50%; }
+  .bs-whale{ left:0; top:0; will-change:transform, opacity; }
+  .bs-orca-shadow{ position:absolute; left:0; top:0; width:70px; height:22px; margin:-11px 0 0 -35px; border-radius:50% 40% 40% 50% / 50%; background:radial-gradient(ellipse, rgba(5,15,30,0.75), rgba(5,15,30,0.35) 55%, transparent 72%); filter:blur(2px); opacity:0; }
+  .bs-orca-drop{ position:absolute; width:3px; height:4px; margin:-2px 0 0 -1.5px; border-radius:50%; background:#eaf7ff; box-shadow:0 0 2px #fff; animation: bs-orca-drop 0.7s ease-in forwards; }
+  @keyframes bs-orca-drop{ to{ transform:translateY(22px); opacity:0; } }
+  .bs-whale-splash.big b{ left:-28px; top:-12px; width:56px; height:24px; border-width:2.5px; }
+  .bs-orca-foam{ position:absolute; width:60px; height:26px; margin:-13px 0 0 -30px; border-radius:50%; background:radial-gradient(ellipse, rgba(255,255,255,0.75), rgba(220,240,255,0.4) 45%, transparent 70%); animation: bs-orca-foam 2.1s ease-out forwards; }
+  @keyframes bs-orca-foam{ from{ transform:scale(0.4); opacity:1; } 30%{ transform:scale(1.1); } to{ transform:scale(1.4); opacity:0; } }
+  .bso-drips circle{ fill:#eaf7ff; animation: bso-drip 0.5s linear infinite; }
+  .bso-drips circle:nth-child(2n){ animation-delay:-0.25s; }
+  @keyframes bso-drip{ from{ transform:translateY(0); opacity:1; } to{ transform:translateY(7px); opacity:0; } }
+  .bs-whale svg{ display:block; width:100%; height:100%; overflow:visible; filter:drop-shadow(2px 4px 3px rgba(0,20,50,0.45)); }
+  .bs-whale-splash{ position:absolute; width:0; height:0; }
+  .bs-whale-splash b{ position:absolute; left:-18px; top:-9px; width:36px; height:18px; border-radius:50%; border:2px solid rgba(235,248,255,0.9); animation: bs-wring 1s ease-out forwards; }
+  .bs-whale-splash b:nth-child(2){ animation-delay:0.18s; }
+  @keyframes bs-wring{ from{ transform:scale(0.3); opacity:1; } to{ transform:scale(1.9); opacity:0; } }
+  .bs-whale-splash s{ position:absolute; left:-2px; top:-2px; width:4px; height:5px; border-radius:50%; background:#f2fbff; box-shadow:0 0 3px #fff; animation: bs-drop 0.9s cubic-bezier(.3,.6,.6,1) forwards; }
+  .bs-whale-spout{ position:absolute; width:0; height:0; }
+  .bs-whale-spout s{ position:absolute; left:-2px; top:-2px; width:4px; height:4px; border-radius:50%; background:rgba(240,250,255,0.9); animation: bs-drop 0.8s ease-out forwards; }
+  .bs-coord{ display:grid; place-items:center; font-family:'Black Ops One', 'Oswald', sans-serif; font-size:0.62rem; color:rgba(255,255,255,0.75); text-shadow:0 1px 0 rgba(0,0,0,0.6); }
   .bs-cell{
-    background:rgba(255,255,255,0.15); border:none; border-radius:3px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; font-size:0.9rem;
-    transition: background 0.15s ease;
+    position:relative; z-index:1; padding:0; border:none; cursor:pointer;
+    background:
+      radial-gradient(circle at 50% 50%, #030b14 0 2.6px, #0b2238 2.6px 3.6px, rgba(0,0,0,0.55) 3.6px 4.2px, rgba(255,255,255,0.4) 4.2px 4.9px, transparent 5.3px),
+      linear-gradient(135deg, rgba(255,255,255,0.10), transparent 45%, rgba(0,0,0,0.14));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,0.16), inset -1px -1px 0 rgba(0,0,0,0.3);
+    transition: background-color 0.15s ease;
   }
-  .bs-cell:hover:not(:disabled){ background:rgba(255,255,255,0.3); }
+  #bs-board-b .bs-cell{ box-shadow:inset 1px 1px 0 rgba(140,200,255,0.14), inset -1px -1px 0 rgba(0,0,0,0.45); }
   .bs-cell:disabled{ cursor:default; }
-  .bs-cell.miss{ background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.4); }
-  .bs-cell.hit{ background:var(--brick); color:#fff; }
-  .bs-cell.sunk{ background:#5c1a15; color:#fff; }
-  .bs-cell.ship-placed{ background:var(--teal); }
-  .bs-cell.selecting{ background:var(--amber); }
-
-  .bs-fleet-status{
-    display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;
+  .bs-cell:hover:not(:disabled){ background-color:rgba(255,255,255,0.18); }
+  #bs-board-b .bs-cell:hover:not(:disabled){ cursor:crosshair; background-color:rgba(255,70,70,0.22); box-shadow:inset 0 0 0 2px rgba(255,90,90,0.8); }
+  .bs-cell.selecting{ background-color:rgba(255,210,80,0.55); box-shadow:inset 0 0 0 2px #ffd250; }
+  /* Plastikschiffe */
+  .bs-ship{ position:relative; z-index:2; pointer-events:none; padding:1px; }
+  .bs-ship:not(.sunk) svg{ animation: bs-bob 3.4s ease-in-out var(--bob, 0s) infinite alternate; }
+  @keyframes bs-bob{ 0%{ transform:translate(0, 0) rotate(-0.6deg); } 100%{ transform:translate(0.4px, 0.8px) rotate(0.6deg); } }
+  .bs-fsmoke{ position:absolute; width:10px; height:10px; margin:-5px 0 0 -5px; border-radius:50%; background:radial-gradient(circle, rgba(25,25,28,0.9), rgba(30,30,34,0.5) 55%, transparent 72%); animation: bs-fsmoke 2.4s ease-out infinite; }
+  .bs-fsmoke.two{ animation-delay:-0.8s; } .bs-fsmoke.three{ animation-delay:-1.6s; }
+  @keyframes bs-fsmoke{ 0%{ transform:translate(0, 0) scale(0.4); opacity:0; } 15%{ opacity:0.9; } 100%{ transform:translate(-16px, -12px) scale(2.4); opacity:0; } }
+  /* brennende Treffer */
+  .bs-fire{ position:relative; z-index:4; pointer-events:none; place-self:center; width:0; height:0; }
+  .bs-fire b{ position:absolute; left:-6px; top:-25px; width:12px; height:17px; border-radius:50% 50% 45% 45% / 65% 65% 35% 35%; background:radial-gradient(ellipse at 50% 75%, #fff6c0, #ffb02e 35%, #ff4a1a 65%, transparent 72%); transform-origin:50% 100%; animation: bs-flame 0.45s ease-in-out var(--d, 0s) infinite alternate; mix-blend-mode:screen; }
+  .bs-fire b:nth-child(2){ left:-11px; top:-20px; width:9px; height:13px; animation-delay:calc(var(--d, 0s) - 0.15s); }
+  .bs-fire b:nth-child(3){ left:2px; top:-21px; width:9px; height:14px; animation-delay:calc(var(--d, 0s) - 0.3s); }
+  @keyframes bs-flame{ from{ transform:scale(0.85, 0.9) skewX(-4deg); opacity:0.85; } to{ transform:scale(1.05, 1.15) skewX(5deg); opacity:1; } }
+  .bs-fire u{ position:absolute; left:-6px; top:-30px; width:12px; height:12px; border-radius:50%; background:radial-gradient(circle, rgba(50,50,52,0.7), transparent 70%); animation: bs-fsmoke 2s ease-out var(--d, 0s) infinite; }
+  /* anfliegende Granate */
+  .bs-shell{ position:relative; z-index:5; pointer-events:none; place-self:center; width:0; height:0; }
+  .bs-shell::before{ content:''; position:absolute; left:0; top:0; width:46px; height:3px; margin-top:-1.5px; transform-origin:0 50%; transform:rotate(-140deg);
+    background:linear-gradient(90deg, #fff 0 4px, #ffd46a 6px, rgba(255,140,40,0.6) 40%, transparent); border-radius:2px; animation: bs-shell 0.3s ease-in forwards; }
+  @keyframes bs-shell{ 0%{ transform:rotate(-140deg) translateX(70px); opacity:1; } 90%{ opacity:1; } 100%{ transform:rotate(-140deg) translateX(0); opacity:0; } }
+  .bs-ship svg{ display:block; width:100%; height:100%; filter:drop-shadow(2px 3px 2px rgba(0,10,30,0.45)) drop-shadow(0 0 1px rgba(0,0,0,0.4)); }
+  /* Wrack: liegt zerbrochen unter Wasser (dunkel, bläulich, Spalt in der Mitte), darüber ein Ölfleck */
+  .bs-ship.sunk svg{ opacity:0.75; filter:brightness(0.7) sepia(0.3) hue-rotate(170deg) saturate(1.5) blur(0.5px) drop-shadow(0 0 3px rgba(120,190,255,0.35));
+    -webkit-mask:linear-gradient(90deg, #000 44%, transparent 47% 53%, #000 56%); mask:linear-gradient(90deg, #000 44%, transparent 47% 53%, #000 56%); }
+  .bs-ship.sunk.vert svg{ -webkit-mask:linear-gradient(180deg, #000 44%, transparent 47% 53%, #000 56%); mask:linear-gradient(180deg, #000 44%, transparent 47% 53%, #000 56%); }
+  .bs-oil{ position:absolute; inset:15% 10%; border-radius:50%; background:radial-gradient(ellipse, rgba(20,20,25,0.55), rgba(90,40,120,0.25) 45%, rgba(40,150,140,0.18) 60%, transparent 72%); filter:blur(1px); }
+  .bs-wbub{ position:absolute; left:35%; top:50%; width:4px; height:4px; border-radius:50%; border:1px solid rgba(220,245,255,0.8); animation: bs-wbub 3.2s ease-out infinite; }
+  .bs-wbub.two{ left:62%; animation-delay:-1.6s; }
+  @keyframes bs-wbub{ 0%{ transform:scale(0.4); opacity:0; } 20%{ opacity:1; } 60%{ transform:scale(1.4); opacity:0.8; } 70%, 100%{ transform:scale(2.4); opacity:0; } }
+  /* Zerbrechen und Sinken */
+  .bs-sinker{ position:absolute; }
+  .bs-half{ position:absolute; overflow:hidden; }
+  .bs-half-in{ position:absolute; left:0; top:0; padding:1px; box-sizing:border-box; }
+  .bs-half-in svg{ display:block; width:100%; height:100%; filter:drop-shadow(2px 3px 2px rgba(0,10,30,0.45)); }
+  .bs-sinker{ transform-style:preserve-3d; }
+  .bs-water{ position:absolute; inset:0; opacity:0; background:linear-gradient(180deg, rgba(40,110,170,0.9), rgba(10,50,100,0.95)); mix-blend-mode:multiply; pointer-events:none; }
+  .bs-smokepuff{ position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:radial-gradient(circle, rgba(55,55,58,0.85), rgba(40,40,42,0.45) 55%, transparent 72%); animation: bs-smokepuff 1.7s ease-out forwards; }
+  @keyframes bs-smokepuff{ 0%{ transform:translate(0, 0) scale(0.4); opacity:0.9; } 100%{ transform:translate(10px, -34px) scale(2.6); opacity:0; } }
+  .bs-break{ position:absolute; width:10px; top:0; bottom:0; background:radial-gradient(ellipse at 50% 50%, #fff3b0, #ff9a2e 35%, rgba(255,70,20,0.6) 60%, transparent 75%); animation: bs-burn 0.25s steps(2) infinite alternate; }
+  .bs-break.b{ right:-5px; } .bs-break.a{ left:-5px; }
+  .bs-half.vert .bs-break{ width:auto; height:10px; left:0; right:0; top:auto; bottom:auto; }
+  .bs-half.vert .bs-break.b{ bottom:-5px; } .bs-half.vert .bs-break.a{ top:-5px; }
+  @keyframes bs-burn{ to{ opacity:0.6; transform:scale(1.2); } }
+  .bs-bubble{ position:absolute; width:var(--s); height:var(--s); margin:calc(var(--s) / -2) 0 0 calc(var(--s) / -2); border-radius:50%; border:1px solid rgba(225,245,255,0.9); background:radial-gradient(circle at 35% 35%, rgba(255,255,255,0.8) 0 20%, transparent 40%); animation: bs-bubble 1.2s ease-out forwards; }
+  @keyframes bs-bubble{ 0%{ transform:scale(0.3); opacity:0; } 25%{ opacity:1; } 100%{ transform:translateY(-10px) scale(1.4); opacity:0; } }
+  .bs-sinkring{ position:absolute; transform:translate(-50%, -50%); border-radius:50%; border:2px solid rgba(220,245,255,0.85); animation: bs-sinkring 1.5s ease-out forwards; }
+  @keyframes bs-sinkring{ from{ transform:translate(-50%, -50%) scale(0.4); opacity:1; } to{ transform:translate(-50%, -50%) scale(1.5); opacity:0; } }
+  /* Stecker: rot = Treffer, weiss = daneben */
+  /* Stecker: kleiner Plastikzylinder mit runder Kappe, schräg von oben gesehen, mit Schatten */
+  .bs-peg{ position:relative; z-index:3; pointer-events:none; place-self:center; width:12px; height:17px; margin-top:-9px; --p1:#ff7a7f; --p2:#d7262e; --p3:#7d0f14; }
+  .bs-peg.white{ --p1:#ffffff; --p2:#dfe3e8; --p3:#8e969f; }
+  .bs-peg::before{ content:''; position:absolute; left:1px; top:5px; width:10px; height:11px; border-radius:0 0 5px 5px / 0 0 3px 3px;
+    background:linear-gradient(90deg, var(--p3), var(--p2) 35%, var(--p1) 55%, var(--p2) 75%, var(--p3)); box-shadow:3px 3px 3px rgba(0,0,0,0.45); }
+  .bs-peg::after{ content:''; position:absolute; left:0; top:0; width:12px; height:10px; border-radius:50%;
+    background:radial-gradient(ellipse at 40% 35%, #fff 0 12%, var(--p1) 30%, var(--p2) 65%, var(--p3)); box-shadow:inset 0 -1px 1px rgba(0,0,0,0.35); }
+  .bs-peg.fresh{ animation: bs-peg-in 0.45s cubic-bezier(.3,1.6,.5,1); }
+  @keyframes bs-peg-in{ from{ transform:translateY(-28px) scale(1.5); opacity:0; } 70%{ transform:translateY(2px); } }
+  /* Effekte: Wasserspritzer und Explosion */
+  .bs-fx{ position:relative; z-index:4; pointer-events:none; place-self:center; width:0; height:0; }
+  .bs-fx.splash b{ position:absolute; left:-16px; top:-16px; width:32px; height:32px; border-radius:50%; border:2px solid rgba(220,245,255,0.95); animation: bs-ring 0.8s ease-out forwards; }
+  .bs-fx.splash b:nth-child(2){ animation-delay:0.15s; }
+  /* Wassersäule: Tropfen fliegen hoch und fallen zurück */
+  .bs-fx.splash s{ position:absolute; left:-2px; top:-2px; width:4px; height:5px; border-radius:50% 50% 50% 50% / 60% 60% 40% 40%; background:linear-gradient(180deg, #ffffff, #bfe6ff); box-shadow:0 0 2px rgba(255,255,255,0.8); animation: bs-drop 0.75s cubic-bezier(.3,.6,.6,1) forwards; }
+  @keyframes bs-drop{ 0%{ transform:translate(0, 0) scale(0.6); opacity:1; } 45%{ transform:translate(calc(var(--x) * 0.6), calc(var(--h) * -1)) scale(1); } 100%{ transform:translate(var(--x), 4px) scale(0.5); opacity:0; } }
+  .bs-fx.splash b:nth-child(3){ animation-delay:0.3s; border-color:rgba(150,210,255,0.7); }
+  /* Explosion: Rauchwolken steigen auf, Funken fliegen */
+  .bs-fx.boom u{ position:absolute; left:-9px; top:-9px; width:18px; height:18px; border-radius:50%; background:radial-gradient(circle, rgba(60,60,60,0.85), rgba(40,40,40,0.5) 55%, transparent 72%); animation: bs-puff 1.4s ease-out 0.15s forwards; opacity:0; }
+  .bs-fx.boom u:nth-of-type(2){ --sx:7px; animation-delay:0.25s; } .bs-fx.boom u:nth-of-type(3){ --sx:-6px; animation-delay:0.35s; }
+  @keyframes bs-puff{ 0%{ transform:translate(0, 0) scale(0.5); opacity:0.9; } 100%{ transform:translate(var(--sx, 0px), -30px) scale(2.2); opacity:0; } }
+  .bs-fx.boom s{ position:absolute; left:-1.5px; top:-1.5px; width:3px; height:3px; border-radius:50%; background:#ffe9a0; box-shadow:0 0 4px #ffb02e; animation: bs-sparkfly 0.6s ease-out forwards; }
+  @keyframes bs-sparkfly{ from{ transform:rotate(var(--a)) translateX(0); opacity:1; } to{ transform:rotate(var(--a)) translateX(var(--d)) translateY(6px); opacity:0; } }
+  @keyframes bs-ring{ from{ transform:scale(0.2); opacity:1; } to{ transform:scale(1.6); opacity:0; } }
+  .bs-fx.boom b{ position:absolute; left:-7px; top:-7px; width:14px; height:14px; border-radius:50%; background:radial-gradient(circle, #fff6c0, #ffb02e 45%, #ff4a1a 70%, transparent 72%); animation: bs-boom 0.7s ease-out forwards; }
+  .bs-fx.boom b:nth-child(1){ --dx:0px; --dy:0px; animation-name: bs-flash; }
+  .bs-fx.boom b:nth-child(2){ --dx:16px; --dy:-12px; } .bs-fx.boom b:nth-child(3){ --dx:-15px; --dy:-10px; }
+  .bs-fx.boom b:nth-child(4){ --dx:12px; --dy:14px; } .bs-fx.boom b:nth-child(5){ --dx:-13px; --dy:13px; } .bs-fx.boom b:nth-child(6){ --dx:0px; --dy:-19px; }
+  @keyframes bs-boom{ from{ transform:translate(0, 0) scale(0.4); opacity:1; } to{ transform:translate(var(--dx), var(--dy)) scale(1.1); opacity:0; } }
+  @keyframes bs-flash{ 0%{ transform:scale(0.5); opacity:1; } 40%{ transform:scale(3.2); opacity:1; } 100%{ transform:scale(3.8); opacity:0; } }
+  /* Ansage über den Konsolen */
+  .bsg-banner{ position:absolute; left:0; right:0; top:42%; z-index:6; display:flex; justify-content:center; pointer-events:none; }
+  .bsg-banner span{
+    font-family:'Black Ops One', 'Oswald', sans-serif; font-size:2.3rem; text-transform:uppercase; letter-spacing:0.06em; color:#fff;
+    -webkit-text-stroke:2px var(--bs-navy); paint-order:stroke fill; text-shadow:4px 4px 0 var(--bs-navy);
+    animation: bs-banner 1.1s cubic-bezier(.2,1.4,.4,1) forwards;
   }
-  .bs-fleet-ship{
-    font-family:'JetBrains Mono'; font-size:0.72rem;
-    background:var(--board-2); color:rgba(255,255,255,0.75);
-    border:1px solid var(--line); border-radius:6px; padding:4px 9px;
-  }
-  .bs-fleet-ship.sunk{
-    background:rgba(193,68,61,0.25); color:rgba(255,255,255,0.4);
-    text-decoration:line-through; border-color:rgba(193,68,61,0.4);
-  }
-
-  .ship-select{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+  .bsg-banner .hit, .bsg-banner .sunk, .bsg-banner .lose{ color:#ff5a5f; }
+  .bsg-banner .miss{ color:#bfe6ff; font-size:1.8rem; }
+  .bsg-banner .sunk, .bsg-banner .win, .bsg-banner .lose{ font-size:2.8rem; }
+  .bsg-banner .win{ color:#ffd84a; }
+  @keyframes bs-banner{ 0%{ transform:scale(0.3) rotate(-8deg); opacity:0; } 20%{ transform:scale(1.15) rotate(-3deg); opacity:1; } 80%{ transform:scale(1) rotate(-3deg); opacity:1; } 100%{ transform:scale(1.05) rotate(-3deg); opacity:0; } }
+  /* Kampfjet-Angriff beim Versenken */
+  .bs-air{ position:absolute; inset:0; z-index:8; pointer-events:none; overflow:hidden; }
+  .bs-jet{ position:absolute; left:0; top:0; width:0; height:0; }
+  .bs-jet svg{ position:absolute; left:-44px; top:-34px; width:88px; height:68px; display:block; }
+  .bs-jet-body svg{ filter:drop-shadow(0 2px 2px rgba(0,0,0,0.4)); }
+  .bs-jet-shadow svg{ transform:translate(-26px, 34px) scale(0.8); filter:brightness(0) blur(2.5px); opacity:0.35; }
+  .bsj-burn{ animation: bsj-burn 0.08s steps(2) infinite; transform-origin:-30px 0; transform-box:view-box; }
+  @keyframes bsj-burn{ 50%{ transform:scaleX(0.7); opacity:0.75; } }
+  .bs-bomb{ position:absolute; left:0; top:0; width:0; height:0; }
+  .bs-bomb::before{ content:''; position:absolute; left:-9px; top:-3.5px; width:18px; height:7px; border-radius:4px 7px 7px 4px; background:linear-gradient(180deg, #6c757f, #2b3138); box-shadow:0 0 0 1px #1a1e23; }
+  .bs-bomb::after{ content:''; position:absolute; left:-12px; top:-5px; width:4px; height:10px; background:#3a424b; clip-path:polygon(0 0, 100% 30%, 100% 70%, 0 100%); }
+  .bs-tracer{ position:absolute; height:2px; margin-top:-1px; transform-origin:0 50%; background:linear-gradient(90deg, rgba(255,240,160,0), #fff3a0 60%, #fff); box-shadow:0 0 6px #ffcc33; animation: bs-tracer 0.35s ease-out forwards; }
+  @keyframes bs-tracer{ from{ opacity:1; } to{ opacity:0; } }
+  .bs-spark{ position:absolute; width:12px; height:12px; margin:-6px 0 0 -6px; border-radius:50%; background:radial-gradient(circle, #fff, #ffcc33 40%, transparent 70%); animation: bs-flashsmall 0.35s ease-out forwards; }
+  @keyframes bs-flashsmall{ from{ transform:scale(0.4); } to{ transform:scale(1.8); opacity:0; } }
+  .bs-bigboom{ position:absolute; width:0; height:0; }
+  .bs-bigboom b{ position:absolute; left:-18px; top:-18px; width:36px; height:36px; border-radius:50%; background:radial-gradient(circle, #fffbe0, #ffc23a 35%, #ff5a1a 62%, rgba(120,30,10,0.6) 75%, transparent 78%); animation: bs-ball 1.1s ease-out forwards; }
+  .bs-bigboom b:nth-child(1){ --dx:0px; --dy:0px; --s:2.6; } .bs-bigboom b:nth-child(2){ --dx:22px; --dy:-10px; --s:1.6; animation-delay:0.06s; }
+  .bs-bigboom b:nth-child(3){ --dx:-22px; --dy:-8px; --s:1.7; animation-delay:0.1s; } .bs-bigboom b:nth-child(4){ --dx:14px; --dy:18px; --s:1.5; animation-delay:0.14s; }
+  .bs-bigboom b:nth-child(5){ --dx:-16px; --dy:16px; --s:1.4; animation-delay:0.18s; } .bs-bigboom b:nth-child(6){ --dx:0px; --dy:-26px; --s:1.5; animation-delay:0.08s; } .bs-bigboom b:nth-child(7){ --dx:30px; --dy:6px; --s:1.2; animation-delay:0.2s; }
+  @keyframes bs-ball{ 0%{ transform:translate(0, 0) scale(0.2); opacity:1; } 35%{ opacity:1; } 100%{ transform:translate(var(--dx), var(--dy)) scale(var(--s)); opacity:0; } }
+  .bs-bigboom i{ position:absolute; left:-30px; top:-30px; width:60px; height:60px; border-radius:50%; border:3px solid rgba(255,240,200,0.9); animation: bs-shock 0.7s ease-out forwards; }
+  .bs-bigboom i:nth-of-type(2){ border-color:rgba(200,235,255,0.7); animation-delay:0.12s; }
+  @keyframes bs-shock{ from{ transform:scale(0.2); opacity:1; } to{ transform:scale(2.6); opacity:0; } }
+  .bs-bigboom em{ position:absolute; left:-3px; top:-3px; width:6px; height:6px; background:#2b2f35; clip-path:polygon(0 0, 100% 30%, 70% 100%); animation: bs-debris 0.9s cubic-bezier(.2,.7,.4,1) forwards; }
+  @keyframes bs-debris{ from{ transform:rotate(var(--a)) translateX(0) rotate(0); opacity:1; } to{ transform:rotate(var(--a)) translateX(var(--d)) rotate(400deg); opacity:0; } }
+  .bs-board.bs-shake{ animation: bs-shake 0.45s ease-out; }
+  @keyframes bs-shake{ 20%{ transform:translate(-4px, 2px); } 40%{ transform:translate(4px, -2px); } 60%{ transform:translate(-3px, -1px); } 80%{ transform:translate(2px, 1px); } }
+  /* Flotten-Ablage unter der Konsole */
+  .bs-fleet-status{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; align-items:center; margin-top:9px; padding:5px 6px; border-radius:6px; background:rgba(0,0,0,0.2); box-shadow:inset 0 2px 4px rgba(0,0,0,0.35); }
+  .bs-fleet-ship{ display:block; width:calc(var(--len) * 11px); height:11px; }
+  .bs-pegpile{ position:relative; width:70px; height:20px; margin-left:4px; border-radius:4px; background:rgba(0,0,0,0.25); box-shadow:inset 0 2px 3px rgba(0,0,0,0.45); }
+  .bs-pegpile i{ position:absolute; width:5px; height:5px; border-radius:50%; box-shadow:1px 1.5px 1px rgba(0,0,0,0.5); }
+  .bs-pegpile i.w{ background:radial-gradient(circle at 40% 35%, #fff, #dfe3e8 55%, #8e969f); }
+  .bs-pegpile i.r{ background:radial-gradient(circle at 40% 35%, #ff9a9e, #d7262e 55%, #7d0f14); }
+  .bs-fleet-ship svg{ display:block; width:100%; height:100%; }
+  .bs-fleet-ship.sunk{ opacity:0.55; position:relative; }
+  .bs-fleet-ship.sunk::after{ content:''; position:absolute; left:-2px; right:-2px; top:50%; height:2px; background:var(--bs-red); transform:rotate(-8deg); }
+  .bsg-status{ display:flex; align-items:center; gap:10px; width:fit-content; max-width:100%; margin-top:12px; padding:7px 14px 7px 10px; border-radius:6px; background:#0b1f12; border:2px solid #24452d; box-shadow:inset 0 0 12px rgba(0,0,0,0.6); }
+  .bsg-status i{ width:9px; height:9px; flex-shrink:0; border-radius:50%; background:#3dff7a; box-shadow:0 0 8px #3dff7a; animation: bs-radar 1.4s ease-in-out infinite; }
+  @keyframes bs-radar{ 50%{ opacity:0.3; } }
+  .bsg-status #bs-status{ margin:0; padding:0; font-family:'VT323', monospace; font-size:1.15rem; color:#7dff9e; text-shadow:0 0 6px rgba(61,255,122,0.5); }
+  .ship-select{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
   .ship-chip{
-    background:var(--board-2); color:#fff; border:2px solid var(--line);
-    border-radius:8px; padding:10px 16px; font-family:'JetBrains Mono'; font-size:0.8rem;
-    cursor:pointer; transition: all 0.15s ease;
+    display:flex; align-items:center; gap:8px; padding:6px 12px; cursor:pointer;
+    font-family:'Black Ops One', 'Oswald', sans-serif; font-size:0.78rem; letter-spacing:0.04em; color:#e8eef5;
+    background:linear-gradient(180deg, #2a3a4c, #18222e); border:2px solid #3b4a5a; border-radius:8px;
   }
-  .ship-chip:hover{ border-color:rgba(255,255,255,0.4); }
-  .ship-chip.selected{ border-color:var(--teal); background:rgba(31,182,166,0.2); color:var(--teal); font-weight:700; }
-  .ship-chip.placed{ opacity:0.3; text-decoration:line-through; cursor:default; }
+  .ship-chip-svg{ display:block; width:calc(var(--len) * 14px); height:14px; } .ship-chip-svg svg{ display:block; width:100%; height:100%; }
+  .ship-chip:hover{ border-color:#7f93a8; }
+  .ship-chip.selected{ border-color:#ffd250; background:linear-gradient(180deg, #3b4f66, #22303f); color:#ffd250; box-shadow:0 0 10px rgba(255,210,80,0.35); }
   @media (max-width:480px){
-    .bs-board{ grid-template-columns:repeat(8, 28px); grid-auto-rows:28px; }
+    .bs-board{ grid-template-columns:13px repeat(10, 26px); grid-template-rows:13px repeat(10, 26px); padding:4px 5px 5px 2px; }
+    .bsg-console{ padding:10px 8px 8px; }
   }
   @media (max-width:420px){
     .chess-board{ grid-template-columns:repeat(8, 38px); grid-auto-rows:38px; }
@@ -2732,9 +3159,9 @@
   }
   .gameboy .mode-btn:hover, .gameboy .diff-btn:hover{ color:#0f380f; }
   .gameboy .mode-btn.active, .gameboy .diff-btn.active{ background:#0f380f; color:#9bbc0f; font-weight:400; }
-  .gameboy .mode-icon, .gameboy .cat-icon{ width:22px !important; height:22px !important; filter: grayscale(1) sepia(1) hue-rotate(40deg) saturate(2.4) brightness(0.75) !important; }
-  .gameboy .mode-btn.active .mode-icon, .gameboy .diff-btn.active .cat-icon{ filter: grayscale(1) sepia(1) hue-rotate(40deg) saturate(2) brightness(1.25) !important; }
-  .gameboy #conv-cat-select{ margin-bottom:10px !important; }
+  .gameboy .mode-icon, .gameboy .cat-icon{ width:22px !important; height:22px !important; filter: grayscale(1) sepia(1) hue-rotate(40deg) saturate(2.4) brightness(0.75); }
+  .gameboy .mode-btn.active .mode-icon, .gameboy .diff-btn.active .cat-icon{ filter: grayscale(1) sepia(1) hue-rotate(40deg) saturate(2) brightness(1.25); }
+  .gameboy #conv-cat-select{ margin-bottom:10px; }
   .gameboy .conv-row{ gap:6px; margin-bottom:6px; }
   .gameboy .conv-row input, .gameboy .conv-row select{
     background:#8bac0f; color:#0f380f; border:2px solid #306230; border-radius:2px;
@@ -3207,3 +3634,13 @@
     #board-time .analog-clock{ width:58px; height:58px; }
     #board-time .city-card{ gap:12px; }
   }
+  /* Knopf ganz unten: zurück nach oben */
+  .to-top-btn{
+    display:flex; align-items:center; gap:8px; margin:40px auto 10px; padding:10px 20px; cursor:pointer;
+    border:1px solid var(--line); border-radius:999px; background:var(--board-2); color:rgba(var(--fg),0.85);
+    font-family:'JetBrains Mono'; font-size:0.78rem; letter-spacing:0.08em; text-transform:uppercase;
+    transition:transform 0.15s ease, border-color 0.15s ease;
+  }
+  .to-top-btn:hover{ transform:translateY(-3px); border-color:var(--teal); }
+  .to-top-btn svg{ width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+  .cs-real{ font-family:'Inter', sans-serif; font-size:0.62rem; color:#8a9096; margin-top:-2px; }

@@ -513,7 +513,7 @@ export default function Page() {
     <button className="city-chip" data-target="game-label-c4">Vier gewinnt</button>
     <button className="city-chip" data-target="game-label-hangman">Galgenmännchen</button>
     <button className="city-chip" data-target="game-label-chess">Schach</button>
-    <button className="city-chip" data-target="game-label-mill">Valorant Schach</button>
+    <button className="city-chip" data-target="game-label-mill">Mühle</button>
     <button className="city-chip" data-target="game-label-bs">Schiffe versenken</button>
     <button className="city-chip" data-target="game-label-ms">Minesweeper</button>
     <button className="city-chip" data-target="game-label-snake">Snake</button>
@@ -777,7 +777,7 @@ export default function Page() {
     </div>
   </div>
 
-  <div className="panel-label" id="game-label-mill" style={{ marginTop: "44px" }}>Valorant Schach</div>
+  <div className="panel-label" id="game-label-mill" style={{ marginTop: "44px" }}>Mühle</div>
   <div className="vl-mill">
     <div className="vl-top">
       <div className="vl-logo"><svg viewBox="0 0 40 32" aria-hidden="true"><path d="M2 3l18 22h-9L2 14z" fill="currentColor"/><path d="M38 3L24 20h-9L38 3z" fill="currentColor"/></svg><span>VALORANT</span></div>
@@ -788,10 +788,10 @@ export default function Page() {
     </div>
     <div className="vl-hud">
       <div className="vl-side def"><b id="vl-def-count">0</b><div className="vl-side-info"><span>Verteidiger</span><div className="vl-pips" id="vl-def-pips"></div></div></div>
-      <div className="vl-mid"><span id="vl-phase">Kaufphase</span><em id="vl-round">Runde 1</em></div>
+      <div className="vl-mid"><span id="vl-phase">Kaufphase</span><em id="vl-round">Haven · Runde 1</em></div>
       <div className="vl-side atk"><div className="vl-side-info"><span>Angreifer</span><div className="vl-pips" id="vl-atk-pips"></div></div><b id="vl-atk-count">0</b></div>
     </div>
-    <div className="game-resize-wrap"><div className="vl-map"><div className="mill-board" id="mill-board"></div><div className="vl-fx" id="vl-fx"></div><div className="vl-feed" id="vl-feed"></div><div className="vl-overlay" id="vl-overlay"></div></div><div className="game-resize-handle"></div></div>
+    <div className="game-resize-wrap"><div className="vl-map"><div className="mill-board" id="mill-board"></div><div className="vl-petals"></div><div className="vl-fx" id="vl-fx"></div><div className="vl-feed" id="vl-feed"></div><div className="vl-overlay" id="vl-overlay"></div></div><div className="game-resize-handle"></div></div>
     <div className="mill-pieces-left" id="mill-pieces-left"></div>
     <div className="vl-status"><i></i><span className="todo-empty" id="mill-status"></span></div>
     <div className="sudoku-controls" style={{ marginTop: "14px" }}>
@@ -800,56 +800,99 @@ export default function Page() {
   </div>
 
   <div className="panel-label" id="game-label-bs" style={{ marginTop: "44px" }}>Schiffe versenken</div>
-  <div className="mode-select" id="bs-mode-select">
-    <button className="mode-btn active" data-mode="bot">Gegen Bot</button>
-    <button className="mode-btn" data-mode="friend">Gegen Freund</button>
-  </div>
-  <div className="sudoku-controls" id="bs-place-controls" style={{ marginBottom: "10px" }}>
-    <button className="action-btn" id="bs-confirm-btn">Platzieren</button>
-    <button className="action-btn" id="bs-clear-btn">Auswahl zurücksetzen</button>
-    <button className="action-btn" id="bs-random-btn">Zufällig platzieren</button>
-  </div>
-  <div className="ship-select" id="bs-ship-select"></div>
-  <div className="game-resize-wrap">
-  <div className="bs-boards">
-    <div>
-      <div className="bs-board-label" id="bs-label-a">Deine Flotte</div>
-      <div className="bs-board" id="bs-board-a"></div>
-      <div className="bs-fleet-status" id="bs-fleet-a"></div>
+  <div className="bsg">
+    <div className="bsg-logo"><span>Schiffe</span><b>Versenken</b></div>
+    <div className="mode-select" id="bs-mode-select">
+      <button className="mode-btn active" data-mode="bot">Gegen Bot</button>
+      <button className="mode-btn" data-mode="friend">Gegen Freund</button>
     </div>
-    <div>
-      <div className="bs-board-label" id="bs-label-b">Gegnerflotte</div>
-      <div className="bs-board" id="bs-board-b"></div>
-      <div className="bs-fleet-status" id="bs-fleet-b"></div>
+    <div className="sudoku-controls" id="bs-place-controls" style={{ marginBottom: "10px" }}>
+      <button className="action-btn" id="bs-confirm-btn">Platzieren</button>
+      <button className="action-btn" id="bs-clear-btn">Auswahl zurücksetzen</button>
+      <button className="action-btn" id="bs-random-btn">Zufällig platzieren</button>
+    </div>
+    <div className="ship-select" id="bs-ship-select"></div>
+    <div className="game-resize-wrap">
+    <div className="bs-boards">
+      <div className="bsg-console own">
+        <div className="bs-board-label" id="bs-label-a">Deine Flotte</div>
+        <div className="bs-board" id="bs-board-a"></div>
+        <div className="bs-fleet-status" id="bs-fleet-a"></div>
+      </div>
+      <div className="bsg-console target">
+        <div className="bs-board-label" id="bs-label-b">Gegnerflotte</div>
+        <div className="bs-board" id="bs-board-b"></div>
+        <div className="bs-fleet-status" id="bs-fleet-b"></div>
+      </div>
+    </div>
+    <div className="bsg-banner" id="bsg-banner"></div>
+    <div className="game-resize-handle"></div>
+    </div>
+    <div className="bsg-status"><i></i><span className="todo-empty" id="bs-status"></span></div>
+    <div className="sudoku-controls" style={{ marginTop: "14px" }}>
+      <button className="action-btn" id="bs-reset-btn">Neues Spiel</button>
     </div>
   </div>
-  <div className="game-resize-handle"></div>
-  </div>
-  <div className="sudoku-controls" style={{ marginTop: "14px" }}>
-    <button className="action-btn" id="bs-reset-btn">Neues Spiel</button>
-  </div>
-  <div className="todo-empty" id="bs-status" style={{ marginTop: "10px" }}></div>
 
   <div className="panel-label" id="game-label-ms" style={{ marginTop: "44px" }}>Minesweeper</div>
+  <div className="csgo-ms">
   <div className="sudoku-controls">
     <div className="diff-select" id="ms-diff-select">
-      <button className="diff-btn active" data-diff="easy">Einfach</button>
-      <button className="diff-btn" data-diff="medium">Mittel</button>
-      <button className="diff-btn" data-diff="hard">Schwer</button>
+      <button className="diff-btn active" data-diff="easy">Casual</button>
+      <button className="diff-btn" data-diff="medium">Wettkampf</button>
+      <button className="diff-btn" data-diff="hard">Premier</button>
     </div>
   </div>
+  <div className="cs-row">
   <div className="game-resize-wrap">
   <div className="ms-wrap">
     <div className="ms-hud">
-      <div className="ms-counter" id="ms-mine-counter">010</div>
-      <button className="ms-face" id="ms-face-btn" title="Neues Spiel">🙂</button>
-      <div className="ms-counter" id="ms-timer">000</div>
+      <div className="cs-team ct"><span className="cs-team-tag">CT</span><div className="ms-counter" id="ms-mine-counter">010</div><span className="cs-team-lbl">Bomben</span></div>
+      <div className="cs-mid">
+        <div className="cs-score"><b className="ct" id="cs-score-ct">0</b><span className="cs-clockrow"><i className="cs-planted" id="cs-planted"></i><span className="ms-counter cs-clock" id="ms-timer">0:00</span></span><b className="t" id="cs-score-t">0</b></div>
+        <button className="ms-face" id="ms-face-btn" title="Neue Runde">Neue Runde</button>
+      </div>
+      <div className="cs-team t"><span className="cs-team-lbl">Map</span><div className="cs-map">de_dust2</div><span className="cs-team-tag">T</span></div>
     </div>
-    <div className="ms-grid" id="ms-grid"></div>
+    <div className="cs-site"><div className="ms-grid" id="ms-grid"></div></div>
+    <div className="cs-bottom">
+      <canvas className="cs-radar" id="cs-radar" width="120" height="120"></canvas>
+      <div className="cs-vitals">
+        <span className="cs-hp"><i></i><b id="cs-hp">100</b></span>
+        <span className="cs-armor"><i></i><b id="cs-armor">100</b></span>
+      </div>
+      <div className="cs-money"><b id="cs-money">$800</b><span className="cs-moneypop" id="cs-moneypop"></span></div>
+    </div>
+    <div className="cs-feed" id="cs-feed"></div>
+    <div className="cs-defuse" id="cs-defuse"><span>Entschärfe mit Kit</span><i></i></div>
+    <div className="cs-fx" id="cs-fx"></div>
+    <div className="cs-banner" id="cs-banner"></div>
   </div>
   <div className="game-resize-handle"></div>
   </div>
-  <div className="todo-empty" id="ms-status" style={{ marginTop: "14px" }}></div>
+  <div className="cs-cases" id="cs-cases">
+    <div className="cs-tabs">
+      <button className="cs-tab active" data-tab="shop">Shop</button>
+      <button className="cs-tab" data-tab="inv">Inventar <i className="cs-badge" id="cs-inv-badge"></i></button>
+    </div>
+    <div className="cs-shopwrap" id="cs-shopwrap">
+      <div className="cs-shop-top"><input className="cs-search" id="cs-search" type="search" placeholder="Kiste suchen …" /><span id="cs-shop-count"></span></div>
+      <div className="cs-shop" id="cs-shop"></div>
+    </div>
+    <div className="cs-invpane" id="cs-invpane">
+      <div className="cs-inv-head"><b>Inventar</b><span id="cs-inv-count">0 Gegenstände</span></div>
+      <div className="cs-inv" id="cs-inv"></div>
+    </div>
+    <div className="cs-case-msg" id="cs-case-msg"></div>
+    <div className="cs-stage" id="cs-stage">
+      <div className="cs-stage-title"></div>
+      <div className="cs-reel-wrap"><div className="cs-reel" id="cs-reel"></div><i className="cs-reel-line"></i></div>
+    </div>
+    <div className="cs-drop" id="cs-drop"></div>
+  </div>
+  </div>
+  <div className="cs-status"><b>[ALLE]</b><span className="todo-empty" id="ms-status"></span></div>
+  </div>
 
   <div className="panel-label" id="game-label-snake" style={{ marginTop: "44px" }}>Snake</div>
   <div className="game-resize-wrap">
@@ -896,6 +939,7 @@ export default function Page() {
   </div>
 </div>
 
+<button className="to-top-btn" id="to-top-btn" type="button" aria-label="Ganz nach oben"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l-7 7M12 5l7 7M12 5v14" /></svg><span>Nach oben</span></button>
 <footer>Zeiten aktualisieren sich live · Wetterdaten via Open-Meteo</footer>
 </div>
 

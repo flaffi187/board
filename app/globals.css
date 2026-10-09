@@ -397,15 +397,12 @@
     background:#16181b; border:1px solid #3a4046; border-left:3px solid #e3b04a; border-radius:2px;
   }
   #game-jump-row [data-target="game-label-ms"]::before{ content:''; display:inline-block; width:12px; height:9px; margin-right:2px; background:#6b5a3a; border:1px solid #2a2214; box-shadow:inset 3px 0 0 #c9b27a, inset -3px 0 0 #c9b27a; vertical-align:-1px; }
-  /* Snake → Nokia-Display */
+  /* Snake → Call of Duty */
   #game-jump-row [data-target="game-label-snake"]{
-    font-family:'VT323', monospace; font-size:1.15rem; color:#1e2b14; letter-spacing:0.04em;
-    background: linear-gradient(180deg, #b9cf92, #a6c07c); border:3px solid #2c3038; border-radius:6px;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.35), 0 0 10px rgba(150,220,110,0.25);
+    font-family:'Black Ops One', 'Oswald', sans-serif; font-size:0.95rem; color:#e8b13a; letter-spacing:0.05em; text-transform:uppercase;
+    background:linear-gradient(180deg, #2a3322, #151a10); border:1px solid #4a5a34; border-radius:2px; box-shadow:inset 3px 0 0 #7dff6a;
   }
-  #game-jump-row [data-target="game-label-snake"]::before{
-    content:''; display:inline-block; width:46px; height:18px; vertical-align:-3px; background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2041%2016%22%3E%3Cg%20fill%3D%22%231e2b14%22%3E%3Crect%20x%3D%221%22%20y%3D%229%22%20width%3D%224%22%20height%3D%224%22/%3E%3Crect%20x%3D%226%22%20y%3D%229%22%20width%3D%224%22%20height%3D%224%22/%3E%3Crect%20x%3D%2211%22%20y%3D%229%22%20width%3D%224%22%20height%3D%224%22/%3E%3Crect%20x%3D%2211%22%20y%3D%224%22%20width%3D%224%22%20height%3D%224%22/%3E%3Crect%20x%3D%2216%22%20y%3D%224%22%20width%3D%224%22%20height%3D%224%22/%3E%3Crect%20x%3D%2221%22%20y%3D%224%22%20width%3D%224%22%20height%3D%224%22/%3E%3Crect%20x%3D%2221%22%20y%3D%229%22%20width%3D%224%22%20height%3D%224%22/%3E%3Crect%20x%3D%2226%22%20y%3D%229%22%20width%3D%225%22%20height%3D%224%22/%3E%3C/g%3E%3Crect%20x%3D%2228%22%20y%3D%2210%22%20width%3D%221.5%22%20height%3D%221.5%22%20fill%3D%22%23a6c07c%22/%3E%3Crect%20x%3D%2236%22%20y%3D%229%22%20width%3D%224%22%20height%3D%224%22%20fill%3D%22%231e2b14%22%20opacity%3D%22.8%22/%3E%3C/svg%3E") center / contain no-repeat;
-  }
+  #game-jump-row [data-target="game-label-snake"]::before{ content:''; display:inline-block; width:14px; height:14px; margin-right:2px; vertical-align:-2px; border-radius:50%; background:radial-gradient(circle, #7dff6a 0 20%, transparent 22%), conic-gradient(from 0deg, rgba(125,255,106,0.6), transparent 30%), #1d2219; border:1px solid #7dff6a; }
   /* 2048 → Zahlenkachel */
   #game-jump-row [data-target="game-label-2048"]{
     font-family:'Press Start 2P', monospace; font-size:0.62rem; color:#fff; text-shadow:2px 2px 0 #3f3f3f; border-radius:0;
@@ -1122,7 +1119,7 @@
   .cs-hp i{ width:14px; height:14px; background:linear-gradient(#eef0f2, #eef0f2) center / 4px 100% no-repeat, linear-gradient(#eef0f2, #eef0f2) center / 100% 4px no-repeat; }
   .cs-hp.low{ color:#ff4a3a; } .cs-hp.low i{ filter:hue-rotate(0) drop-shadow(0 0 3px #ff4a3a); }
   .cs-armor i{ width:13px; height:15px; background:#eef0f2; clip-path:polygon(50% 0, 100% 18%, 92% 65%, 50% 100%, 8% 65%, 0 18%); }
-  .cs-money{ position:relative; padding:6px 12px; background:var(--cs-hud); border-radius:2px; font-family:'Oswald', sans-serif; font-size:1.3rem; font-weight:700; color:#8fe08f; }
+  .cs-money{ position:relative; white-space:nowrap; padding:6px 12px; background:var(--cs-hud); border-radius:2px; font-family:'Oswald', sans-serif; font-size:1.3rem; font-weight:700; color:#8fe08f; }
   .cs-moneypop{ position:absolute; right:4px; bottom:100%; white-space:nowrap; font-size:0.75rem; color:#8fe08f; opacity:0; text-shadow:0 1px 2px #000; }
   .cs-moneypop.show{ animation: cs-money 1.6s ease-out forwards; }
   @keyframes cs-money{ 0%{ opacity:0; transform:translateY(6px); } 15%, 70%{ opacity:1; transform:translateY(0); } 100%{ opacity:0; transform:translateY(-8px); } }
@@ -3743,3 +3740,131 @@
   }
   /* kein Zoomen beim schnellen Tippen, kein Markier-Menü beim langen Drücken */
   .ms-cell, .snake-pad button, .ms-kit-btn{ touch-action:manipulation; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
+  .cs-wear{ font-family:'Inter', sans-serif; font-size:0.55rem; color:#8a9096; text-align:center; line-height:1.1; }
+  .cs-drop-wear{ font-style:normal; font-family:'Oswald', sans-serif; font-size:0.85rem; color:#cfd3d7; letter-spacing:0.04em; }
+
+  /* Snake im Call-of-Duty-Stil: Taktik-Karte mit Nachtsicht-Grün, Radar, Killstreaks */
+  .cod-snake{ --cod-g:#7dff6a; --cod-o:#e8b13a; max-width:100%; }
+  .cod-title{ display:flex; flex-direction:column; margin-bottom:12px; }
+  .cod-title b{ font-family:'Black Ops One', 'Oswald', sans-serif; font-weight:400; font-size:1.9rem; letter-spacing:0.06em; color:#f2f2f2; text-shadow:0 0 12px rgba(125,255,106,0.25), 0 3px 0 #000; }
+  .cod-title span{ font-family:'Oswald', sans-serif; font-size:0.75rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--cod-o); }
+  .cod-snake .snake-wrap{ background:linear-gradient(180deg, #1d2219, #10130d); border:1px solid #3b4632; border-radius:2px; box-shadow:0 10px 24px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(125,255,106,0.08); }
+  .cod-snake .snake-hud{ justify-content:space-between; }
+  .cod-snake .snake-hud-item{ align-items:flex-start; padding:4px 10px; background:rgba(0,0,0,0.45); border-left:3px solid var(--cod-g); }
+  .cod-snake .snake-hud-item.cod-streak{ border-left-color:var(--cod-o); }
+  .cod-snake .snake-hud-label{ font-family:'Oswald', sans-serif; font-size:0.62rem; letter-spacing:0.2em; color:#9aa58f; }
+  .cod-snake .snake-hud-item .ms-counter{ background:none; box-shadow:none; padding:0; min-width:0; font-family:'Black Ops One', 'Oswald', sans-serif; font-weight:400; font-size:1.3rem; color:#f2f2f2; }
+  .cod-snake .cod-streak .ms-counter{ color:var(--cod-o); }
+  .cod-map{ position:relative; border:2px solid #3b4632; overflow:hidden; box-shadow:0 0 0 1px #000, inset 0 0 30px rgba(0,0,0,0.6); }
+  .cod-snake .snake-wrap{ background: linear-gradient(180deg, rgba(125,255,106,0.05), transparent 30%), repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0 6px, transparent 6px 12px), linear-gradient(180deg, #1d2219, #0e110b) !important; }
+  .cod-title b{ text-shadow:0 3px 0 #000, 0 0 18px rgba(125,255,106,0.25) !important; color:#eef1ea !important; }
+  .cod-map.cod-hit{ animation: bs-shake 0.5s ease-out; }
+  .cod-map.cod-hit::after{ content:''; position:absolute; inset:0; background:radial-gradient(circle, transparent 30%, rgba(200,0,0,0.55)); animation: cod-red 0.7s ease-out forwards; pointer-events:none; z-index:5; }
+  @keyframes cod-red{ from{ opacity:1; } to{ opacity:0.35; } }
+  .cod-snake .snake-grid{ position:relative; gap:0; border:none; border-radius:0; background:
+      radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,0.55)),
+      linear-gradient(rgba(125,255,106,0.07) 1px, transparent 1px) 0 0 / 6.25% 6.25%,
+      linear-gradient(90deg, rgba(125,255,106,0.07) 1px, transparent 1px) 0 0 / 6.25% 6.25%,
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 320'%3E%3Cellipse cx='70' cy='60' rx='14' ry='14' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='70' cy='60' rx='29' ry='25' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='70' cy='60' rx='45' ry='33' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='70' cy='60' rx='56' ry='45' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='70' cy='60' rx='73' ry='56' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='70' cy='60' rx='82' ry='64' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='230' cy='220' rx='17' ry='12' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='230' cy='220' rx='28' ry='24' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='230' cy='220' rx='43' ry='36' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='230' cy='220' rx='54' ry='41' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='230' cy='220' rx='70' ry='54' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='230' cy='220' rx='82' ry='63' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='230' cy='220' rx='99' ry='80' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='260' cy='60' rx='16' ry='13' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='260' cy='60' rx='25' ry='23' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='260' cy='60' rx='42' ry='33' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='260' cy='60' rx='58' ry='46' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='60' cy='250' rx='15' ry='13' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='60' cy='250' rx='26' ry='23' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='60' cy='250' rx='39' ry='36' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='60' cy='250' rx='57' ry='41' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cellipse cx='60' cy='250' rx='67' ry='52' fill='none' stroke='rgba%28140%2C200%2C120%2C0.10%29' stroke-width='1'/%3E%3Cpath d='M0 150 C80 140 120 170 180 150 S280 120 320 140' stroke='rgba%28190%2C200%2C170%2C0.14%29' stroke-width='7' fill='none'/%3E%3Cpath d='M150 0 C160 80 140 120 160 200 S170 280 150 320' stroke='rgba%28190%2C200%2C170%2C0.12%29' stroke-width='5' fill='none'/%3E%3Crect x='30' y='190' width='26' height='18' fill='rgba%2810%2C14%2C8%2C0.55%29' stroke='rgba%28140%2C200%2C120%2C0.22%29' stroke-width='1'/%3E%3Crect x='62' y='186' width='16' height='24' fill='rgba%2810%2C14%2C8%2C0.55%29' stroke='rgba%28140%2C200%2C120%2C0.22%29' stroke-width='1'/%3E%3Crect x='200' y='30' width='30' height='20' fill='rgba%2810%2C14%2C8%2C0.55%29' stroke='rgba%28140%2C200%2C120%2C0.22%29' stroke-width='1'/%3E%3Crect x='236' y='34' width='18' height='14' fill='rgba%2810%2C14%2C8%2C0.55%29' stroke='rgba%28140%2C200%2C120%2C0.22%29' stroke-width='1'/%3E%3Crect x='210' y='250' width='22' height='28' fill='rgba%2810%2C14%2C8%2C0.55%29' stroke='rgba%28140%2C200%2C120%2C0.22%29' stroke-width='1'/%3E%3Crect x='100' y='90' width='20' height='16' fill='rgba%2810%2C14%2C8%2C0.55%29' stroke='rgba%28140%2C200%2C120%2C0.22%29' stroke-width='1'/%3E%3Crect x='250' y='170' width='28' height='18' fill='rgba%2810%2C14%2C8%2C0.55%29' stroke='rgba%28140%2C200%2C120%2C0.22%29' stroke-width='1'/%3E%3Crect x='40' y='40' width='18' height='12' fill='rgba%2810%2C14%2C8%2C0.55%29' stroke='rgba%28140%2C200%2C120%2C0.22%29' stroke-width='1'/%3E%3Ccircle cx='97' cy='123' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='237' cy='167' r='6' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='302' cy='100' r='4' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='150' cy='255' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='43' cy='234' r='5' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='208' cy='282' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='130' cy='161' r='4' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='262' cy='147' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='35' cy='288' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='205' cy='55' r='5' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='197' cy='34' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='0' cy='109' r='4' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='26' cy='240' r='6' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='203' cy='214' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='289' cy='101' r='5' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='172' cy='44' r='5' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='170' cy='7' r='6' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='60' cy='68' r='4' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='51' cy='5' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='238' cy='249' r='4' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='286' cy='96' r='6' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='260' cy='97' r='4' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='214' cy='196' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='202' cy='215' r='4' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='0' cy='138' r='5' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='10' cy='107' r='4' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='201' cy='308' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='21' cy='74' r='4' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='226' cy='132' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='312' cy='168' r='5' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='197' cy='37' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='46' cy='106' r='4' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='7' cy='307' r='5' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='190' cy='318' r='6' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='65' cy='300' r='6' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='294' cy='69' r='6' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='93' cy='78' r='5' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='116' cy='312' r='4' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='97' cy='81' r='4' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3Ccircle cx='198' cy='247' r='3' fill='rgba%2830%2C50%2C25%2C0.55%29'/%3E%3C/svg%3E") center / 100% 100%,
+      radial-gradient(ellipse at 30% 30%, #2b3623, #151b11 70%); }
+  .ghost-svg{ position:absolute; inset:0; width:100%; height:100%; z-index:3; pointer-events:none; overflow:visible; filter:drop-shadow(0 0 3px rgba(0,0,0,0.6)); }
+  .ghost-svg .gh-shadowg{ fill:rgba(0,0,0,0.45); } .ghost-svg .gh-outg{ fill:#000; } .ghost-svg .gh-bodyg{ fill:url(#ghBody); }
+  .gh-glow{ animation: gh-glow 1.6s ease-in-out infinite alternate; }
+  @keyframes gh-glow{ from{ opacity:0.35; } to{ opacity:1; } }
+  .ghost-svg.dead{ filter:grayscale(1) brightness(0.7); }
+  .cod-snake .snake-cell.food{ z-index:2; }
+  .cod-snake .snake-cell{ background:transparent; }
+  .cod-snake .snake-cell.body{ background: radial-gradient(circle at 30% 30%, #a3b878 0 18%, transparent 19%), radial-gradient(circle at 70% 65%, #4e5e36 0 22%, transparent 23%), #7a8f52 !important;
+    box-shadow:inset 0 0 0 1.5px #141a0e, inset 2px 2px 0 rgba(255,255,255,0.2), 0 0 6px rgba(125,255,106,0.35) !important; }
+  .cod-snake .snake-cell.head{ background:transparent !important; box-shadow:none !important; z-index:2; }
+  .cod-snake .snake-cell.head svg{ transform:scale(1.25); filter:drop-shadow(0 0 4px rgba(0,0,0,0.8)); }
+  /* Ghost-Körper: schwarze Taktikweste mit Platten, ab und zu ein Totenkopf-Aufdruck */
+  .cod-snake .snake-cell.body{ background:
+      linear-gradient(90deg, transparent 46%, rgba(255,255,255,0.08) 46% 54%, transparent 54%),
+      linear-gradient(180deg, #2c3134, #15181a) !important;
+    box-shadow:inset 0 0 0 1.5px #000, inset 0 2px 0 rgba(255,255,255,0.12), 0 0 5px rgba(0,0,0,0.6) !important; border-radius:3px !important; }
+  .cod-snake .snake-cell.body::after{ content:''; position:absolute; inset:22%; border-radius:2px; background:#3a4045; box-shadow:inset 0 0 0 1px #000; }
+  .cod-snake .snake-cell.body.skull::after{ inset:16%; border-radius:45% 45% 35% 35%; box-shadow:none;
+    background: radial-gradient(circle at 35% 45%, #000 0 14%, transparent 15%), radial-gradient(circle at 65% 45%, #000 0 14%, transparent 15%), linear-gradient(#000, #000) 50% 85% / 50% 10% no-repeat, #e9e6dc; }
+  .cod-snake .snake-cell.body.tail{ transform:scale(0.8); }
+  .cod-food{ filter:drop-shadow(0 0 4px rgba(125,255,106,0.55)); animation: cod-ping 1.2s ease-in-out infinite; }
+  @keyframes cod-ping{ 50%{ filter:drop-shadow(0 0 8px rgba(125,255,106,0.95)); transform:scale(1.08); } }
+  /* Radar-Wischer und Scanlines */
+  .cod-radar{ position:absolute; inset:-50%; pointer-events:none; z-index:3; background:conic-gradient(from 0deg, rgba(125,255,106,0.16), transparent 18%); animation: cod-sweep 4s linear infinite; mix-blend-mode:screen; }
+  @keyframes cod-sweep{ to{ transform:rotate(360deg); } }
+  .cod-map::before{ content:''; position:absolute; inset:0; z-index:4; pointer-events:none; background:repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0 1px, transparent 1px 3px); }
+  .cod-fx{ position:absolute; inset:0; z-index:6; pointer-events:none; }
+  .cod-pop{ position:absolute; transform:translate(-50%, -50%); display:flex; align-items:center; gap:4px; font-family:'Black Ops One', 'Oswald', sans-serif; font-size:0.85rem; color:#f2f2f2; text-shadow:0 1px 2px #000; white-space:nowrap; animation: cod-pop 0.9s ease-out forwards; }
+  .cod-pop.ammo{ color:var(--cod-o); }
+  .cod-hm{ position:relative; width:16px; height:16px; }
+  .cod-hm::before, .cod-hm::after{ content:''; position:absolute; left:50%; top:50%; width:18px; height:2px; background:#fff; box-shadow:0 0 2px #000; transform:translate(-50%, -50%) rotate(45deg); clip-path:polygon(0 0, 35% 0, 35% 100%, 0 100%, 0 0, 65% 0, 100% 0, 100% 100%, 65% 100%, 65% 0); }
+  .cod-hm::after{ transform:translate(-50%, -50%) rotate(-45deg); }
+  @keyframes cod-pop{ from{ transform:translate(-50%, -50%) scale(1.3); opacity:1; } to{ transform:translate(-50%, -150%) scale(1); opacity:0; } }
+  .cod-pop.boom{ width:60px; height:60px; border-radius:50%; background:radial-gradient(circle, #fff6c0, #ffb02e 30%, #ff4a1a 55%, transparent 70%); animation: bs-boom 0.7s ease-out forwards; }
+  .cod-banner{ position:absolute; inset:0; z-index:7; display:grid; place-items:center; pointer-events:none; }
+  .cod-ban{ display:flex; flex-direction:column; align-items:center; gap:3px; width:100%; padding:12px 0; background:linear-gradient(90deg, transparent, rgba(0,0,0,0.82) 15% 85%, transparent); animation: cs-ban 0.35s ease-out; }
+  .cod-ban b{ text-align:center; padding:0 10px; font-family:'Black Ops One', 'Oswald', sans-serif; font-weight:400; font-size:1.5rem; letter-spacing:0.06em; text-transform:uppercase; color:#f2f2f2; }
+  .cod-ban span{ font-family:'Oswald', sans-serif; font-size:0.75rem; letter-spacing:0.22em; text-transform:uppercase; color:#b8c2ad; }
+  .cod-ban.streak b{ color:var(--cod-o); } .cod-ban.fail b{ color:#ff4a3a; } .cod-ban.ready b{ color:var(--cod-g); }
+  .cod-ban.ready{ animation: cod-blink 1.2s ease-in-out infinite alternate; }
+  @keyframes cod-blink{ from{ opacity:0.7; } to{ opacity:1; } }
+  .cod-snake .action-btn{ font-family:'Black Ops One', 'Oswald', sans-serif; letter-spacing:0.08em; text-transform:uppercase; color:#10130d; background:var(--cod-o); border:none; border-radius:2px; box-shadow:0 3px 0 #8a6618; }
+  .cod-snake .snake-pad button{ background:#1d2219; border-color:#3b4632; color:var(--cod-g); border-radius:2px; }
+  .cod-snake #snake-status{ font-family:'Oswald', sans-serif; letter-spacing:0.04em; }
+  @media (max-width:420px){ .cod-title b{ font-size:1.45rem; } .cod-ban b{ font-size:1.1rem; } }
+
+  /* mehr CoD-HUD: Kompass, Killfeed, Ziel, Munition, Rang */
+  .cod-compass{ position:relative; height:24px; margin-bottom:6px; overflow:hidden; background:rgba(0,0,0,0.45); border:1px solid #3b4632;
+    -webkit-mask:linear-gradient(90deg, transparent, #000 20% 80%, transparent); mask:linear-gradient(90deg, transparent, #000 20% 80%, transparent); }
+  .cod-compass-strip{ position:absolute; top:0; left:0; display:flex; height:100%; transition:transform 0.3s ease; }
+  .cod-compass-strip span{ width:40px; flex-shrink:0; display:grid; place-items:center; font-family:'Oswald', sans-serif; font-size:0.62rem; color:#8a967f; }
+  .cod-compass-strip span.dir{ font-size:0.85rem; font-weight:700; color:#f2f2f2; }
+  .cod-compass > i{ position:absolute; left:50%; top:0; width:0; height:0; margin-left:-5px; border:5px solid transparent; border-top-color:var(--cod-o); }
+  .cod-feed{ position:absolute; right:8px; top:8px; z-index:6; display:flex; flex-direction:column; align-items:flex-end; gap:3px; pointer-events:none; }
+  .cod-feed-row{ padding:2px 8px; background:rgba(0,0,0,0.65); font-family:'Oswald', sans-serif; font-size:0.72rem; color:#d8ddd2; letter-spacing:0.04em; animation: vl-feed-in 0.25s ease-out; }
+  .cod-feed-row b{ color:#6ec3ff; font-weight:600; } .cod-feed-row b.g{ color:var(--cod-o); }
+  .cod-ki{ display:inline-block; width:18px; height:8px; vertical-align:-1px; background:#d8ddd2; clip-path:polygon(0 30%, 70% 30%, 75% 0, 100% 0, 100% 60%, 40% 60%, 35% 100%, 22% 100%, 25% 60%, 0 60%); }
+  .cod-objective{ position:absolute; left:8px; top:8px; z-index:6; display:flex; flex-direction:column; padding:3px 8px; background:rgba(0,0,0,0.55); border-left:3px solid var(--cod-o); pointer-events:none; }
+  .cod-objective b{ font-family:'Oswald', sans-serif; font-size:0.55rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--cod-o); }
+  .cod-objective span{ font-family:'Oswald', sans-serif; font-size:0.72rem; color:#e6e8e0; }
+  .cod-ammo{ position:absolute; right:8px; bottom:8px; z-index:6; display:flex; align-items:baseline; gap:6px; padding:3px 10px; background:rgba(0,0,0,0.55); pointer-events:none; }
+  .cod-gun{ font-family:'Oswald', sans-serif; font-size:0.6rem; letter-spacing:0.15em; color:#9aa58f; }
+  .cod-ammo b{ font-family:'Black Ops One', sans-serif; font-weight:400; font-size:1.2rem; color:#f2f2f2; }
+  .cod-ammo b.low{ color:#ff4a3a; animation: cod-blink 0.5s steps(2) infinite; }
+  .cod-ammo em{ font-style:normal; font-family:'Oswald', sans-serif; font-size:0.75rem; color:#9aa58f; }
+  .cod-snake .snake-hud-item.cod-rank-item{ border-left:none; padding:2px; background:none; justify-content:center; }
+  .cod-rank{ display:grid; place-items:center; width:42px; height:42px; font-style:normal; font-family:'Black Ops One', sans-serif; font-size:1.1rem; color:#1a1408;
+    background:linear-gradient(180deg, #ffd86a, #c8901e); clip-path:polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+  .cod-rank.up{ animation: cod-rankup 0.6s ease-out; }
+  @keyframes cod-rankup{ 40%{ transform:scale(1.35) rotate(8deg); filter:brightness(1.4); } }
+  @media (max-width:420px){ .cod-objective{ display:none; } .cod-rank{ width:34px; height:34px; font-size:0.9rem; } .cod-snake .snake-hud-item{ padding:3px 6px; } .cod-snake .snake-hud-item .ms-counter{ font-size:1.05rem; } }
+
+
+  /* Tab 10 – Serien */
+  .sv-wrap{ max-width:900px; }
+  .sv-search{ display:flex; gap:8px; flex-wrap:wrap; }
+  .sv-search input, .sv-add input{ flex:1; min-width:180px; padding:11px 14px; border:1px solid var(--line); border-radius:10px; background:var(--board-2); color:rgba(var(--fg),0.95); font-family:'Inter', sans-serif; font-size:0.95rem; outline:none; }
+  .sv-search input:focus, .sv-add input:focus{ border-color:var(--teal); }
+  .sv-search select{ padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--board-2); color:rgba(var(--fg),0.9); font-family:'Inter', sans-serif; font-size:0.85rem; }
+  .sv-search button, .sv-add button{ padding:10px 18px; border:none; border-radius:10px; background:var(--teal); color:var(--ink); font-family:'Oswald', sans-serif; font-weight:600; font-size:0.95rem; letter-spacing:0.04em; cursor:pointer; }
+  .sv-hint{ margin:8px 2px 0; font-family:'JetBrains Mono'; font-size:0.68rem; color:rgba(var(--fg),0.45); }
+  .sv-group-label{ margin:26px 0 10px; font-family:'JetBrains Mono'; font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:rgba(var(--fg),0.55); }
+  .sv-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
+  .sv-tile{ position:relative; display:flex; flex-direction:column; justify-content:flex-end; gap:3px; height:96px; padding:12px 14px; border-radius:12px; text-decoration:none; overflow:hidden;
+    background: radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--c1) 55%, transparent), transparent 60%), linear-gradient(135deg, var(--c2), #0d0d0f);
+    border:1px solid color-mix(in srgb, var(--c1) 40%, transparent); transition:transform 0.15s ease, box-shadow 0.15s ease; }
+  .sv-tile:hover{ transform:translateY(-3px); box-shadow:0 8px 20px color-mix(in srgb, var(--c1) 35%, transparent); }
+  .sv-tile b{ font-family:'Oswald', sans-serif; font-size:1.25rem; font-weight:700; color:#fff; letter-spacing:0.02em; }
+  .sv-tile span{ font-family:'Inter', sans-serif; font-size:0.72rem; color:rgba(255,255,255,0.7); }
+  .sv-add{ display:flex; gap:8px; margin-bottom:10px; }
+  .sv-list{ display:flex; flex-direction:column; gap:6px; }
+  .sv-item{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--board-2); }
+  .sv-item b{ flex:1; min-width:140px; font-family:'Inter', sans-serif; font-size:0.95rem; font-weight:500; color:rgba(var(--fg),0.95); }
+  .sv-step{ display:flex; align-items:center; gap:5px; font-family:'JetBrains Mono'; font-size:0.8rem; color:rgba(var(--fg),0.6); }
+  .sv-step em{ font-style:normal; min-width:22px; text-align:center; color:rgba(var(--fg),0.95); font-weight:700; }
+  .sv-step button{ width:26px; height:26px; border:1px solid var(--line); border-radius:6px; background:transparent; color:rgba(var(--fg),0.8); cursor:pointer; }
+  .sv-step button:hover{ border-color:var(--teal); color:var(--teal); }
+  .sv-where{ font-family:'JetBrains Mono'; font-size:0.72rem; color:var(--teal); text-decoration:none; }
+  .sv-del{ border:none; background:none; color:rgba(var(--fg),0.4); font-size:1.2rem; cursor:pointer; }
+  .sv-del:hover{ color:#e8826f; }
+  .sv-empty{ font-family:'Inter', sans-serif; font-size:0.85rem; color:rgba(var(--fg),0.45); padding:8px 2px; }

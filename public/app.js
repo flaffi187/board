@@ -7917,19 +7917,24 @@ function csBanner(big, small, side){
   el.innerHTML = big ? `<div class="cs-ban ${side}"><b>${big}</b><span>${small}</span></div>` : '';
 }
 // Spielstand, Geld und HP bleiben zwischen den Runden erhalten
-let csState = { ct: 0, t: 0, money: 800 };
+// Geld in echten Franken (Kisten- und Skinpreise vom Skinport-Markt in CHF)
+let csState = { ct: 0, t: 0, money: 5, cur: 'chf' };
 try{ Object.assign(csState, JSON.parse(localStorage.getItem('cs_state') || '{}')); } catch(err){}
+if(csState.cur !== 'chf'){ csState.money = Math.max(5, Math.round(csState.money) / 100); csState.cur = 'chf'; }   // alte $-Stände einmalig umrechnen
+const csFr = (v) => 'Fr. ' + (Math.round(v * 100) / 100).toFixed(2);
+// Verdienst pro Minesweeper-Runde (je schwerer, desto mehr)
+const CS_PAY = { easy: { win: 1.5, loss: 0.3 }, medium: { win: 4, loss: 0.5 }, hard: { win: 10, loss: 1 } };
 function csSave(){ try{ localStorage.setItem('cs_state', JSON.stringify(csState)); } catch(err){} }
 function csHud(){
   const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
-  set('cs-score-ct', csState.ct); set('cs-score-t', csState.t); set('cs-money', '$' + csState.money);
+  set('cs-score-ct', csState.ct); set('cs-score-t', csState.t); set('cs-money', csFr(csState.money));
 }
 function csMoney(delta, label){
-  csState.money = Math.max(0, Math.min(16000, csState.money + delta));
+  csState.money = Math.max(0, Math.min(5000, Math.round((csState.money + delta) * 100) / 100));
   csSave(); csHud();
   if(typeof csRenderShop === 'function' && document.getElementById('cs-shop')) csRenderShop();
   const pop = document.getElementById('cs-moneypop');
-  if(pop && delta){ pop.textContent = (delta > 0 ? '+$' : '-$') + Math.abs(delta) + (label ? ' ' + label : ''); pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show'); }
+  if(pop && delta){ pop.textContent = (delta > 0 ? '+' : '-') + csFr(Math.abs(delta)) + (label ? ' ' + label : ''); pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show'); }
 }
 function csVitals(hp, armor){
   const h = document.getElementById('cs-hp'), a = document.getElementById('cs-armor');
@@ -8141,7 +8146,7 @@ function msReveal(r, c){
     msUpdateCells();
     csExplode(hitCell);
     csVitals(0, 0);
-    csState.t++; csMoney(1400, 'Niederlage-Bonus');
+    csState.t++; csMoney(CS_PAY[msDiff].loss, 'Niederlage-Bonus');
     csFeed(`<b class="t">Terrorist</b>${CS_FEED_C4}<b class="ct">Du</b>`);
     document.getElementById('cs-planted')?.classList.remove('on');
     msStatusEl.textContent = 'Die Bombe ist explodiert.';
@@ -8153,7 +8158,7 @@ function msReveal(r, c){
   msFloodReveal(r, c);
   msUpdateCells();
   const gained = msRevealedCount - before;
-  if(gained > 0 && !msOver) csMoney(Math.min(300, gained * 10), gained > 8 ? 'Sektor gesichert' : '');
+  if(gained > 0 && !msOver) csMoney(Math.min(0.3, gained * 0.01), gained > 8 ? 'Sektor gesichert' : '');
 
   if(msRevealedCount === msSize * msSize - msMines){
     msOver = true;
@@ -8162,7 +8167,7 @@ function msReveal(r, c){
     msBoard.forEach(s => { if(s.mine && !s.flagged) s.flagged = true; });
     msUpdateCells();
     msStatusEl.textContent = 'Alle Bomben gefunden.';
-    csState.ct++; csMoney(3250, 'Rundensieg');
+    csState.ct++; csMoney(CS_PAY[msDiff].win, 'Rundensieg');
     csFeed(`<b class="ct">Du</b>${CS_FEED_KIT}<b class="t">C4 entschärft</b>`);
     document.getElementById('cs-planted')?.classList.remove('on');
     csBanner('Counter-Terroristen gewinnen', 'Alle Bomben entschärft', 'ct');
@@ -8246,13 +8251,32 @@ const csCase = (id) => CS_CASES.find(c => c.id === id);
 function csSaveInv(){ try{ localStorage.setItem('cs_inv', JSON.stringify(csInv)); } catch(err){} }
 const csImg = (file, cls = '') => `<img src="/cs/${file}" alt="" class="${cls}" loading="lazy" draggable="false">`;
 function csSplitName(n){ const [w, ...rest] = n.split(' | '); return [w, rest.join(' | ')]; }
+// Zustand wie in CS (ungefähre echte Verteilung); Wert = echter Marktpreis dieses Zustands
+const CS_WEAR = [['fn', 'Fabrikneu', 0.03], ['mw', 'Minimale Gebrauchsspuren', 0.24], ['ft', 'Einsatzerprobt', 0.33], ['ww', 'Abgenutzt', 0.24], ['bs', 'Kampfspuren', 0.16]];
+const CS_FALLBACK = { mil: 0.1, res: 0.5, cla: 2, cov: 10, gold: 150 };
+function csRollWear(prices){
+  const opts = CS_WEAR.filter(w => !prices || prices[w[0]] != null);
+  if(!opts.length) return 'ft';
+  let x = Math.random() * opts.reduce((a, w) => a + w[2], 0);
+  for(const w of opts){ if(x < w[2]) return w[0]; x -= w[2]; }
+  return opts[opts.length - 1][0];
+}
+const csWearName = (k) => (CS_WEAR.find(w => w[0] === k) || CS_WEAR[2])[1];
+// Wert eines Skins in Franken (auch für alte Inventar-Einträge ohne gespeicherten Wert)
+function csValue(it){
+  if(it.v != null) return it.v;
+  for(const cs of CS_CASES){ const m = cs.items.find(x => x[0] === it.n); if(m && m[3]){ const p = m[3][it.w || 'ft'] ?? Object.values(m[3])[0]; if(p != null) return p; } }
+  return CS_FALLBACK[it.r] || 0.1;
+}
 function csRollItem(cs, noGold){
   let x = Math.random() * (noGold ? 1 - CS_RARITY[4].chance : 1), rar = CS_RARITY[0];
   for(const r of CS_RARITY){ if(x < r.chance){ rar = r; break; } x -= r.chance; }
   let pool = cs.items.filter(it => it[1] === rar.id);
   if(!pool.length) pool = cs.items.filter(it => it[1] === 'mil');
   const it = pool[Math.floor(Math.random() * pool.length)];
-  return { kind: 'skin', n: it[0], r: it[1], i: it[2] };
+  const w = csRollWear(it[3]);
+  const v = it[3] && it[3][w] != null ? it[3][w] : CS_FALLBACK[it[1]];
+  return { kind: 'skin', n: it[0], r: it[1], i: it[2], w, v };
 }
 function csCardHtml(it, cls = ''){
   const r = csRar(it.r), [w, sk] = csSplitName(it.n);
@@ -8274,14 +8298,14 @@ function csRenderShop(){
   const list = CS_CASES.filter(cs => !q || cs.name.toLowerCase().includes(q));
   if(!CS_CASES.length){ el.innerHTML = '<div class="cs-inv-empty">Kisten werden geladen …</div>'; return; }
   if(!list.length){ el.innerHTML = '<div class="cs-inv-empty">Keine Kiste gefunden.</div>'; return; }
-  el.innerHTML = list.map(cs => `<div class="cs-shop-item">${csImg(cs.img, 'cs-case-img')}<span>${cs.name}</span>${cs.usd != null ? `<small class="cs-real">Steam-Markt: ${cs.usd.toFixed(2)} US$</small>` : ''}
-    <button data-id="${cs.id}"${csState.money < cs.price ? ' class="poor"' : ''}>Kaufen $${cs.price}</button></div>`).join('');
+  el.innerHTML = list.map(cs => `<div class="cs-shop-item">${csImg(cs.img, 'cs-case-img')}<span>${cs.name}</span><small class="cs-real">echter Marktpreis</small>
+    <button data-id="${cs.id}"${csState.money < cs.chf ? ' class="poor"' : ''}>Kaufen ${csFr(cs.chf)}</button></div>`).join('');
   el.querySelectorAll('button[data-id]').forEach(b => b.addEventListener('click', () => {
     const cs = csCase(b.dataset.id), msg = document.getElementById('cs-case-msg');
-    if(csState.money < cs.price){ msg.className = 'cs-case-msg'; msg.textContent = 'Zu wenig Geld! Spiel Minesweeper-Runden für mehr $.'; return; }
+    if(csState.money < cs.chf){ msg.className = 'cs-case-msg'; msg.textContent = 'Zu wenig Geld! Gewinne Minesweeper-Runden für mehr Franken.'; return; }
     msg.className = 'cs-case-msg ok';
     msg.textContent = `${cs.name} gekauft – sie liegt jetzt in deinem Inventar.`;
-    csMoney(-cs.price, cs.name);
+    csMoney(-cs.chf, cs.name);
     csInv.unshift({ kind: 'case', id: cs.id });
     csSaveInv();
     b.closest('.cs-shop-item').classList.remove('bought'); void b.offsetWidth; b.closest('.cs-shop-item').classList.add('bought');
@@ -8299,12 +8323,12 @@ function csRenderInv(){
       return `<div class="cs-inv-item case" title="${cs.name}">${csImg(cs.img, 'cs-inv-img')}<span>${cs.name}</span><button class="open" data-open="${i}">Öffnen</button></div>`;
     }
     const r = csRar(it.r), [w, sk] = csSplitName(it.n);
-    return `<div class="cs-inv-item" style="--rc:${r.color}" title="${it.n}">${csImg(it.i, 'cs-inv-img')}<span>${w}<br>${sk}</span><button data-sell="${i}">$${r.sell}</button></div>`;
+    return `<div class="cs-inv-item" style="--rc:${r.color}" title="${it.n}">${csImg(it.i, 'cs-inv-img')}<span>${w}<br>${sk}</span><small class="cs-wear">${csWearName(it.w)}</small><button data-sell="${i}">${csFr(csValue(it))}</button></div>`;
   }).join('') : '<div class="cs-inv-empty">Leer. Kauf eine Kiste im Shop!</div>';
   el.querySelectorAll('button[data-sell]').forEach(b => b.addEventListener('click', () => {
     if(csSpinning) return;
     const it = csInv.splice(Number(b.dataset.sell), 1)[0];
-    csSaveInv(); csMoney(csRar(it.r).sell, 'verkauft'); csRenderAll();
+    csSaveInv(); csMoney(csValue(it), 'verkauft'); csRenderAll();
   }));
   el.querySelectorAll('button[data-open]').forEach(b => b.addEventListener('click', () => csOpenCase(Number(b.dataset.open))));
 }
@@ -8349,12 +8373,12 @@ function csOpenCase(invIdx){
       card.classList.add('landed');
       csInv.unshift(win); csSaveInv();
       const r = csRar(win.r), [w, sk] = csSplitName(win.n), drop = document.getElementById('cs-drop');
-      drop.innerHTML = `<div class="cs-drop-in" style="--rc:${r.color}"><small>${r.name}</small>${csImg(win.i, 'cs-skin big')}<b>${w} | ${sk}</b>
-        <div class="cs-drop-btns"><button class="keep">Behalten</button><button class="sell">Verkaufen $${r.sell}</button></div></div>`;
+      drop.innerHTML = `<div class="cs-drop-in" style="--rc:${r.color}"><small>${r.name}</small>${csImg(win.i, 'cs-skin big')}<b>${w} | ${sk}</b><em class="cs-drop-wear">${csWearName(win.w)} · Wert ${csFr(win.v)}</em>
+        <div class="cs-drop-btns"><button class="keep">Behalten</button><button class="sell">Verkaufen ${csFr(win.v)}</button></div></div>`;
       drop.classList.add('show');
       const close = () => { drop.classList.remove('show'); stage.classList.remove('show'); csSpinning = false; csTab = 'inv'; csRenderAll(); };
       drop.querySelector('.keep').onclick = close;
-      drop.querySelector('.sell').onclick = () => { const i = csInv.indexOf(win); if(i >= 0) csInv.splice(i, 1); csSaveInv(); csMoney(r.sell, 'verkauft'); close(); };
+      drop.querySelector('.sell').onclick = () => { const i = csInv.indexOf(win); if(i >= 0) csInv.splice(i, 1); csSaveInv(); csMoney(win.v, 'verkauft'); close(); };
     };
     timer = setTimeout(finish, 5800);
     csSkip = finish;
@@ -8374,7 +8398,7 @@ document.getElementById('cs-search')?.addEventListener('input', (e) => { csShopF
 csInv.forEach(it => { if(it.i) it.i = it.i.replace(/\.png$/, '.webp'); });
 csRenderAll(); csHud();
 fetch('/cs/cases.json').then(r => r.json()).then(list => {
-  CS_CASES = list;
+  CS_CASES = list.sort((a, b) => a.chf - b.chf);
   csInv = csInv.filter(it => it.kind !== 'case' || csCase(it.id));
   const cnt = document.getElementById('cs-shop-count');
   if(cnt) cnt.textContent = list.length + ' Kisten';
@@ -8406,6 +8430,7 @@ function snakeRandomFood(){
   do {
     pos = { x: Math.floor(Math.random() * SNAKE_SIZE), y: Math.floor(Math.random() * SNAKE_SIZE) };
   } while(snakeBody.some(s => s.x === pos.x && s.y === pos.y));
+  pos.kind = Math.random() < 0.25 ? 'ammo' : 'tag';   // Munitionskiste gibt mehr XP
   snakeFood = pos;
 }
 
@@ -8417,7 +8442,85 @@ function snakeBuildGrid(){
     cell.className = 'snake-cell';
     snakeGridEl.appendChild(cell);
   }
+  // Ghost als durchgehender Körper (SVG über dem Raster), gleitet flüssig von Feld zu Feld
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'ghost-svg');
+  svg.setAttribute('viewBox', `0 0 ${SNAKE_SIZE} ${SNAKE_SIZE}`);
+  svg.innerHTML = `<defs>
+      <radialGradient id="ghBody" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#5b646a"/><stop offset="0.55" stop-color="#2a3034"/><stop offset="1" stop-color="#101315"/></radialGradient>
+      <linearGradient id="ghPlate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6c757b"/><stop offset="1" stop-color="#2f3539"/></linearGradient>
+      <radialGradient id="ghMask" cx="0.45" cy="0.3" r="0.75"><stop offset="0" stop-color="#ffffff"/><stop offset="0.6" stop-color="#e6e1d4"/><stop offset="1" stop-color="#a8a191"/></radialGradient>
+      <radialGradient id="ghHood" cx="0.38" cy="0.28" r="0.85"><stop offset="0" stop-color="#4a5055"/><stop offset="0.6" stop-color="#1a1d20"/><stop offset="1" stop-color="#070809"/></radialGradient>
+      <radialGradient id="ghGlow"><stop offset="0" stop-color="#9fe3ff" stop-opacity="0.9"/><stop offset="1" stop-color="#3fb6ff" stop-opacity="0"/></radialGradient>
+    </defs>
+    <g class="gh-shadowg"></g><g class="gh-outg"></g><g class="gh-bodyg"></g><g class="gh-decals"></g>
+    <g class="gh-head">
+      <ellipse cx="0.04" cy="0.12" rx="0.68" ry="0.66" fill="rgba(0,0,0,0.45)"/>
+      <circle r="0.68" fill="#000"/>
+      <circle r="0.62" fill="url(#ghHood)"/>
+      <path d="M-0.5 -0.32 Q0 -0.62 0.5 -0.32" stroke="#5a6166" stroke-width="0.05" fill="none"/>
+      <path d="M-0.56 0.1 Q-0.6 -0.2 -0.44 -0.42 M0.56 0.1 Q0.6 -0.2 0.44 -0.42" stroke="#2c3135" stroke-width="0.04" fill="none"/>
+      <!-- Totenkopf-Maske mit Wangenknochen und Kiefer -->
+      <path d="M-0.43 -0.2 Q0 -0.46 0.43 -0.2 L0.4 0.16 Q0.3 0.3 0.2 0.32 L0.18 0.5 Q0 0.58 -0.18 0.5 L-0.2 0.32 Q-0.3 0.3 -0.4 0.16 Z" fill="url(#ghMask)" stroke="#000" stroke-width="0.035"/>
+      <path d="M-0.4 0.12 Q-0.28 0.24 -0.16 0.2 M0.4 0.12 Q0.28 0.24 0.16 0.2" stroke="#8d8676" stroke-width="0.03" fill="none"/>
+      <g class="gh-eyes">
+        <path d="M-0.36 -0.12 Q-0.22 -0.26 -0.05 -0.1 Q-0.08 0.07 -0.22 0.08 Q-0.36 0.05 -0.36 -0.12 Z" fill="#050505"/>
+        <path d="M0.36 -0.12 Q0.22 -0.26 0.05 -0.1 Q0.08 0.07 0.22 0.08 Q0.36 0.05 0.36 -0.12 Z" fill="#050505"/>
+        <circle cx="-0.2" cy="-0.04" r="0.1" fill="url(#ghGlow)" class="gh-glow"/><circle cx="0.2" cy="-0.04" r="0.1" fill="url(#ghGlow)" class="gh-glow"/>
+        <circle cx="-0.2" cy="-0.04" r="0.035" fill="#d8f6ff"/><circle cx="0.2" cy="-0.04" r="0.035" fill="#d8f6ff"/>
+      </g>
+      <path d="M0 0.12 l-0.06 0.11 h0.12 z" fill="#050505"/>
+      <path d="M-0.15 0.36 Q0 0.4 0.15 0.36" stroke="#050505" stroke-width="0.03" fill="none"/>
+      <path d="M-0.11 0.33 v0.1 M-0.055 0.34 v0.11 M0 0.34 v0.11 M0.055 0.34 v0.11 M0.11 0.33 v0.1" stroke="#050505" stroke-width="0.025" stroke-linecap="round"/>
+      <!-- Headset mit Mikrofon -->
+      <path d="M-0.64 -0.12 Q-0.72 0.1 -0.6 0.3 Q-0.4 0.46 -0.22 0.42" stroke="#3c4246" stroke-width="0.05" fill="none"/>
+      <rect x="-0.74" y="-0.2" width="0.14" height="0.3" rx="0.05" fill="#1b1f22" stroke="#000" stroke-width="0.025"/>
+      <circle cx="-0.22" cy="0.42" r="0.04" fill="#1b1f22"/>
+    </g>`;
+  snakeGridEl.appendChild(svg);
 }
+let ghostPrev = [], ghostTickAt = 0, ghostRaf = null;
+function ghostDraw(){
+  const svg = snakeGridEl.querySelector('.ghost-svg');
+  if(!svg || !snakeBody.length) return;
+  const k = snakeRunning ? Math.min(1, (performance.now() - ghostTickAt) / snakeSpeed) : 1;
+  const pts = snakeBody.map((seg, i) => {
+    const p = ghostPrev[i] || ghostPrev[ghostPrev.length - 1] || seg;
+    return [p.x + (seg.x - p.x) * k + 0.5, p.y + (seg.y - p.y) * k + 0.5];
+  });
+  // Körper aus überlappenden Kreisen, wird zum Schwanz hin schmaler
+  const dense = [];
+  for(let i = 0; i < pts.length - 1; i++) for(let t = 0; t < 1; t += 0.1)
+    dense.push([pts[i][0] + (pts[i + 1][0] - pts[i][0]) * t, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * t, i + t]);
+  dense.push([...pts[pts.length - 1], pts.length - 1]);
+  const n = Math.max(1, pts.length - 1), rad = (f) => 0.36 - 0.16 * Math.pow(f / n, 1.2);
+  let sh = '', ol = '', bd = '', dc = '';
+  for(let j = dense.length - 1; j >= 1; j--){
+    const [x, y, f] = dense[j], r = rad(f);
+    sh += `<circle cx="${(x + 0.06).toFixed(3)}" cy="${(y + 0.14).toFixed(3)}" r="${r.toFixed(3)}"/>`;
+    ol += `<circle cx="${x.toFixed(3)}" cy="${y.toFixed(3)}" r="${(r + 0.055).toFixed(3)}"/>`;
+    bd += `<circle cx="${x.toFixed(3)}" cy="${y.toFixed(3)}" r="${r.toFixed(3)}"/>`;
+  }
+  // Weste: Platten quer zum Körper, Taschen links/rechts, Totenkopf-Aufnäher, Gurtband
+  for(let i = 1; i < pts.length; i++){
+    const [x, y] = pts[i], [px, py] = pts[i - 1], r = rad(i);
+    const ang = Math.atan2(y - py, x - px) * 180 / Math.PI;
+    const g = (inner) => `<g transform="translate(${x.toFixed(3)} ${y.toFixed(3)}) rotate(${ang.toFixed(1)})">${inner}</g>`;
+    if(i % 3 === 1) dc += `<g transform="translate(${x.toFixed(3)} ${y.toFixed(3)})"><circle r="${(r * 0.58).toFixed(3)}" fill="#e6e1d4" stroke="#000" stroke-width="0.03"/><circle cx="${(-r * 0.2).toFixed(3)}" cy="${(-r * 0.08).toFixed(3)}" r="${(r * 0.15).toFixed(3)}" fill="#111"/><circle cx="${(r * 0.2).toFixed(3)}" cy="${(-r * 0.08).toFixed(3)}" r="${(r * 0.15).toFixed(3)}" fill="#111"/><path d="M${(-r * 0.2).toFixed(3)} ${(r * 0.28).toFixed(3)} h${(r * 0.4).toFixed(3)}" stroke="#111" stroke-width="0.035"/></g>`;   // Totenkopf-Aufnäher bleibt aufrecht
+    else dc += g(`<rect x="${(-r * 0.4).toFixed(3)}" y="${(-r * 0.78).toFixed(3)}" width="${(r * 0.8).toFixed(3)}" height="${(r * 1.56).toFixed(3)}" rx="${(r * 0.18).toFixed(3)}" fill="url(#ghPlate)" stroke="#000" stroke-width="0.03"/><path d="M${(-r * 0.3).toFixed(3)} 0 h${(r * 0.6).toFixed(3)}" stroke="#20252a" stroke-width="0.03"/>`
+      + (i % 2 ? `<rect x="${(-r * 0.3).toFixed(3)}" y="${(r * 0.62).toFixed(3)}" width="${(r * 0.6).toFixed(3)}" height="${(r * 0.42).toFixed(3)}" rx="0.04" fill="#3d4533" stroke="#000" stroke-width="0.025"/>` : ''));
+  }
+  dc += `<path d="M${pts.slice(0, -1).map(p => (p[0] - 0.06).toFixed(3) + ' ' + (p[1] - 0.12).toFixed(3)).join(' L')}" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="0.06" stroke-linecap="round" stroke-linejoin="round"/>`;
+  svg.querySelector('.gh-shadowg').innerHTML = sh;
+  svg.querySelector('.gh-outg').innerHTML = ol;
+  svg.querySelector('.gh-bodyg').innerHTML = bd;
+  svg.querySelector('.gh-decals').innerHTML = dc;
+  const [hx, hy] = pts[0];
+  svg.querySelector('.gh-head').setAttribute('transform', `translate(${hx.toFixed(3)} ${hy.toFixed(3)})`);
+  svg.querySelector('.gh-eyes').setAttribute('transform', `translate(${(snakeDir.x * 0.06).toFixed(2)} ${(snakeDir.y * 0.06).toFixed(2)})`);
+  svg.classList.toggle('dead', snakeOver);
+}
+(function ghostLoop(){ if(snakeRunning && snakeGridEl.offsetParent) ghostDraw(); ghostRaf = requestAnimationFrame(ghostLoop); })();
 
 function snakeDirDeg(v){
   if(v.x === 1) return 0;
@@ -8426,25 +8529,91 @@ function snakeDirDeg(v){
   return 270;
 }
 
+// Call-of-Duty-Stil: Kopf ist ein Soldat mit Helm (von oben), Futter sind Dogtags und Munitionskisten
+// Ghost-Skin: schwarze Sturmhaube mit weisser Totenkopf-Maske (von vorn), Blick in Laufrichtung
 function snakeHeadSVG(dir){
-  const deg = snakeDirDeg(dir);
-  return `<svg viewBox="0 0 24 24" style="overflow:visible;display:block;width:100%;height:100%;transform:rotate(${deg}deg);">
-    <circle cx="15.5" cy="8" r="1.9" fill="#0c2b28"/>
-    <circle cx="15.5" cy="16" r="1.9" fill="#0c2b28"/>
-    <circle cx="16" cy="7.5" r="0.6" fill="#fff" opacity="0.8"/>
-    <circle cx="16" cy="15.5" r="0.6" fill="#fff" opacity="0.8"/>
-    <path d="M21 12 L26 10 M21 12 L26 14" stroke="#C94A3A" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+  const ex = dir.x * 0.9, ey = dir.y * 0.9;
+  return `<svg viewBox="0 0 24 24" style="overflow:visible;display:block;width:100%;height:100%;">
+    <ellipse cx="12" cy="13" rx="11.5" ry="11.5" fill="#0d0f10" stroke="#000" stroke-width="1"/>
+    <path d="M3 8 Q12 1 21 8" stroke="#2a2e31" stroke-width="2" fill="none"/>
+    <path d="M5 10 Q12 6 19 10 L18.5 16 Q16 21 12 21.5 Q8 21 5.5 16 Z" fill="#e9e6dc" stroke="#000" stroke-width="0.8"/>
+    <path d="M7 14 l1 3 M17 14 l-1 3" stroke="#bdb8aa" stroke-width="0.6"/>
+    <g transform="translate(${ex} ${ey})">
+      <path d="M6.6 11.2 Q8.6 9.6 10.6 11.4 Q10 14 8.2 14 Q6.6 13.6 6.6 11.2 Z" fill="#050505"/>
+      <path d="M17.4 11.2 Q15.4 9.6 13.4 11.4 Q14 14 15.8 14 Q17.4 13.6 17.4 11.2 Z" fill="#050505"/>
+      <circle cx="8.8" cy="12.1" r="0.7" fill="#c9d4da"/><circle cx="15.2" cy="12.1" r="0.7" fill="#c9d4da"/>
+    </g>
+    <path d="M12 14.6 l-1 2 h2 z" fill="#050505"/>
+    <path d="M8.4 18.2 h7.2 M9.2 17.5 v1.6 M10.4 17.5 v1.8 M11.6 17.5 v1.9 M12.8 17.5 v1.9 M14 17.5 v1.8 M15.2 17.5 v1.6" stroke="#050505" stroke-width="0.6" stroke-linecap="round"/>
+    <path d="M2.5 15 Q1 12 2 9" stroke="#3a3f43" stroke-width="1.2" fill="none"/><circle cx="2.3" cy="15.6" r="1.1" fill="#1b1f22" stroke="#555" stroke-width="0.4"/>
   </svg>`;
 }
 
 function snakeAppleSVG(){
-  return `<svg viewBox="0 0 24 24" style="display:block;width:100%;height:100%;">
-    <ellipse cx="12" cy="14" rx="7.3" ry="6.8" fill="#C6392B"/>
-    <ellipse cx="9.2" cy="10.8" rx="2.7" ry="2.2" fill="#FF9482" opacity="0.85"/>
-    <path d="M12 8 C11.2 5.6 12.6 4.2 14.4 3.7" stroke="#6B4423" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-    <path d="M14 4.6 C16.3 3.6 17.8 5 16.9 6.9 C15.5 7.4 14.1 6.5 14 4.6 Z" fill="#4C9A4C"/>
+  if(snakeFood.kind === 'ammo') return `<svg viewBox="0 0 24 24" class="cod-food" style="display:block;width:100%;height:100%;">
+    <rect x="3" y="6" width="18" height="13" rx="1.5" fill="#5a6b34" stroke="#1d240f" stroke-width="1.2"/>
+    <rect x="3" y="6" width="18" height="3.5" fill="#6d8040"/><path d="M3 9.5h18" stroke="#1d240f" stroke-width="0.8"/>
+    <text x="12" y="16.6" text-anchor="middle" font-family="Black Ops One, sans-serif" font-size="5.2" fill="#e8d36a">AMMO</text>
+  </svg>`;
+  return `<svg viewBox="0 0 24 24" class="cod-food" style="display:block;width:100%;height:100%;">
+    <path d="M12 2v5" stroke="#9aa3ab" stroke-width="1" stroke-dasharray="1 1"/>
+    <rect x="6" y="7" width="12" height="14" rx="5" fill="url(#codTag)" stroke="#4a5058" stroke-width="1"/>
+    <defs><linearGradient id="codTag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2f5f8"/><stop offset="1" stop-color="#8a939c"/></linearGradient></defs>
+    <path d="M9 12h6M9 14.5h6M9 17h4" stroke="#4a5058" stroke-width="0.9"/>
   </svg>`;
 }
+let codStreak = 0, codAmmo = 30;
+// Kompass oben: dreht sich mit der Laufrichtung (N/O/S/W mit Strichen dazwischen)
+(function codBuildCompass(){
+  const el = document.getElementById('cod-compass');
+  if(!el) return;
+  const marks = ['N', '15', '30', 'NO', '60', '75', 'O', '105', '120', 'SO', '150', '165', 'S', '195', '210', 'SW', '240', '255', 'W', '285', '300', 'NW', '330', '345'];
+  el.innerHTML = [...marks, ...marks, ...marks].map(m => `<span class="${m.length <= 2 && isNaN(m) ? 'dir' : ''}">${m}</span>`).join('');
+})();
+function codCompass(){
+  const el = document.getElementById('cod-compass');
+  if(!el) return;
+  const deg = { '0,-1': 0, '1,0': 90, '0,1': 180, '-1,0': 270 }[snakeDir.x + ',' + snakeDir.y] || 0;
+  const half = (el.parentElement.clientWidth || 300) / 2;
+  el.style.transform = `translateX(${half - ((24 + deg / 15) * 40 + 20)}px)`;   // gewünschte Richtung genau unter den Pfeil
+}
+function codFeed(text){
+  const feed = document.getElementById('cod-feed');
+  if(!feed) return;
+  const row = document.createElement('div');
+  row.className = 'cod-feed-row';
+  row.innerHTML = text;
+  feed.prepend(row);
+  while(feed.children.length > 3) feed.lastChild.remove();
+  setTimeout(() => row.remove(), 3500);
+}
+function codRank(){
+  const lvl = 1 + Math.floor(snakeScore / 5);
+  const el = document.getElementById('cod-rank');
+  if(el && el.textContent !== String(lvl)){
+    const up = Number(el.textContent) < lvl;
+    el.textContent = lvl;
+    if(up){ el.classList.remove('up'); void el.offsetWidth; el.classList.add('up'); codFeed(`<b class="g">Rang aufgestiegen</b> Stufe ${lvl}`); }
+  }
+}
+function codPop(x, y, text, cls){
+  const fx = document.getElementById('cod-fx');
+  if(!fx) return;
+  const el = document.createElement('span');
+  el.className = 'cod-pop ' + (cls || '');
+  el.innerHTML = text;
+  el.style.left = ((x + 0.5) / SNAKE_SIZE * 100) + '%'; el.style.top = ((y + 0.5) / SNAKE_SIZE * 100) + '%';
+  fx.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+function codBanner(big, small, cls, stay){
+  const el = document.getElementById('cod-banner');
+  if(!el) return;
+  el.innerHTML = big ? `<div class="cod-ban ${cls || ''}"><b>${big}</b>${small ? `<span>${small}</span>` : ''}</div>` : '';
+  clearTimeout(codBanner.t);
+  if(big && !stay) codBanner.t = setTimeout(() => { el.innerHTML = ''; }, 1800);
+}
+const COD_STREAKS = { 3: ['UAV online', 'Feindliche Positionen aufgedeckt'], 5: ['Präzisionsschlag bereit', '5er-Killstreak'], 7: ['Kampfhubschrauber', '7er-Killstreak'], 10: ['Sentry Gun', '10er-Killstreak'], 15: ['Kampfjets im Anflug', '15er-Killstreak'], 25: ['Taktische Nuke', '25er-Killstreak!'] };
 
 function snakeCornerRadius(i){
   const cur = snakeBody[i];
@@ -8473,23 +8642,14 @@ function snakeCornerRadius(i){
 }
 
 function snakeRender(){
+  codCompass();
   const cells = snakeGridEl.children;
-  for(let i = 0; i < cells.length; i++){
+  for(let i = 0; i < SNAKE_SIZE * SNAKE_SIZE; i++){   // nur Felder, nicht das Ghost-SVG
     cells[i].className = 'snake-cell';
     cells[i].style.borderRadius = '';
     cells[i].innerHTML = '';
   }
-  snakeBody.forEach((seg, i) => {
-    const cell = cells[snakeCellIndex(seg.x, seg.y)];
-    if(!cell) return;
-    cell.style.borderRadius = snakeCornerRadius(i);
-    if(i === 0){
-      cell.className = 'snake-cell head';
-      cell.innerHTML = snakeHeadSVG(snakeDir);
-    } else {
-      cell.className = 'snake-cell body';
-    }
-  });
+  ghostDraw();
   const foodCell = cells[snakeCellIndex(snakeFood.x, snakeFood.y)];
   if(foodCell){
     foodCell.classList.add('food');
@@ -8516,12 +8676,18 @@ function snakeReset(){
   snakeNextDir = { x: 1, y: 0 };
   snakeScore = 0;
   snakeSpeed = 160;
+  codStreak = 0; codAmmo = 30;
+  const st = document.getElementById('cod-streak'); if(st) st.textContent = 0;
+  const am = document.getElementById('cod-ammo'); if(am){ am.textContent = 30; am.classList.remove('low'); }
+  const rk = document.getElementById('cod-rank'); if(rk) rk.textContent = 1;
+  codBanner('Einsatz bereit', 'Sammle Dogtags und Munition', 'ready', true);
   snakeOver = false;
   snakeRunning = false;
-  snakeScoreEl.textContent = msPad(snakeScore);
-  snakeBestEl.textContent = msPad(snakeBest);
+  snakeScoreEl.textContent = snakeScore * 100;   // in XP
+  snakeBestEl.textContent = snakeBest * 100;
   snakeRandomFood();
   snakeBuildGrid();
+  ghostPrev = snakeBody.map(p => ({ ...p }));
   snakeRender();
   snakeStatusEl.textContent = matchMedia('(pointer:coarse), (hover:none), (max-width:700px)').matches ? 'Wischen oder Steuerkreuz zum Starten.' : 'Pfeiltasten zum Starten.';
 }
@@ -8530,10 +8696,17 @@ function snakeGameOver(){
   snakeStopLoop();
   snakeOver = true;
   snakeRunning = false;
-  snakeStatusEl.textContent = `Game Over! ${snakeScore} Punkte. Neues Spiel starten?`;
+  const hd = snakeBody[0];
+  codPop(hd.x, hd.y, '', 'boom');
+  document.querySelector('.cod-map')?.classList.add('cod-hit');
+  setTimeout(() => document.querySelector('.cod-map')?.classList.remove('cod-hit'), 700);
+  codBanner('Mission fehlgeschlagen', `${snakeScore * 100} XP · Killstreak ${codStreak}`, 'fail', true);
+  snakeStatusEl.textContent = `Gefallen! ${snakeScore * 100} XP. Drück „Einsatz starten“ für eine neue Runde.`;
 }
 
 function snakeTick(){
+  ghostPrev = snakeBody.map(p => ({ ...p }));
+  ghostTickAt = performance.now();
   snakeDir = snakeNextDir;
   const head = snakeBody[0];
   const newHead = { x: head.x + snakeDir.x, y: head.y + snakeDir.y };
@@ -8552,11 +8725,20 @@ function snakeTick(){
 
   snakeBody.unshift(newHead);
   if(willGrow){
-    snakeScore++;
-    snakeScoreEl.textContent = msPad(snakeScore);
+    const gain = snakeFood.kind === 'ammo' ? 3 : 1;
+    snakeScore += gain;
+    codStreak++;
+    const st = document.getElementById('cod-streak'); if(st) st.textContent = codStreak;
+    codPop(newHead.x, newHead.y, `<i class="cod-hm"></i>+${gain * 100}`, snakeFood.kind);
+    codFeed(`<b>Ghost</b> <i class="cod-ki"></i> ${snakeFood.kind === 'ammo' ? 'Munitionskiste' : 'Dogtag'}`);
+    if(snakeFood.kind === 'ammo') codAmmo = 30; else codAmmo = Math.max(0, codAmmo - 3);
+    const am = document.getElementById('cod-ammo'); if(am){ am.textContent = codAmmo; am.classList.toggle('low', codAmmo < 10); }
+    codRank();
+    if(COD_STREAKS[codStreak]) codBanner(COD_STREAKS[codStreak][0], COD_STREAKS[codStreak][1], 'streak');
+    snakeScoreEl.textContent = snakeScore * 100;   // in XP
     if(snakeScore > snakeBest){
       snakeBest = snakeScore;
-      snakeBestEl.textContent = msPad(snakeBest);
+      snakeBestEl.textContent = snakeBest * 100;
       localStorage.setItem('snake_best', String(snakeBest));
     }
     snakeRandomFood();
@@ -8580,7 +8762,7 @@ function snakeSetDirection(dx, dy){
     snakeDir = { x: dx, y: dy };
   }
   snakeNextDir = { x: dx, y: dy };
-  if(!snakeRunning) snakeStartLoop();
+  if(!snakeRunning){ codBanner(''); snakeStartLoop(); }
 }
 
 // Mehrere Spiele hören auf Pfeiltasten — nur das zuletzt angeklickte reagiert darauf
@@ -8958,4 +9140,72 @@ document.getElementById('to-top-btn')?.addEventListener('click', () => window.sc
   new ResizeObserver(apply).observe(fit);
   window.addEventListener('resize', apply);
   apply();
+})();
+
+
+// Tab 10 – Serien: legale Streaming-Dienste, Suche (JustWatch zeigt, wo etwas läuft) und eine Merkliste mit Staffel/Folge
+(function seriesTab(){
+  const free = document.getElementById('sv-free'), paid = document.getElementById('sv-paid');
+  if(!free) return;
+  const SERVICES = [
+    { name: 'Play Suisse', url: 'https://www.playsuisse.ch', c1: '#e30613', c2: '#7a0008', sub: 'Schweizer Serien & Filme', free: true },
+    { name: 'Play SRF', url: 'https://www.srf.ch/play', c1: '#af001d', c2: '#4a000c', sub: 'SRF-Mediathek', free: true },
+    { name: 'ZDF', url: 'https://www.zdf.de', c1: '#fa7d19', c2: '#8a3a00', sub: 'ZDF-Mediathek', free: true },
+    { name: 'ARD', url: 'https://www.ardmediathek.de', c1: '#003480', c2: '#001a40', sub: 'ARD-Mediathek', free: true },
+    { name: 'arte', url: 'https://www.arte.tv/de/', c1: '#fa481c', c2: '#2a0d05', sub: 'Serien & Dokus', free: true },
+    { name: 'YouTube', url: 'https://www.youtube.com', c1: '#ff0033', c2: '#3a0008', sub: 'Gratis mit Werbung', free: true },
+    { name: 'Netflix', url: 'https://www.netflix.com', c1: '#e50914', c2: '#1a0103', sub: 'Abo', free: false },
+    { name: 'Disney+', url: 'https://www.disneyplus.com', c1: '#0063e5', c2: '#06123a', sub: 'Abo', free: false },
+  ];
+  const tile = (sv) => `<a class="sv-tile" href="${sv.url}" target="_blank" rel="noopener" style="--c1:${sv.c1};--c2:${sv.c2}"><b>${sv.name}</b><span>${sv.sub}</span></a>`;
+  free.innerHTML = SERVICES.filter(x => x.free).map(tile).join('');
+  paid.innerHTML = SERVICES.filter(x => !x.free).map(tile).join('');
+
+  const SEARCH = {
+    justwatch: (q) => 'https://www.justwatch.com/ch/Suche?q=' + encodeURIComponent(q),
+    netflix: (q) => 'https://www.netflix.com/search?q=' + encodeURIComponent(q),
+    srf: (q) => 'https://www.srf.ch/play/tv/suche?query=' + encodeURIComponent(q),
+    zdf: (q) => 'https://www.zdf.de/suche?q=' + encodeURIComponent(q),
+    ard: (q) => 'https://www.ardmediathek.de/suche/' + encodeURIComponent(q),
+    youtube: (q) => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q),
+  };
+  document.getElementById('sv-search').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = document.getElementById('sv-q').value.trim();
+    if(!q) return;
+    window.open(SEARCH[document.getElementById('sv-where').value](q), '_blank', 'noopener');
+  });
+
+  // Merkliste: Name, Staffel, Folge – im Browser gespeichert
+  let list = [];
+  try{ list = JSON.parse(localStorage.getItem('sv_list') || '[]'); } catch(err){}
+  const save = () => { try{ localStorage.setItem('sv_list', JSON.stringify(list)); } catch(err){} };
+  const esc = (t) => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const listEl = document.getElementById('sv-list');
+  function render(){
+    listEl.innerHTML = list.length ? list.map((x, i) => `<div class="sv-item">
+        <b>${esc(x.name)}</b>
+        <div class="sv-step"><span>S</span><button data-i="${i}" data-k="s" data-d="-1">−</button><em>${x.s}</em><button data-i="${i}" data-k="s" data-d="1">+</button></div>
+        <div class="sv-step"><span>F</span><button data-i="${i}" data-k="e" data-d="-1">−</button><em>${x.e}</em><button data-i="${i}" data-k="e" data-d="1">+</button></div>
+        <a class="sv-where" href="${SEARCH.justwatch(x.name)}" target="_blank" rel="noopener" title="Wo läuft das?">Wo läuft's?</a>
+        <button class="sv-del" data-del="${i}" aria-label="Entfernen">×</button>
+      </div>`).join('') : '<div class="sv-empty">Noch keine Serien. Füge oben eine hinzu, um dir Staffel und Folge zu merken.</div>';
+  }
+  listEl.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if(!b) return;
+    if(b.dataset.del != null){ list.splice(Number(b.dataset.del), 1); save(); render(); return; }
+    const x = list[Number(b.dataset.i)], k = b.dataset.k, d = Number(b.dataset.d);
+    if(!x) return;
+    x[k] = Math.max(1, x[k] + d);
+    if(k === 's' && d > 0) x.e = 1;   // neue Staffel beginnt bei Folge 1
+    save(); render();
+  });
+  document.getElementById('sv-add').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const inp = document.getElementById('sv-add-name'), name = inp.value.trim();
+    if(!name) return;
+    list.unshift({ name, s: 1, e: 1 }); inp.value = ''; save(); render();
+  });
+  render();
 })();

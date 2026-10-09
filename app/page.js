@@ -30,6 +30,7 @@ export default function Page() {
   <button className="tab-btn" data-view="timer-view">07 Timer</button>
   <button className="tab-btn" data-view="apps-view">08 Apps</button>
   <button className="tab-btn" data-view="games-view">09 Spiele</button>
+  <button className="tab-btn" data-view="series-view">10 Serien</button>
 </div>
 
 <div className="view active" id="overview-view">
@@ -505,6 +506,37 @@ export default function Page() {
   </div>
 </div>
 
+<div className="view" id="series-view">
+  <div className="panel-label">Serien &amp; Filme</div>
+  <div className="sv-wrap">
+    <form className="sv-search" id="sv-search">
+      <input id="sv-q" type="search" placeholder="Serie oder Film suchen …" autoComplete="off" />
+      <select id="sv-where" aria-label="Wo suchen">
+        <option value="justwatch">Überall (JustWatch)</option>
+        <option value="netflix">Netflix</option>
+        <option value="srf">Play SRF</option>
+        <option value="zdf">ZDF-Mediathek</option>
+        <option value="ard">ARD-Mediathek</option>
+        <option value="youtube">YouTube</option>
+      </select>
+      <button type="submit">Suchen</button>
+    </form>
+    <div className="sv-hint">„Überall“ zeigt dir, bei welchem Dienst in der Schweiz eine Serie läuft – gratis oder im Abo.</div>
+
+    <div className="sv-group-label">Gratis</div>
+    <div className="sv-grid" id="sv-free"></div>
+    <div className="sv-group-label">Abos</div>
+    <div className="sv-grid" id="sv-paid"></div>
+
+    <div className="sv-group-label">Meine Serien</div>
+    <form className="sv-add" id="sv-add">
+      <input id="sv-add-name" placeholder="Serie hinzufügen, z. B. Stranger Things" autoComplete="off" />
+      <button type="submit">+</button>
+    </form>
+    <div className="sv-list" id="sv-list"></div>
+  </div>
+</div>
+
 <div className="view" id="games-view">
   <div className="panel-label">Spiel wählen</div>
   <div className="city-select" id="game-jump-row">
@@ -863,7 +895,7 @@ export default function Page() {
         <span className="cs-hp"><i></i><b id="cs-hp">100</b></span>
         <span className="cs-armor"><i></i><b id="cs-armor">100</b></span>
       </div>
-      <div className="cs-money"><b id="cs-money">$800</b><span className="cs-moneypop" id="cs-moneypop"></span></div>
+      <div className="cs-money"><b id="cs-money">Fr. 5.00</b><span className="cs-moneypop" id="cs-moneypop"></span></div>
     </div>
     <div className="cs-feed" id="cs-feed"></div>
     <div className="cs-defuse" id="cs-defuse"><span>Entschärfe mit Kit</span><i></i></div>
@@ -898,24 +930,42 @@ export default function Page() {
   </div>
 
   <div className="panel-label" id="game-label-snake" style={{ marginTop: "44px" }}>Snake</div>
+  <div className="cod-snake">
+  <div className="cod-title"><b>CALL OF SNAKE</b><span>Modern Warfare · Operator: Ghost</span></div>
   <div className="game-resize-wrap">
   <div className="snake-wrap">
     <div className="snake-hud">
-      <div className="snake-hud-item">
-        <div className="snake-hud-label">Punkte</div>
-        <div className="ms-counter" id="snake-score">000</div>
+      <div className="snake-hud-item cod-rank-item">
+        <i className="cod-rank" id="cod-rank">1</i>
       </div>
       <div className="snake-hud-item">
-        <div className="snake-hud-label">Bestwert</div>
+        <div className="snake-hud-label">XP</div>
+        <div className="ms-counter" id="snake-score">000</div>
+      </div>
+      <div className="snake-hud-item cod-streak">
+        <div className="snake-hud-label">Killstreak</div>
+        <div className="ms-counter" id="cod-streak">0</div>
+      </div>
+      <div className="snake-hud-item">
+        <div className="snake-hud-label">Rekord</div>
         <div className="ms-counter" id="snake-best">000</div>
       </div>
     </div>
-    <div className="snake-grid" id="snake-grid"></div>
+    <div className="cod-compass"><div className="cod-compass-strip" id="cod-compass"></div><i></i></div>
+    <div className="cod-map">
+      <div className="snake-grid" id="snake-grid"></div>
+      <div className="cod-feed" id="cod-feed"></div>
+      <div className="cod-objective"><b>Ziel</b><span>Dogtags sichern</span></div>
+      <div className="cod-ammo"><span className="cod-gun">M4A1</span><b id="cod-ammo">30</b><em>/ 120</em></div>
+      <i className="cod-radar"></i>
+      <div className="cod-fx" id="cod-fx"></div>
+      <div className="cod-banner" id="cod-banner"></div>
+    </div>
   </div>
   <div className="game-resize-handle"></div>
   </div>
   <div className="sudoku-controls" style={{ marginTop: "14px" }}>
-    <button className="action-btn" id="snake-new-btn">Neues Spiel</button>
+    <button className="action-btn" id="snake-new-btn">Einsatz starten</button>
   </div>
   <div className="snake-pad" id="snake-pad">
     <button type="button" data-dir="0,-1" aria-label="Hoch">▲</button>
@@ -924,6 +974,7 @@ export default function Page() {
     <button type="button" data-dir="0,1" aria-label="Runter">▼</button>
   </div>
   <div className="todo-empty" id="snake-status" style={{ marginTop: "10px" }}></div>
+  </div>
 
   <div className="panel-label" id="game-label-2048" style={{ marginTop: "44px" }}>2048</div>
   <div className="g2048-wrap">

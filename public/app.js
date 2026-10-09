@@ -9153,13 +9153,30 @@ document.getElementById('to-top-btn')?.addEventListener('click', () => window.sc
     { name: 'ZDF', url: 'https://www.zdf.de', c1: '#fa7d19', c2: '#8a3a00', sub: 'ZDF-Mediathek', free: true },
     { name: 'ARD', url: 'https://www.ardmediathek.de', c1: '#003480', c2: '#001a40', sub: 'ARD-Mediathek', free: true },
     { name: 'arte', url: 'https://www.arte.tv/de/', c1: '#fa481c', c2: '#2a0d05', sub: 'Serien & Dokus', free: true },
-    { name: 'YouTube', url: 'https://www.youtube.com', c1: '#ff0033', c2: '#3a0008', sub: 'Gratis mit Werbung', free: true },
-    { name: 'Netflix', url: 'https://www.netflix.com', c1: '#e50914', c2: '#1a0103', sub: 'Abo', free: false },
-    { name: 'Disney+', url: 'https://www.disneyplus.com', c1: '#0063e5', c2: '#06123a', sub: 'Abo', free: false },
+    { name: 'YouTube', url: 'https://www.youtube.com', app: { android: 'com.google.android.youtube', ios: 'youtube://' }, c1: '#ff0033', c2: '#3a0008', sub: 'Gratis mit Werbung', free: true },
+    { name: 'Netflix', url: 'https://www.netflix.com', app: { android: 'com.netflix.mediaclient', ios: 'nflx://www.netflix.com/' }, c1: '#e50914', c2: '#1a0103', sub: 'Abo', free: false },
+    { name: 'Disney+', url: 'https://www.disneyplus.com', app: { android: 'com.disney.disneyplus', ios: 'disneyplus://' }, c1: '#0063e5', c2: '#06123a', sub: 'Abo', free: false },
   ];
-  const tile = (sv) => `<a class="sv-tile" href="${sv.url}" target="_blank" rel="noopener" style="--c1:${sv.c1};--c2:${sv.c2}"><b>${sv.name}</b><span>${sv.sub}</span></a>`;
+  const tile = (sv, i) => `<a class="sv-tile" href="${sv.url}" target="_blank" rel="noopener" data-sv="${SERVICES.indexOf(sv)}" style="--c1:${sv.c1};--c2:${sv.c2}"><b>${sv.name}</b><span>${sv.sub}</span></a>`;
   free.innerHTML = SERVICES.filter(x => x.free).map(tile).join('');
   paid.innerHTML = SERVICES.filter(x => !x.free).map(tile).join('');
+  // Auf dem Handy direkt die App öffnen statt der Webseite (Android: Intent mit Webseite als Ersatz, iPhone: App-Link mit Ersatz nach kurzer Zeit)
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  document.querySelectorAll('.sv-tile[data-sv]').forEach(a => a.addEventListener('click', (e) => {
+    const sv = SERVICES[Number(a.dataset.sv)];
+    if(!sv || !sv.app || !(isAndroid || isIOS)) return;   // Computer: normal die Webseite
+    e.preventDefault();
+    if(isAndroid){
+      const u = new URL(sv.url);
+      location.href = `intent://${u.host}${u.pathname}#Intent;scheme=https;package=${sv.app.android};S.browser_fallback_url=${encodeURIComponent(sv.url)};end`;
+      return;
+    }
+    // iPhone: App-Schema versuchen; ist die App nicht installiert, nach 1.5 s die Webseite öffnen
+    const fallback = setTimeout(() => { if(!document.hidden) location.href = sv.url; }, 1500);
+    document.addEventListener('visibilitychange', () => { if(document.hidden) clearTimeout(fallback); }, { once: true });
+    location.href = sv.app.ios;
+  }));
 
   const SEARCH = {
     justwatch: (q) => 'https://www.justwatch.com/ch/Suche?q=' + encodeURIComponent(q),

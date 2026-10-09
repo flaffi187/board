@@ -1081,7 +1081,14 @@ document.querySelectorAll('.overview-card').forEach(card => {
   card.addEventListener('click', () => {
     const target = card.dataset.jump;
     const targetBtn = document.querySelector(`.tab-btn[data-view="${target}"]`);
-    if(targetBtn) targetBtn.click();
+    if(targetBtn){ targetBtn.click(); return; }
+    // Seiten ohne eigenen Tab (z. B. Serien): direkt anzeigen
+    const view = document.getElementById(target);
+    if(!view) return;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    view.classList.add('active');
+    window.scrollTo({ top: 0 });
   });
 });
 
@@ -9143,86 +9150,3 @@ document.getElementById('to-top-btn')?.addEventListener('click', () => window.sc
 })();
 
 
-// Tab 10 – Serien: legale Streaming-Dienste, Suche (JustWatch zeigt, wo etwas läuft) und eine Merkliste mit Staffel/Folge
-(function seriesTab(){
-  const free = document.getElementById('sv-free'), paid = document.getElementById('sv-paid');
-  if(!free) return;
-  const SERVICES = [
-    { name: 'Play Suisse', url: 'https://www.playsuisse.ch', c1: '#e30613', c2: '#7a0008', sub: 'Schweizer Serien & Filme', free: true },
-    { name: 'Play SRF', url: 'https://www.srf.ch/play', c1: '#af001d', c2: '#4a000c', sub: 'SRF-Mediathek', free: true },
-    { name: 'ZDF', url: 'https://www.zdf.de', c1: '#fa7d19', c2: '#8a3a00', sub: 'ZDF-Mediathek', free: true },
-    { name: 'ARD', url: 'https://www.ardmediathek.de', c1: '#003480', c2: '#001a40', sub: 'ARD-Mediathek', free: true },
-    { name: 'arte', url: 'https://www.arte.tv/de/', c1: '#fa481c', c2: '#2a0d05', sub: 'Serien & Dokus', free: true },
-    { name: 'YouTube', url: 'https://www.youtube.com', app: { android: 'com.google.android.youtube', ios: 'youtube://' }, c1: '#ff0033', c2: '#3a0008', sub: 'Gratis mit Werbung', free: true },
-    { name: 'Netflix', url: 'https://www.netflix.com', app: { android: 'com.netflix.mediaclient', ios: 'nflx://www.netflix.com/' }, c1: '#e50914', c2: '#1a0103', sub: 'Abo', free: false },
-    { name: 'Disney+', url: 'https://www.disneyplus.com', app: { android: 'com.disney.disneyplus', ios: 'disneyplus://' }, c1: '#0063e5', c2: '#06123a', sub: 'Abo', free: false },
-  ];
-  const tile = (sv, i) => `<a class="sv-tile" href="${sv.url}" target="_blank" rel="noopener" data-sv="${SERVICES.indexOf(sv)}" style="--c1:${sv.c1};--c2:${sv.c2}"><b>${sv.name}</b><span>${sv.sub}</span></a>`;
-  free.innerHTML = SERVICES.filter(x => x.free).map(tile).join('');
-  paid.innerHTML = SERVICES.filter(x => !x.free).map(tile).join('');
-  // Auf dem Handy direkt die App öffnen statt der Webseite (Android: Intent mit Webseite als Ersatz, iPhone: App-Link mit Ersatz nach kurzer Zeit)
-  const isAndroid = /Android/i.test(navigator.userAgent);
-  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  document.querySelectorAll('.sv-tile[data-sv]').forEach(a => a.addEventListener('click', (e) => {
-    const sv = SERVICES[Number(a.dataset.sv)];
-    if(!sv || !sv.app || !(isAndroid || isIOS)) return;   // Computer: normal die Webseite
-    e.preventDefault();
-    if(isAndroid){
-      const u = new URL(sv.url);
-      location.href = `intent://${u.host}${u.pathname}#Intent;scheme=https;package=${sv.app.android};S.browser_fallback_url=${encodeURIComponent(sv.url)};end`;
-      return;
-    }
-    // iPhone: App-Schema versuchen; ist die App nicht installiert, nach 1.5 s die Webseite öffnen
-    const fallback = setTimeout(() => { if(!document.hidden) location.href = sv.url; }, 1500);
-    document.addEventListener('visibilitychange', () => { if(document.hidden) clearTimeout(fallback); }, { once: true });
-    location.href = sv.app.ios;
-  }));
-
-  const SEARCH = {
-    justwatch: (q) => 'https://www.justwatch.com/ch/Suche?q=' + encodeURIComponent(q),
-    netflix: (q) => 'https://www.netflix.com/search?q=' + encodeURIComponent(q),
-    srf: (q) => 'https://www.srf.ch/play/tv/suche?query=' + encodeURIComponent(q),
-    zdf: (q) => 'https://www.zdf.de/suche?q=' + encodeURIComponent(q),
-    ard: (q) => 'https://www.ardmediathek.de/suche/' + encodeURIComponent(q),
-    youtube: (q) => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q),
-  };
-  document.getElementById('sv-search').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const q = document.getElementById('sv-q').value.trim();
-    if(!q) return;
-    window.open(SEARCH[document.getElementById('sv-where').value](q), '_blank', 'noopener');
-  });
-
-  // Merkliste: Name, Staffel, Folge – im Browser gespeichert
-  let list = [];
-  try{ list = JSON.parse(localStorage.getItem('sv_list') || '[]'); } catch(err){}
-  const save = () => { try{ localStorage.setItem('sv_list', JSON.stringify(list)); } catch(err){} };
-  const esc = (t) => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const listEl = document.getElementById('sv-list');
-  function render(){
-    listEl.innerHTML = list.length ? list.map((x, i) => `<div class="sv-item">
-        <b>${esc(x.name)}</b>
-        <div class="sv-step"><span>S</span><button data-i="${i}" data-k="s" data-d="-1">−</button><em>${x.s}</em><button data-i="${i}" data-k="s" data-d="1">+</button></div>
-        <div class="sv-step"><span>F</span><button data-i="${i}" data-k="e" data-d="-1">−</button><em>${x.e}</em><button data-i="${i}" data-k="e" data-d="1">+</button></div>
-        <a class="sv-where" href="${SEARCH.justwatch(x.name)}" target="_blank" rel="noopener" title="Wo läuft das?">Wo läuft's?</a>
-        <button class="sv-del" data-del="${i}" aria-label="Entfernen">×</button>
-      </div>`).join('') : '<div class="sv-empty">Noch keine Serien. Füge oben eine hinzu, um dir Staffel und Folge zu merken.</div>';
-  }
-  listEl.addEventListener('click', (e) => {
-    const b = e.target.closest('button');
-    if(!b) return;
-    if(b.dataset.del != null){ list.splice(Number(b.dataset.del), 1); save(); render(); return; }
-    const x = list[Number(b.dataset.i)], k = b.dataset.k, d = Number(b.dataset.d);
-    if(!x) return;
-    x[k] = Math.max(1, x[k] + d);
-    if(k === 's' && d > 0) x.e = 1;   // neue Staffel beginnt bei Folge 1
-    save(); render();
-  });
-  document.getElementById('sv-add').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const inp = document.getElementById('sv-add-name'), name = inp.value.trim();
-    if(!name) return;
-    list.unshift({ name, s: 1, e: 1 }); inp.value = ''; save(); render();
-  });
-  render();
-})();

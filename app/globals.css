@@ -3838,33 +3838,3 @@
   .cod-rank.up{ animation: cod-rankup 0.6s ease-out; }
   @keyframes cod-rankup{ 40%{ transform:scale(1.35) rotate(8deg); filter:brightness(1.4); } }
   @media (max-width:420px){ .cod-objective{ display:none; } .cod-rank{ width:34px; height:34px; font-size:0.9rem; } .cod-snake .snake-hud-item{ padding:3px 6px; } .cod-snake .snake-hud-item .ms-counter{ font-size:1.05rem; } }
-
-
-  /* Tab 10 – Serien */
-  .sv-wrap{ max-width:900px; }
-  .sv-search{ display:flex; gap:8px; flex-wrap:wrap; }
-  .sv-search input, .sv-add input{ flex:1; min-width:180px; padding:11px 14px; border:1px solid var(--line); border-radius:10px; background:var(--board-2); color:rgba(var(--fg),0.95); font-family:'Inter', sans-serif; font-size:0.95rem; outline:none; }
-  .sv-search input:focus, .sv-add input:focus{ border-color:var(--teal); }
-  .sv-search select{ padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--board-2); color:rgba(var(--fg),0.9); font-family:'Inter', sans-serif; font-size:0.85rem; }
-  .sv-search button, .sv-add button{ padding:10px 18px; border:none; border-radius:10px; background:var(--teal); color:var(--ink); font-family:'Oswald', sans-serif; font-weight:600; font-size:0.95rem; letter-spacing:0.04em; cursor:pointer; }
-  .sv-hint{ margin:8px 2px 0; font-family:'JetBrains Mono'; font-size:0.68rem; color:rgba(var(--fg),0.45); }
-  .sv-group-label{ margin:26px 0 10px; font-family:'JetBrains Mono'; font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:rgba(var(--fg),0.55); }
-  .sv-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
-  .sv-tile{ position:relative; display:flex; flex-direction:column; justify-content:flex-end; gap:3px; height:96px; padding:12px 14px; border-radius:12px; text-decoration:none; overflow:hidden;
-    background: radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--c1) 55%, transparent), transparent 60%), linear-gradient(135deg, var(--c2), #0d0d0f);
-    border:1px solid color-mix(in srgb, var(--c1) 40%, transparent); transition:transform 0.15s ease, box-shadow 0.15s ease; }
-  .sv-tile:hover{ transform:translateY(-3px); box-shadow:0 8px 20px color-mix(in srgb, var(--c1) 35%, transparent); }
-  .sv-tile b{ font-family:'Oswald', sans-serif; font-size:1.25rem; font-weight:700; color:#fff; letter-spacing:0.02em; }
-  .sv-tile span{ font-family:'Inter', sans-serif; font-size:0.72rem; color:rgba(255,255,255,0.7); }
-  .sv-add{ display:flex; gap:8px; margin-bottom:10px; }
-  .sv-list{ display:flex; flex-direction:column; gap:6px; }
-  .sv-item{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--board-2); }
-  .sv-item b{ flex:1; min-width:140px; font-family:'Inter', sans-serif; font-size:0.95rem; font-weight:500; color:rgba(var(--fg),0.95); }
-  .sv-step{ display:flex; align-items:center; gap:5px; font-family:'JetBrains Mono'; font-size:0.8rem; color:rgba(var(--fg),0.6); }
-  .sv-step em{ font-style:normal; min-width:22px; text-align:center; color:rgba(var(--fg),0.95); font-weight:700; }
-  .sv-step button{ width:26px; height:26px; border:1px solid var(--line); border-radius:6px; background:transparent; color:rgba(var(--fg),0.8); cursor:pointer; }
-  .sv-step button:hover{ border-color:var(--teal); color:var(--teal); }
-  .sv-where{ font-family:'JetBrains Mono'; font-size:0.72rem; color:var(--teal); text-decoration:none; }
-  .sv-del{ border:none; background:none; color:rgba(var(--fg),0.4); font-size:1.2rem; cursor:pointer; }
-  .sv-del:hover{ color:#e8826f; }
-  .sv-empty{ font-family:'Inter', sans-serif; font-size:0.85rem; color:rgba(var(--fg),0.45); padding:8px 2px; }

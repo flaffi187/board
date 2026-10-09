@@ -30,7 +30,6 @@ export default function Page() {
   <button className="tab-btn" data-view="timer-view">07 Timer</button>
   <button className="tab-btn" data-view="apps-view">08 Apps</button>
   <button className="tab-btn" data-view="games-view">09 Spiele</button>
-  <button className="tab-btn" data-view="series-view">10 Serien</button>
 </div>
 
 <div className="view active" id="overview-view">
@@ -503,37 +502,6 @@ export default function Page() {
     <a className="app-tile app-tile-image" href="https://www.google.com" target="_blank" rel="noopener" style={{ '--tile-color': "#4285F4", '--tile-image': "url(/google-farbe.jpg)", '--tile-pos': "50% 40%" }}>
       <span className="app-name">Google</span>
     </a>
-  </div>
-</div>
-
-<div className="view" id="series-view">
-  <div className="panel-label">Serien &amp; Filme</div>
-  <div className="sv-wrap">
-    <form className="sv-search" id="sv-search">
-      <input id="sv-q" type="search" placeholder="Serie oder Film suchen …" autoComplete="off" />
-      <select id="sv-where" aria-label="Wo suchen">
-        <option value="justwatch">Überall (JustWatch)</option>
-        <option value="netflix">Netflix</option>
-        <option value="srf">Play SRF</option>
-        <option value="zdf">ZDF-Mediathek</option>
-        <option value="ard">ARD-Mediathek</option>
-        <option value="youtube">YouTube</option>
-      </select>
-      <button type="submit">Suchen</button>
-    </form>
-    <div className="sv-hint">„Überall“ zeigt dir, bei welchem Dienst in der Schweiz eine Serie läuft – gratis oder im Abo.</div>
-
-    <div className="sv-group-label">Gratis</div>
-    <div className="sv-grid" id="sv-free"></div>
-    <div className="sv-group-label">Abos</div>
-    <div className="sv-grid" id="sv-paid"></div>
-
-    <div className="sv-group-label">Meine Serien</div>
-    <form className="sv-add" id="sv-add">
-      <input id="sv-add-name" placeholder="Serie hinzufügen, z. B. Stranger Things" autoComplete="off" />
-      <button type="submit">+</button>
-    </form>
-    <div className="sv-list" id="sv-list"></div>
   </div>
 </div>
 

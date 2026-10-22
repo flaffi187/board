@@ -3,7 +3,12 @@
 // paar Sekunden werden die Änderungen der anderen Geräte geholt. Danach wird die eigentliche App (app.js) geladen.
 (function(){
   const ls = window.localStorage;
-  const origSet = ls.setItem.bind(ls), origRemove = ls.removeItem.bind(ls), origClear = ls.clear.bind(ls);
+  // Die Original-Methoden kommen vom Storage-Prototyp. Eigene Methoden direkt auf localStorage zu setzen geht nicht
+  // überall: manche Browser (z.B. auf dem Handy) speichern "localStorage.setItem = …" einfach als Eintrag namens "setItem".
+  const proto = Storage.prototype;
+  const protoSet = proto.setItem, protoRemove = proto.removeItem, protoClear = proto.clear;
+  const origSet = (k, v) => protoSet.call(ls, k, v), origRemove = (k) => protoRemove.call(ls, k), origClear = () => protoClear.call(ls);
+  const JUNK = ['setItem', 'removeItem', 'clear'];   // Überbleibsel aus der alten Version
   const USER_KEY = '__board_user';   // zu welchem Konto die Daten in diesem Browser gehören (wird nicht hochgeladen)
   const pending = { set: {}, del: new Set() };
   let timer = null, since = 0, polling = false, user = null;
@@ -27,9 +32,14 @@
   }
   function schedule(){ if(!timer) timer = setTimeout(() => flush(false), 400); }
 
-  ls.setItem = function(k, v){ origSet(k, v); k = String(k); if(k === USER_KEY) return; pending.set[k] = String(v); pending.del.delete(k); schedule(); };
-  ls.removeItem = function(k){ origRemove(k); k = String(k); if(k === USER_KEY) return; delete pending.set[k]; pending.del.add(k); schedule(); };
-  ls.clear = function(){ for(let i = 0; i < ls.length; i++) if(ls.key(i) !== USER_KEY) pending.del.add(ls.key(i)); const u = ls.getItem(USER_KEY); origClear(); if(u) origSet(USER_KEY, u); pending.set = {}; schedule(); };
+  // Nur Änderungen an localStorage werden abgefangen (sessionStorage bleibt unberührt)
+  proto.setItem = function(k, v){ protoSet.call(this, k, v); if(this !== ls) return; k = String(k); if(k === USER_KEY) return; pending.set[k] = String(v); pending.del.delete(k); schedule(); };
+  proto.removeItem = function(k){ protoRemove.call(this, k); if(this !== ls) return; k = String(k); if(k === USER_KEY) return; delete pending.set[k]; pending.del.add(k); schedule(); };
+  proto.clear = function(){
+    if(this !== ls) return protoClear.call(this);
+    for(let i = 0; i < ls.length; i++) if(ls.key(i) !== USER_KEY) pending.del.add(ls.key(i));
+    const u = ls.getItem(USER_KEY); origClear(); if(u) origSet(USER_KEY, u); pending.set = {}; schedule();
+  };
   window.addEventListener('pagehide', () => flush(true));
 
   // Abmelden: noch Offenes senden, dann die Sachen dieses Kontos vom Gerät entfernen
@@ -41,7 +51,7 @@
   function apply(res){
     const keys = [];
     for(const [k, v] of Object.entries(res.data || {})){
-      if(k === USER_KEY || k in pending.set || pending.del.has(k) || ls.getItem(k) === v) continue;
+      if(k === USER_KEY || JUNK.includes(k) || k in pending.set || pending.del.has(k) || ls.getItem(k) === v) continue;
       origSet(k, v); keys.push(k);
     }
     for(const k of res.deleted || []){
@@ -87,13 +97,15 @@
     const sameUser = ls.getItem(USER_KEY) === String(res.user);
     if(!sameUser){ origClear(); origSet(USER_KEY, String(res.user)); }
     user = res.user;
-    for(const [k, v] of Object.entries(server)) if(k !== USER_KEY) origSet(k, v);
+    for(const [k, v] of Object.entries(server)) if(k !== USER_KEY && !JUNK.includes(k)) origSet(k, v);
+    JUNK.forEach(k => { if(typeof ls.getItem(k) === 'string') origRemove(k); if(k in server) pending.del.add(k); });
     for(const k of deleted) origRemove(k);
     since = res.now || 0;
+    schedule();
     if(sameUser){
       for(let i = 0; i < ls.length; i++){
         const k = ls.key(i);
-        if(k !== USER_KEY && !(k in server) && !deleted.includes(k)) pending.set[k] = ls.getItem(k);
+        if(k !== USER_KEY && !JUNK.includes(k) && !(k in server) && !deleted.includes(k)) pending.set[k] = ls.getItem(k);
       }
       schedule();
     }

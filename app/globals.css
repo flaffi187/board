@@ -3841,11 +3841,11 @@
 
 /* Anmeldung / Konten – als Terminal-Fenster */
 .login-page{
-  position:fixed; inset:0; overflow:auto; display:grid; place-items:center; padding:24px 16px;
-  background:#10233d; color:#cccccc;
+  position:fixed; inset:0; overflow:auto; display:flex;
+  background:#0c0c0c; color:#cccccc;
   font-family:'Cascadia Mono', 'JetBrains Mono', Consolas, 'Courier New', monospace;
 }
-.term{ width:100%; max-width:1030px; min-height:min(640px, calc(100vh - 48px)); display:flex; flex-direction:column; background:#0c0c0c; border:1px solid #3c74c4; box-shadow:0 24px 60px rgba(0,0,0,.45); }
+.term{ width:100%; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; background:#0c0c0c; }   /* Vollbild wie ein maximiertes Fenster */
 .term-bar{ display:flex; align-items:center; gap:10px; height:34px; padding-left:12px; background:#1f1f1f; color:#e6e6e6; font-family:'Segoe UI', Inter, system-ui, sans-serif; font-size:12.5px; user-select:none; }
 .term-icon{ display:grid; place-items:center; width:18px; height:14px; border:1px solid #bdbdbd; border-radius:2px; font-family:Consolas, monospace; font-size:8px; line-height:1; color:#e6e6e6; }
 .term-title{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -3880,7 +3880,6 @@
 .term-switch a{ color:#61d6d6; text-decoration:underline; text-underline-offset:3px; }
 .term-switch a:hover{ color:#9ef0f0; }
 @media (max-width:600px){
-  .term{ min-height:0; }
   .term-body{ padding:14px 14px 20px; font-size:13px; }
   .term-field > span{ flex-basis:13ch; }
   .term-field input{ height:1.9em; }

@@ -978,7 +978,7 @@ export default function Page() {
 <footer>Zeiten aktualisieren sich live · Wetterdaten via Open-Meteo</footer>
 </div>
 
-      <Script src="/app.js" strategy="afterInteractive" />
+      <Script src="/sync.js" strategy="afterInteractive" />
     </>
   );
 }

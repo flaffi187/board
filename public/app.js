@@ -1277,7 +1277,7 @@ function renderTodos(){
         <input type="checkbox" data-idx="${i}" ${todo.done ? 'checked' : ''}>
         <button class="todo-del" data-idx="${i}">✕</button>
       </div>
-      <span class="todo-text">${todo.text}</span>
+      <span class="todo-text">${String(todo.text).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))}</span>
     </li>
   `).join('');
 
@@ -1314,6 +1314,12 @@ renderTodos();
 
 // Notizen (mit automatischen Aufzählungspunkten)
 const NOTES_STORAGE_KEY = 'weltuhr_notizen';
+// Live-Abgleich: ändert ein anderes Gerät die To-Dos oder Notizen, sofort neu anzeigen
+window.addEventListener('board-sync', (e) => {
+  const keys = e.detail.keys;
+  if(keys.includes(TODO_STORAGE_KEY)){ todos = loadTodos(); renderTodos(); }
+  if(keys.includes(NOTES_STORAGE_KEY) && document.activeElement !== notesBox) notesBox.value = localStorage.getItem(NOTES_STORAGE_KEY) || '';
+});
 const notesBox = document.getElementById('notes-box');
 try{
   notesBox.value = localStorage.getItem(NOTES_STORAGE_KEY) || '';

@@ -2432,7 +2432,20 @@ const ladderGame = (() => {
     resetBtn.classList.remove('clap'); void resetBtn.offsetWidth; resetBtn.classList.add('clap');
     reset(); place(true);
   });
-  return { reset, place, setFor: setForMonth };
+  // Für die Speicherung: Spielstand des angezeigten Monats (während eines Wurfs nicht)
+  function getState(){
+    if(busy) return undefined;
+    return { gk: calGameKey, pos: players.map(pl => pl.pos), turn, w: winner ? players.indexOf(winner) : -1 };
+  }
+  function setState(st){
+    if(!st || st.gk !== calGameKey || busy || !Array.isArray(st.pos)) return;
+    st.pos.forEach((v, i) => { if(players[i]) players[i].pos = Math.max(1, Math.min(n, Number(v) || 1)); });
+    turn = Math.min(players.length - 1, Math.max(0, st.turn | 0));
+    winner = st.w >= 0 ? players[st.w] || null : null;
+    status();
+    if(players.every(pl => pl.el)) place(true);
+  }
+  return { reset, place, setFor: setForMonth, getState, setState };
 })();
 
 function renderCalEntries(){
@@ -2450,7 +2463,7 @@ function renderCalEntries(){
         <span class="todo-pin">🎬 Szene ${i + 1}</span>
         <button class="todo-del" data-idx="${i}">✕</button>
       </div>
-      <span class="todo-text">${text}</span>
+      <span class="todo-text">${String(text).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))}</span>
     </li>
   `).join('');
 
@@ -2972,6 +2985,7 @@ const timerHourInput = document.getElementById('timer-hour-input');
 let timerTotalSeconds = 0;
 let timerRemaining = 0;
 let timerInterval = null;
+let timerEndAt = null;   // Uhrzeit (ms), wann der laufende Timer abläuft
 
 function fmtTimer(totalSec){
   const h = Math.floor(totalSec / 3600);
@@ -2988,15 +3002,20 @@ function timerRender(){
 }
 
 function timerTick(){
+  if(timerEndAt) timerRemaining = Math.max(0, Math.ceil((timerEndAt - Date.now()) / 1000));
+  timerRender();
   if(timerRemaining <= 0){
     clearInterval(timerInterval);
     timerInterval = null;
+    timerEndAt = null;
     timerStartBtn.classList.remove('running');
     timerStatus.textContent = '⏰ Zeit abgelaufen!';
-    return;
   }
-  timerRemaining--;
-  timerRender();
+}
+function timerRun(){
+  clearInterval(timerInterval);
+  timerStartBtn.classList.add('running');
+  timerInterval = setInterval(timerTick, 250);
 }
 
 timerSetBtn.addEventListener('click', () => {
@@ -3012,11 +3031,14 @@ timerSetBtn.addEventListener('click', () => {
 timerStartBtn.addEventListener('click', () => {
   if(timerInterval || timerRemaining <= 0) return;
   timerStatus.textContent = '';
-  timerStartBtn.classList.add('running');
-  timerInterval = setInterval(timerTick, 1000);
+  timerEndAt = Date.now() + timerRemaining * 1000;
+  timerRun();
 });
 
 timerPauseBtn.addEventListener('click', () => {
+  if(timerEndAt) timerRemaining = Math.max(0, Math.ceil((timerEndAt - Date.now()) / 1000));
+  timerEndAt = null;
+  timerRender();
   clearInterval(timerInterval);
   timerInterval = null;
   timerStartBtn.classList.remove('running');
@@ -3025,6 +3047,7 @@ timerPauseBtn.addEventListener('click', () => {
 timerResetBtn.addEventListener('click', () => {
   clearInterval(timerInterval);
   timerInterval = null;
+  timerEndAt = null;
   timerStartBtn.classList.remove('running');
   timerRemaining = 0;
   timerTotalSeconds = 0;
@@ -3042,6 +3065,7 @@ const stopwatchResetBtn = document.getElementById('stopwatch-reset-btn');
 let stopwatchElapsed = 0;    // aufsummierte Millisekunden, während pausiert
 let stopwatchStartTime = null; // performance.now() beim Start, während sie läuft
 let stopwatchInterval = null;
+let stopwatchStartWall = null;   // Date.now() abzüglich der schon gelaufenen Zeit, während sie läuft
 
 function fmtStopwatch(totalMs){
   const totalSec = Math.floor(totalMs / 1000);
@@ -3072,6 +3096,7 @@ stopwatchToggleBtn.addEventListener('click', () => {
     // läuft -> stoppen
     stopwatchElapsed = stopwatchCurrentMs();
     stopwatchStartTime = null;
+    stopwatchStartWall = null;
     clearInterval(stopwatchInterval);
     stopwatchInterval = null;
     stopwatchToggleBtn.classList.remove('running');
@@ -3082,6 +3107,7 @@ stopwatchToggleBtn.addEventListener('click', () => {
     stopwatchToggleBtn.classList.add('running');
     stopwatchToggleBtn.textContent = '⏸ Pause';
     stopwatchStartTime = performance.now();
+    stopwatchStartWall = Date.now() - stopwatchElapsed;
     stopwatchInterval = setInterval(stopwatchRender, 31);
   }
 });
@@ -3090,6 +3116,7 @@ stopwatchResetBtn.addEventListener('click', () => {
   clearInterval(stopwatchInterval);
   stopwatchInterval = null;
   stopwatchStartTime = null;
+  stopwatchStartWall = null;
   stopwatchToggleBtn.classList.remove('running');
   stopwatchToggleBtn.textContent = '▶ Start';
   stopwatchElapsed = 0;
@@ -9283,10 +9310,230 @@ window.addEventListener('board-sync', (e) => {
       recLoad(); recRender();
     } else if(k === 'wotd_bags'){
       const b = json(k, {}); for(const l in wotdBags) delete wotdBags[l]; Object.assign(wotdBags, b);
+    } else if(persistList.some(p => p.key === k)){
+      persistApplyRemote(persistList.find(p => p.key === k));
     } else {
       gameResizeInstances.forEach(inst => { if(inst.key === k) inst.apply(v); });
     }
   }
+});
+
+// ===== Alles speichern =====
+// Jeder Bereich meldet, wie sein Zustand aussieht (get) und wie man ihn wiederherstellt (set). Jede Sekunde wird
+// geprüft, ob sich etwas geändert hat – dann landet es im Browser-Speicher und damit im Konto (sync.js) und auf
+// allen anderen Geräten. get() darf undefined liefern, wenn gerade nichts gespeichert werden soll (z.B. Bot denkt).
+const persistList = [];
+function persist(key, get, set){
+  const p = { key, get, set, last: null, localAt: 0 };
+  persistList.push(p);
+  let raw = null;
+  try{ raw = localStorage.getItem(key); if(raw) set(JSON.parse(raw)); } catch(err){ console.warn('Wiederherstellen fehlgeschlagen:', key, err); }
+  // Gab es noch nichts Gespeichertes, wird der Anfangszustand beim ersten Durchlauf gespeichert
+  if(raw){ try{ const v = get(); p.last = v === undefined ? raw : JSON.stringify(v); } catch(err){ p.last = raw; } }
+}
+function persistTick(){
+  for(const p of persistList){
+    let v;
+    try{ v = p.get(); } catch(err){ continue; }
+    if(v === undefined) continue;
+    const str = JSON.stringify(v);
+    if(str === p.last) continue;
+    p.last = str; p.localAt = Date.now();
+    try{ localStorage.setItem(p.key, str); } catch(err){}
+  }
+}
+// Stand von einem anderen Gerät übernehmen – ausser man hat hier gerade selbst etwas geändert
+function persistApplyRemote(p){
+  const raw = localStorage.getItem(p.key);
+  if(!raw || raw === p.last || Date.now() - p.localAt < 4000) return;
+  try{ p.set(JSON.parse(raw)); p.last = raw; } catch(err){ console.warn('Übernehmen fehlgeschlagen:', p.key, err); }
+}
+setInterval(persistTick, 1000);
+window.addEventListener('pagehide', persistTick);
+document.addEventListener('visibilitychange', () => { if(document.hidden) persistTick(); });
+// Auswahl-Knopf (Modus, Schwierigkeit …) aktivieren, als hätte man ihn angeklickt
+function persistPick(selector, attr, value){
+  const btn = [...document.querySelectorAll(selector)].find(b => b.dataset[attr] === String(value));
+  if(btn && !btn.classList.contains('active')) btn.click();
+}
+const persistActive = (selector, attr) => document.querySelector(selector + '.active')?.dataset[attr];
+
+// Kalender-Einträge
+persist('cal_events', () => calEvents, (st) => {
+  Object.keys(calEvents).forEach(k => delete calEvents[k]);
+  Object.entries(st || {}).forEach(([d, list]) => { if(Array.isArray(list) && list.length) calEvents[d] = list.map(String); });
+  renderCalendar(); renderCalEntries();
+});
+// Leiterspiel im Kalender
+persist('cal_ladder', () => ladderGame.getState(), (st) => ladderGame.setState(st));
+
+// Rechner
+persist('calc_state', () => ({ cur: calcCurrent, prev: calcPrevious, op: calcOperator, ow: calcOverwrite, lop: calcLastOperator, lod: calcLastOperand, h: calcHistoryText }), (st) => {
+  calcCurrent = String(st.cur ?? '0'); calcPrevious = st.prev ?? null; calcOperator = st.op ?? null; calcOverwrite = st.ow !== false;
+  calcLastOperator = st.lop ?? null; calcLastOperand = st.lod ?? null; calcHistoryText = String(st.h || '');
+  calcUpdateDisplay();
+});
+// Umrechner (Einheiten und Währung)
+persist('conv_state', () => ({
+  tab: persistActive('#conv-mode-select .mode-btn', 'mode'),
+  cat: convCategory, uf: convUnitFromUnit.value, ut: convUnitToUnit.value, uv: convUnitFromValue.value,
+  cf: convCurFromUnit.value, ct: convCurToUnit.value, cv: convCurFromValue.value,
+}), (st) => {
+  if(st.tab) persistPick('#conv-mode-select .mode-btn', 'mode', st.tab);
+  if(st.cat && convUnitCategories[st.cat]){
+    convCategory = st.cat;
+    convCatSelectEl.querySelectorAll('.diff-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === st.cat));
+    convPopulateUnitSelects();
+  }
+  const units = Object.keys(convUnitCategories[convCategory].units);
+  if(units.includes(st.uf)) convUnitFromUnit.value = st.uf;
+  if(units.includes(st.ut)) convUnitToUnit.value = st.ut;
+  if(st.uv != null) convUnitFromValue.value = st.uv;
+  convUpdateUnitResult();
+  if(convCurrencies.includes(st.cf)) convCurFromUnit.value = st.cf;
+  if(convCurrencies.includes(st.ct)) convCurToUnit.value = st.ct;
+  convFlagPickers.forEach(sync => sync());
+  if(st.cv != null) convCurFromValue.value = st.cv;
+  convUpdateCurrencyResult();
+});
+// Timer (läuft mit seiner Endzeit weiter) und Stoppuhr
+persist('timer_state', () => ({
+  total: timerTotalSeconds, rem: timerEndAt ? null : timerRemaining, end: timerEndAt,
+  h: timerHourInput.value, m: timerMinInput.value, s: timerSecInput.value, done: timerStatus.textContent.includes('abgelaufen'),
+}), (st) => {
+  clearInterval(timerInterval); timerInterval = null; timerStartBtn.classList.remove('running');
+  timerHourInput.value = st.h ?? ''; timerMinInput.value = st.m ?? ''; timerSecInput.value = st.s ?? '';
+  timerTotalSeconds = Number(st.total) || 0;
+  timerStatus.textContent = st.done ? '⏰ Zeit abgelaufen!' : '';
+  if(st.end){
+    timerEndAt = Number(st.end);
+    timerRemaining = Math.max(0, Math.ceil((timerEndAt - Date.now()) / 1000));
+    if(timerRemaining > 0) timerRun(); else { timerEndAt = null; timerStatus.textContent = '⏰ Zeit abgelaufen!'; }
+  } else { timerEndAt = null; timerRemaining = Number(st.rem) || 0; }
+  timerRender();
+});
+persist('stopwatch_state', () => ({ el: stopwatchStartWall ? 0 : Math.round(stopwatchElapsed), start: stopwatchStartWall }), (st) => {
+  clearInterval(stopwatchInterval); stopwatchInterval = null;
+  if(st.start){
+    stopwatchStartWall = Number(st.start);
+    stopwatchElapsed = Math.max(0, Date.now() - stopwatchStartWall);
+    stopwatchStartTime = performance.now();
+    stopwatchToggleBtn.classList.add('running'); stopwatchToggleBtn.textContent = '⏸ Pause';
+    stopwatchInterval = setInterval(stopwatchRender, 31);
+  } else {
+    stopwatchStartWall = null; stopwatchStartTime = null; stopwatchElapsed = Number(st.el) || 0;
+    stopwatchToggleBtn.classList.remove('running'); stopwatchToggleBtn.textContent = '▶ Start';
+  }
+  stopwatchRender();
+});
+
+// Sudoku: Rätsel, Lösung und eigene Eingaben
+persist('game_sudoku', () => sudokuSolution && sudokuGivenMask ? {
+  d: sudokuDifficulty, sol: sudokuSolution, mask: sudokuGivenMask,
+  v: [...sudokuGrid.querySelectorAll('.sudoku-cell')].map(c => c.value || '.').join(''),
+} : undefined, (st) => {
+  if(!Array.isArray(st.sol) || !Array.isArray(st.mask) || typeof st.v !== 'string') return;
+  if(st.d && st.d !== sudokuDifficulty){
+    sudokuDifficulty = st.d;
+    document.querySelectorAll('#diff-select .diff-btn').forEach(b => b.classList.toggle('active', b.dataset.diff === st.d));
+    fnStormMs = (fnStormMinutes[sudokuDifficulty] || 30) * 60 * 1000;
+  }
+  sudokuSolution = st.sol; sudokuGivenMask = st.mask; recSudokuDone = null;
+  const puzzle = Array.from({ length: 9 }, (_, r) => Array.from({ length: 9 }, (_, c) => { const ch = st.v[r * 9 + c]; return ch && ch !== '.' ? Number(ch) : 0; }));
+  sudokuRender(puzzle);
+  sudokuGrid.querySelectorAll('.sudoku-cell:not(.given)').forEach(cell => {
+    if(cell.value !== '' && Number(cell.value) !== sudokuSolution[cell.dataset.row][cell.dataset.col]) cell.classList.add('wrong');
+  });
+  if(typeof fnUpdateHud === 'function') fnUpdateHud();
+  sudokuStatus.textContent = 'Weiter geht\'s – dein Spiel ist wieder da.';
+});
+
+// Kreuzworträtsel: welches Rätsel und was schon eingetragen ist
+persist('game_crossword', () => {
+  const v = {};
+  cwGridEl.querySelectorAll('input').forEach(i => { if(i.value) v[i.dataset.row + ',' + i.dataset.col] = i.value; });
+  return { i: cwPuzzleIndex, v };
+}, (st) => {
+  if(!crosswordPuzzles[st.i]) return;
+  cwPuzzleIndex = st.i;
+  crosswordWords = crosswordPuzzles[cwPuzzleIndex].words;
+  CW_ROWS = crosswordPuzzles[cwPuzzleIndex].rows; CW_COLS = crosswordPuzzles[cwPuzzleIndex].cols;
+  cwRenderGrid(); cwRenderClues();
+  cwGridEl.querySelectorAll('input').forEach(i => { i.value = (st.v || {})[i.dataset.row + ',' + i.dataset.col] || ''; });
+  mkDoneWords = new Set(crosswordWords.filter(w => cwWordCells(w).every(c => cwGetInput(c.r, c.c)?.value === c.letter)).map(w => w.dir + w.id));
+  document.querySelector('.mk-crossword')?.classList.remove('mk-finished');
+  mkUpdateHeader(); mkUpdateKart();
+});
+
+// Wort des Tages: nur die Wortlänge (eine laufende Runde startet neu)
+persist('game_wotd', () => ({ len: wotdLength }), (st) => { if(st.len && st.len !== wotdLength) persistPick('#wotd-length-select button', 'len', st.len); });
+
+// Tic Tac Toe
+persist('game_ttt', () => (tttMode === 'bot' && tttTurn === 'O' && !tttOver) ? undefined
+  : { m: tttMode, b: tttBoard, t: tttTurn, o: tttOver, lm: tttLastMove }, (st) => {
+  if(!Array.isArray(st.b) || st.b.length !== 9) return;
+  if(st.m && st.m !== tttMode){ tttMode = st.m; document.querySelectorAll('#ttt-mode-select .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === st.m)); }
+  tttBoard = st.b.map(x => x === 'X' || x === 'O' ? x : null); tttTurn = st.t === 'O' ? 'O' : 'X'; tttLastMove = st.lm ?? -1;
+  const result = tttCheckWinner(tttBoard);
+  tttOver = !!result;
+  tttRender(result ? result.line : undefined);
+  tttStatusEl.textContent = result ? (result.winner === 'draw' ? 'Unentschieden – alles verklebt!' : `${ccNames[result.winner]} gewinnt!`) : `${ccNames[tttTurn]} ist dran.`;
+});
+
+// Vier gewinnt (beendete Runden starten ohnehin neu)
+persist('game_c4', () => (c4Over || (c4Mode === 'bot' && c4Turn !== 'red')) ? undefined
+  : { m: c4Mode, b: c4Board, t: c4Turn, mv: c4Moves, sc: c4Score_ }, (st) => {
+  if(!Array.isArray(st.b) || st.b.length !== C4_ROWS) return;
+  if(st.m && st.m !== c4Mode){ c4Mode = st.m; document.querySelectorAll('#c4-mode-select .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === st.m)); }
+  if(c4CheckWinner(st.b)) return;
+  clearTimeout(c4RestartTimer);
+  c4Board = st.b.map(row => row.map(x => x === 'red' || x === 'yellow' ? x : null));
+  c4Turn = st.t === 'yellow' ? 'yellow' : 'red'; c4Over = false; c4Moves = st.mv | 0; c4Score_ = st.sc | 0; c4LastMove = null;
+  c4Render(); ttUpdateSide();
+  c4StatusEl.textContent = (c4Mode === 'bot' ? `Level ${c4Level} – ` : '') + `${c4Turn === 'red' ? 'Rot' : 'Gelb'} ist dran.`;
+});
+
+// Schach
+persist('game_chess', () => (chessMode === 'bot' && chessTurn === 'b' && !chessOver) ? undefined
+  : { m: chessMode, b: chessBoard, t: chessTurn, o: chessOver, cr: chessCastleRights }, (st) => {
+  if(!Array.isArray(st.b) || st.b.length !== 8 || st.o) return;
+  if(st.m && st.m !== chessMode){ chessMode = st.m; document.querySelectorAll('#chess-mode-select .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === st.m)); }
+  chessBoard = st.b; chessTurn = st.t === 'b' ? 'b' : 'w'; chessOver = false;
+  chessSelected = null; chessLegalTargets = [];
+  chessCastleRights = st.cr || { w: { k: true, q: true }, b: { k: true, q: true } };
+  eaLastMove = null; eaCapture = null;
+  chessRender(); eaUpdateScore();
+  chessStatusEl.textContent = `${eaTeam(chessTurn)} ist am Ball.` + (chessIsInCheck(chessBoard, chessTurn) ? ' Schach!' : '');
+});
+
+// Mühle und Schiffe versenken: Spielmodus (eine laufende Partie startet neu)
+persist('game_mill', () => ({ m: millMode }), (st) => { if(st.m && st.m !== millMode) persistPick('#mill-mode-select .mode-btn', 'mode', st.m); });
+persist('game_bs', () => ({ m: bsMode }), (st) => { if(st.m && st.m !== bsMode) persistPick('#bs-mode-select .mode-btn', 'mode', st.m); });
+
+// Minesweeper: Schwierigkeit und laufende Runde
+persist('game_ms', () => ({
+  d: msDiff, o: msOver, f: msFirstClick, sec: Math.floor(msSeconds / 10) * 10,   // Rundenuhr nur in 10-s-Schritten, sonst würde jede Sekunde gespeichert
+  b: msFirstClick ? null : msBoard.map(x => (x.mine ? 'm' : '') + (x.revealed ? 'r' : '') + (x.flagged ? 'f' : '') + x.count),
+}), (st) => {
+  if(st.d && st.d !== msDiff) persistPick('#ms-diff-select .diff-btn', 'diff', st.d);
+  if(st.o || st.f || !Array.isArray(st.b) || st.b.length !== msSize * msSize) return;
+  msNewGame();
+  msBoard = st.b.map(code => ({ mine: code.includes('m'), revealed: code.includes('r'), flagged: code.includes('f'), count: parseInt(code.replace(/\D/g, ''), 10) || 0 }));
+  msFirstClick = false; msOver = false;
+  msRevealedCount = msBoard.filter(x => x.revealed && !x.mine).length;
+  msUpdateCells(); msUpdateMineCounter();
+  msStartTimer(); msSeconds = Number(st.sec) || 0;
+  msTimerEl.textContent = Math.floor(msSeconds / 60) + ':' + String(msSeconds % 60).padStart(2, '0');
+  msStatusEl.textContent = `Sektor gesichert: ${msRevealedCount} von ${msSize * msSize - msMines}`;
+});
+
+// 2048
+persist('game_2048', () => g2048Board.length ? { b: g2048Board, s: g2048Score, o: g2048Over, w: g2048Won } : undefined, (st) => {
+  if(!Array.isArray(st.b) || st.b.length !== G2048_SIZE * G2048_SIZE || st.o) return;
+  g2048Board = st.b.map(v => Number(v) || 0); g2048Score = Number(st.s) || 0; g2048Over = false; g2048Won = !!st.w; g2048Merged = [];
+  g2048ScoreEl.textContent = g2048Pad(g2048Score);
+  g2048Render();
+  mcBestBlock = Math.max(...g2048Board); mcUpdateExtras();
 });
 
 recRender();

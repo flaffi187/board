@@ -1,12 +1,13 @@
 import Script from 'next/script';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { SESSION_COOKIE, userFromToken } from '../lib/auth';
+import { SESSION_COOKIE, consumeLogin } from '../lib/auth';
 
 export default async function Page() {
-  // Ohne Konto zuerst zur Anmeldung
-  const user = await userFromToken((await cookies()).get(SESSION_COOKIE)?.value);
-  if (!user) redirect('/login');
+  // Ohne frische Anmeldung zuerst zur Anmeldung (auch nach Neuladen)
+  const login = await consumeLogin((await cookies()).get(SESSION_COOKIE)?.value);
+  if (!login) redirect('/login');
+  const { user, pageToken } = login;
   return (
     <>
 
@@ -25,6 +26,8 @@ export default async function Page() {
     </label>
     <form method="post" action="/api/auth" className="account-box">
       <span className="account-name" title="Angemeldet als">{user.name}</span>
+      <input type="hidden" name="token" value={pageToken} />
+      <div id="board-token" data-token={pageToken} hidden />
       <button type="submit" name="action" value="logout" className="logout-btn" title="Abmelden" aria-label="Abmelden">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       </button>

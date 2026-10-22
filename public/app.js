@@ -3098,6 +3098,63 @@ stopwatchResetBtn.addEventListener('click', () => {
 
 stopwatchRender();
 
+// Rekorde: Siege, Niederlagen, Bestzeiten und Serien aller Spiele ohne eigenen Highscore.
+// Alles in einem Eintrag ("game_records"), damit es im Konto gespeichert und auf allen Geräten gleich ist.
+// Gezählt wird nur, wenn man gegen den Bot spielt (zu zweit gibt es keinen eigenen Sieg).
+const REC_KEY = 'game_records';
+let gameRecords = {};
+function recLoad(){ try{ gameRecords = JSON.parse(localStorage.getItem(REC_KEY) || '{}') || {}; } catch(err){ gameRecords = {}; } }
+recLoad();
+const recGame = (g) => (gameRecords[g] ??= {});
+function recSave(game){ try{ localStorage.setItem(REC_KEY, JSON.stringify(gameRecords)); } catch(err){} recRender(game); }
+const recTime = (sec) => sec == null ? '–' : Math.floor(sec / 60) + ':' + String(Math.round(sec) % 60).padStart(2, '0');
+// Ergebnis eintragen: 'w' Sieg, 'l' Niederlage, 'd' Unentschieden
+function recResult(game, res){
+  const r = recGame(game);
+  r[res] = (r[res] || 0) + 1;
+  if(res === 'w'){ r.streak = (r.streak || 0) + 1; r.bestStreak = Math.max(r.bestStreak || 0, r.streak); }
+  else r.streak = 0;
+  recSave(game);
+}
+// Bestzeit (in Sekunden) je Schwierigkeit; true wenn neuer Rekord
+function recBestTime(game, diff, sec){
+  const r = recGame(game), best = (r.best ??= {});
+  const isNew = best[diff] == null || sec < best[diff];
+  if(isNew) best[diff] = Math.round(sec);
+  r.w = (r.w || 0) + 1;
+  recSave(game);
+  return isNew;
+}
+const REC_DIFF = {
+  sudoku: { easy: 'Holz', medium: 'Stein', hard: 'Metall' },
+  ms: { easy: 'Casual', medium: 'Wettkampf', hard: 'Premier' },
+};
+function recText(game){
+  const r = gameRecords[game] || {}, n = (k) => r[k] || 0;
+  const wld = () => `Siege <b>${n('w')}</b> · Niederlagen <b>${n('l')}</b>`;
+  const times = () => Object.entries(REC_DIFF[game]).map(([d, label]) => `${label} <b>${recTime(r.best?.[d])}</b>`).join(' · ');
+  switch(game){
+    case 'ttt': case 'chess': return `${wld()} · Unentschieden <b>${n('d')}</b>`;
+    case 'mill': case 'bs': return `${wld()} · Beste Serie <b>${n('bestStreak')}</b>`;
+    case 'wotd': return `${wld()} · Serie <b>${n('streak')}</b> · Beste Serie <b>${n('bestStreak')}</b>`;
+    case 'sudoku': return `Gelöst <b>${n('w')}</b> · Bestzeit ${times()}`;
+    case 'ms': return `Bestzeit ${times()}`;
+    case 'crossword': return `Rätsel gelöst <b>${n('w')}</b>`;
+    case '2048': { const b = n('block'); return `Bester Block aller Zeiten <b>${b ? (MC_BLOCKS[b] || MC_BLOCKS[65536]).name + ' (' + b + ')' : '–'}</b>`; }
+  }
+  return '';
+}
+function recRender(game){
+  const games = game ? [game] : ['sudoku', 'crossword', 'wotd', 'ttt', 'chess', 'mill', 'bs', 'ms', '2048'];
+  games.forEach(g => {
+    const label = document.getElementById('game-label-' + g);
+    if(!label) return;
+    let el = document.getElementById('rec-' + g);
+    if(!el){ el = document.createElement('div'); el.id = 'rec-' + g; el.className = 'game-record'; label.insertAdjacentElement('afterend', el); }
+    el.innerHTML = `<span class="game-record-tag">Rekord</span>${recText(g)}`;
+  });
+}
+
 // Sudoku
 const sudokuGrid = document.getElementById('sudoku-grid');
 const sudokuStatus = document.getElementById('sudoku-status');
@@ -3234,12 +3291,20 @@ function sudokuCheck(){
   } else if(correct === 81){
     // Fortnite-Stil: Victory Royale statt einfachem Text
     sudokuStatus.innerHTML = '<span class="fn-victory"><b>#1</b><strong>Victory Royale</strong></span>';
+    if(recSudokuDone !== sudokuSolution){
+      recSudokuDone = sudokuSolution;
+      const sec = fnStormRunning ? (fnStormMs - Math.max(0, fnStormEnd - Date.now())) / 1000 : null;
+      if(sec != null && recBestTime('sudoku', sudokuDifficulty, sec)) sudokuStatus.insertAdjacentHTML('beforeend', ' <span class="rec-new">Neue Bestzeit!</span>');
+      else if(sec == null){ recGame('sudoku').w = (recGame('sudoku').w || 0) + 1; recSave('sudoku'); }
+    }
   } else {
     sudokuStatus.textContent = `Sturmschaden! ${81 - correct} Fehler markiert.`;
   }
 }
 
+let recSudokuDone = null;   // dieses Rätsel schon gezählt (oder Lösung angeschaut)
 function sudokuShowSolution(){
+  recSudokuDone = sudokuSolution;
   sudokuRender(sudokuSolution);
   const cells = sudokuGrid.querySelectorAll('.sudoku-cell');
   cells.forEach(cell => { cell.readOnly = true; cell.classList.add('given'); });
@@ -4156,13 +4221,16 @@ function cwCheck(){
     cwStatus.textContent = `Noch ${total - filled} Felder bis zur Ziellinie.`;
   } else if(correct === total){
     cwStatus.innerHTML = '<span class="mk-win">🏆 1. PLATZ!</span>';
+    if(recCwDone !== crosswordWords){ recCwDone = crosswordWords; recGame('crossword').w = (recGame('crossword').w || 0) + 1; recSave('crossword'); }
     document.querySelector('.mk-crossword')?.classList.add('mk-finished');
   } else {
     cwStatus.textContent = `Auf ${total - correct} Bananen ausgerutscht – ${total - correct} Fehler markiert.`;
   }
 }
 
+let recCwDone = null;
 function cwShowSolution(){
+  recCwDone = crosswordWords;
   const layout = cwBuildLayout();
   cwGridEl.querySelectorAll('input').forEach(input => {
     const key = input.dataset.row + ',' + input.dataset.col;
@@ -4344,11 +4412,13 @@ function wotdSubmitGuess(){
     // Clash-Royale-Stil: Kronen je nach Anzahl Versuche (1–2: drei, 3–4: zwei, 5–6: eine)
     const crowns = wotdAttempt <= 2 ? 3 : wotdAttempt <= 4 ? 2 : 1;
     crUpdateTowers('won');
+    recResult('wotd', 'w');
     wotdStatusEl.innerHTML = `<span class="cr-crowns">${[0, 1, 2].map(i => `<i class="${i < crowns ? '' : 'off'}"></i>`).join('')}</span>Sieg! ${crowns} ${crowns === 1 ? 'Krone' : 'Kronen'}`;
     wotdOver = true;
     wotdNextBtn.style.display = 'inline-block';
   } else if(wotdAttempt >= wotdMaxAttempts){
     crUpdateTowers('lost');
+    recResult('wotd', 'l');
     wotdStatusEl.textContent = `Dein Turm ist gefallen! Das Wort war: ${wotdAnswer}`;
     wotdOver = true;
     wotdNextBtn.style.display = 'inline-block';
@@ -4904,6 +4974,7 @@ function tttPlay(i){
   const result = tttCheckWinner(tttBoard);
   if(result){
     tttOver = true;
+    if(tttMode === 'bot') recResult('ttt', result.winner === 'draw' ? 'd' : result.winner === 'X' ? 'w' : 'l');
     tttRender(result.line);
     tttStatusEl.textContent = result.winner === 'draw' ? 'Unentschieden – alles verklebt!' : `${ccNames[result.winner]} gewinnt!`;
     // Wie in Candy Crush: grosses Lob beim Sieg
@@ -6254,6 +6325,7 @@ function chessAfterMove(){
 
   if(legalMoves.length === 0){
     chessOver = true;
+    if(chessMode === 'bot') recResult('chess', !inCheck ? 'd' : chessTurn === 'b' ? 'w' : 'l');
     clearInterval(eaClockTimer);
     chessStatusEl.textContent = inCheck
       ? `Schachmatt! ${eaTeam(chessTurn === 'w' ? 'b' : 'w')} gewinnt.`
@@ -7031,6 +7103,7 @@ function bsHandleFire(targetKey, r, c){
 
   if(bsAllSunk(targetBoard)){
     bsOver = true;
+    if(bsMode === 'bot') recResult('bs', 'w');
     bsStatusEl.textContent = `${actorLabel === 'Du' ? 'Du hast' : actorLabel + ' hat'} die ganze Flotte versenkt und gewinnt!`;
     bsRender();
     setTimeout(() => bsBanner(bsMode === 'bot' ? 'Sieg!' : actorLabel + ' gewinnt!', 'win'), BS_STRIKE_MS + 300);
@@ -7066,6 +7139,7 @@ function bsBotTurn(){
   bsMarkShot('a', r, c, outcome);
   if(bsAllSunk(bsBoardA)){
     bsOver = true;
+    recResult('bs', 'l');
     bsStatusEl.textContent = 'Der Bot hat deine ganze Flotte versenkt. Verloren!';
     bsRender();
     setTimeout(() => bsBanner('Verloren!', 'lose'), BS_STRIKE_MS + 300);
@@ -7449,6 +7523,7 @@ function vlKill(killer, idx){
 }
 function vlWin(winner){
   const you = millMode === 'bot';
+  if(you) recResult('mill', winner === 'w' ? 'w' : 'l');
   const text = you ? (winner === 'w' ? 'Sieg' : 'Niederlage') : vlName(winner) + ' gewinnen';
   setTimeout(() => vlBanner(text, winner === 'w' ? 'def' : 'atk', true, `Runde ${vlRound} · ${millCountPieces(millBoard, winner)} Agenten übrig`), 700);
 }
@@ -8194,7 +8269,7 @@ function msReveal(r, c){
     msMineCounterEl.textContent = '000';
     msBoard.forEach(s => { if(s.mine && !s.flagged) s.flagged = true; });
     msUpdateCells();
-    msStatusEl.textContent = 'Alle Bomben gefunden.';
+    msStatusEl.textContent = recBestTime('ms', msDiff, msSeconds) ? `Alle Bomben gefunden – neue Bestzeit ${recTime(msSeconds)}!` : 'Alle Bomben gefunden.';
     csState.ct++; csMoney(CS_PAY[msDiff].win, 'Rundensieg');
     csFeed(`<b class="ct">Du</b>${CS_FEED_KIT}<b class="t">C4 entschärft</b>`);
     document.getElementById('cs-planted')?.classList.remove('on');
@@ -8926,6 +9001,7 @@ function mcUpdateExtras(){
   if(book) book.innerHTML = Object.keys(MC_BLOCKS).map(Number).map(v => `<div class="mc-book-row${v <= max ? ' got' : ''}${v === max ? ' sel' : ''}"><i style="background-image:${mcTexture(v)}"></i><b>${v}</b><span>${MC_BLOCKS[v].name.replace('Lapislazulierz', 'Lapis­lazuli­erz').replace('Netherquarzerz', 'Nether­quarz­erz').replace('Tiefenschiefer-', 'Tiefen­schiefer-')}</span></div>`).join('');
   if(max > mcBestBlock && mcBestBlock){ mcToast((MC_BLOCKS[max] || MC_BLOCKS[65536]).name, max); }
   mcBestBlock = Math.max(mcBestBlock, max);
+  if(max > (recGame('2048').block || 0)){ recGame('2048').block = max; recSave('2048'); }
 }
 function mcToast(name, v){
   const t = document.getElementById('mc-toast');
@@ -9203,6 +9279,8 @@ window.addEventListener('board-sync', (e) => {
       snakeBest = Math.max(snakeBest, Number(v) || 0); snakeBestEl.textContent = snakeBest * 100;
     } else if(k === 'g2048_best'){
       g2048Best = Math.max(g2048Best, Number(v) || 0); g2048BestEl.textContent = g2048Pad(g2048Best);
+    } else if(k === REC_KEY){
+      recLoad(); recRender();
     } else if(k === 'wotd_bags'){
       const b = json(k, {}); for(const l in wotdBags) delete wotdBags[l]; Object.assign(wotdBags, b);
     } else {
@@ -9210,3 +9288,5 @@ window.addEventListener('board-sync', (e) => {
     }
   }
 });
+
+recRender();

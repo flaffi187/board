@@ -24,10 +24,10 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const user = await userFromRequest(request);
-  if (!user) return denied();
   let body;
   try { body = await request.json(); } catch { return new Response('Ungültige Daten', { status: 400 }); }
+  const user = await userFromRequest(request, body?.token);
+  if (!user) return denied();
   // Gehören die Daten zu einem anderen Konto (Gerät hat inzwischen gewechselt), nicht speichern
   if (body?.user != null && Number(body.user) !== user.id) return new Response('Falsches Konto', { status: 409 });
   const set = body && typeof body.set === 'object' && body.set ? body.set : {};

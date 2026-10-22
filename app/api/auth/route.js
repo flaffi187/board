@@ -1,6 +1,7 @@
 import { SESSION_COOKIE, createSession, endSession, login, register } from '../../../lib/auth';
 
-// Ein Formular für alles: action = login | register | logout
+// Ein Formular für alles: action = login | register | logout.
+// Das Login-Cookie lebt nur kurz und wird beim ersten Aufbau der Seite verbraucht (siehe consumeLogin).
 export async function POST(request) {
   const form = await request.formData();
   const action = form.get('action');
@@ -13,7 +14,7 @@ export async function POST(request) {
   };
 
   if (action === 'logout') {
-    await endSession(request.cookies.get(SESSION_COOKIE)?.value);
+    await endSession(form.get('token'));
     return go('/login', `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secure}`);
   }
 
@@ -25,5 +26,5 @@ export async function POST(request) {
     return go('/login?' + q);
   }
   const token = await createSession(result.user.id);
-  return go('/', `${SESSION_COOKIE}=${token}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${secure}`);
+  return go('/', `${SESSION_COOKIE}=${token}; Path=/; Max-Age=120; HttpOnly; SameSite=Lax${secure}`);
 }

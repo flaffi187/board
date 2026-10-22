@@ -4,23 +4,34 @@ import { SESSION_COOKIE, userFromToken } from '../../lib/auth';
 
 export const metadata = { title: 'ufl home – Anmelden' };
 
+const UserIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.2" r="4.6" /><path d="M3.6 22c0-5.2 3.8-8.6 8.4-8.6s8.4 3.4 8.4 8.6z" /></svg>
+);
+const LockIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 10V7.4a4.8 4.8 0 0 1 9.6 0V10h-2.4V7.4a2.4 2.4 0 0 0-4.8 0V10z" /><rect x="4.6" y="10" width="14.8" height="12" rx="2.2" /><circle cx="12" cy="15.4" r="1.7" fill="#d9dce8" /><rect x="11.2" y="15.6" width="1.6" height="3.4" rx=".8" fill="#d9dce8" /></svg>
+);
+
 export default async function Login({ searchParams }) {
   if (await userFromToken((await cookies()).get(SESSION_COOKIE)?.value)) redirect('/');
   const { fehler, name, modus } = await searchParams;
   const neu = modus === 'neu';
   return (
     <main className="login-page">
-      <form className="login-card" method="post" action="/api/auth">
-        <h1>ufl home</h1>
-        <div className="login-tabs">
-          <a href="/login" className={neu ? '' : 'active'}>Anmelden</a>
-          <a href="/login?modus=neu" className={neu ? 'active' : ''}>Neues Konto</a>
+      <form className="login-form" method="post" action="/api/auth">
+        {neu && <h1 className="login-title">Neues Konto</h1>}
+        <label className="login-field">
+          <UserIcon />
+          <input name="name" placeholder={neu ? 'Benutzername wählen' : 'Benutzername'} defaultValue={name || ''} autoComplete="username" autoCapitalize="none" autoCorrect="off" required autoFocus={!name} />
+        </label>
+        <label className="login-field">
+          <LockIcon />
+          <input type="password" name="password" placeholder="Passwort" autoComplete={neu ? 'new-password' : 'current-password'} required autoFocus={!!name} minLength={neu ? 6 : undefined} />
+        </label>
+        <div className="login-row">
+          {fehler ? <span className="login-error">{fehler}</span> : <span className="login-hint">{neu ? 'Ein neues Konto startet bei 0.' : ''}</span>}
+          <a href={neu ? '/login' : '/login?modus=neu'}>{neu ? 'Schon ein Konto? Anmelden' : 'Neues Konto?'}</a>
         </div>
-        <p>{neu ? 'Ein neues Konto startet leer – To-Dos, Highscores, CS-Geld usw. gehören nur zu diesem Konto.' : 'Melde dich an – auf jedem Gerät siehst du dann deine Sachen.'}</p>
-        <input name="name" placeholder="Benutzername" defaultValue={name || ''} autoComplete="username" autoCapitalize="none" autoCorrect="off" required autoFocus={!name} />
-        <input type="password" name="password" placeholder="Passwort" autoComplete={neu ? 'new-password' : 'current-password'} required autoFocus={!!name} minLength={neu ? 6 : undefined} />
-        {fehler && <div className="login-error">{fehler}</div>}
-        <button type="submit" name="action" value={neu ? 'register' : 'login'}>{neu ? 'Konto erstellen' : 'Anmelden'}</button>
+        <button type="submit" name="action" value={neu ? 'register' : 'login'}>{neu ? 'Erstellen' : 'Login'}</button>
       </form>
     </main>
   );

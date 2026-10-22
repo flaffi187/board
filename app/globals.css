@@ -3839,42 +3839,55 @@
   @keyframes cod-rankup{ 40%{ transform:scale(1.35) rotate(8deg); filter:brightness(1.4); } }
   @media (max-width:420px){ .cod-objective{ display:none; } .cod-rank{ width:34px; height:34px; font-size:0.9rem; } .cod-snake .snake-hud-item{ padding:3px 6px; } .cod-snake .snake-hud-item .ms-counter{ font-size:1.05rem; } }
 
-/* Anmeldung / Konten */
+/* Anmeldung / Konten – als Terminal-Fenster */
 .login-page{
   position:fixed; inset:0; overflow:auto; display:grid; place-items:center; padding:24px 16px;
-  font-family:Inter, system-ui, sans-serif; color:#e9ebf5;
-  background:
-    radial-gradient(60% 55% at 0% 30%, rgba(38,128,150,.85), transparent 70%),
-    radial-gradient(55% 45% at 100% 100%, rgba(255,214,140,.95), transparent 65%),
-    radial-gradient(70% 50% at 20% 105%, rgba(232,120,140,.9), transparent 70%),
-    radial-gradient(60% 50% at 75% 85%, rgba(160,110,170,.7), transparent 70%),
-    linear-gradient(180deg, #05124f 0%, #0b1f68 45%, #3a3f86 75%, #8b6aa0 100%);
+  background:#10233d; color:#cccccc;
+  font-family:'Cascadia Mono', 'JetBrains Mono', Consolas, 'Courier New', monospace;
 }
-.login-form{ width:100%; max-width:600px; display:flex; flex-direction:column; gap:22px; }
-.login-title{ margin:0 0 4px; text-align:center; font-weight:400; font-size:26px; letter-spacing:.06em; color:#e9ebf5; }
-.login-field{ display:flex; align-items:center; height:70px; background:#d9dce8; border:1px solid rgba(255,255,255,.55); cursor:text; }
-.login-field svg{ width:30px; height:30px; flex-shrink:0; margin:0 28px 0 26px; fill:#1e4a78; }
-.login-field input{ flex:1; min-width:0; height:100%; border:0; outline:none; background:transparent; font:inherit; font-size:20px; color:#33384a; padding-right:16px; }
-.login-field input::placeholder{ color:#6c7082; }
+.term{ width:100%; max-width:1030px; min-height:min(640px, calc(100vh - 48px)); display:flex; flex-direction:column; background:#0c0c0c; border:1px solid #3c74c4; box-shadow:0 24px 60px rgba(0,0,0,.45); }
+.term-bar{ display:flex; align-items:center; gap:10px; height:34px; padding-left:12px; background:#1f1f1f; color:#e6e6e6; font-family:'Segoe UI', Inter, system-ui, sans-serif; font-size:12.5px; user-select:none; }
+.term-icon{ display:grid; place-items:center; width:18px; height:14px; border:1px solid #bdbdbd; border-radius:2px; font-family:Consolas, monospace; font-size:8px; line-height:1; color:#e6e6e6; }
+.term-title{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.term-ctrls{ display:flex; height:100%; }
+.term-ctrls i{ position:relative; width:46px; height:100%; }
+.term-ctrls .min::before{ content:''; position:absolute; left:18px; top:16px; width:10px; height:1px; background:#e6e6e6; }
+.term-ctrls .max::before{ content:''; position:absolute; left:18px; top:12px; width:9px; height:9px; border:1px solid #e6e6e6; }
+.term-ctrls .close::before, .term-ctrls .close::after{ content:''; position:absolute; left:17px; top:16.5px; width:13px; height:1px; background:#e6e6e6; transform:rotate(45deg); }
+.term-ctrls .close::after{ transform:rotate(-45deg); }
+.term-body{ flex:1; padding:18px 20px 24px; font-size:15px; line-height:1.65; }
+.term-line{ white-space:pre-wrap; word-break:break-word; }
+.term-head{ color:#cccccc; font-weight:700; }
+.term-gap{ height:1.65em; }
+.term-code{ color:#f9f1a5; font-weight:700; }
+.term-prompt{ color:#cccccc; }
+.term-field{ display:flex; align-items:center; cursor:text; position:relative; }
+.term-field > span{ flex:0 0 15ch; color:#cccccc; }
+.term-field input{ flex:1; min-width:0; padding:2px 0; border:0; border-bottom:1px dashed #2a2a2a; outline:none; line-height:inherit; height:1.65em; background:transparent; color:#ffffff; font:inherit; font-weight:700; caret-color:#ffffff; caret-shape:block; }
+.term-field input:focus{ border-bottom-color:#4a4a4a; }
+/* Blinkender Terminal-Cursor im leeren Feld, solange man nicht drin ist */
+.term-field input:placeholder-shown:not(:focus) + .term-cursor{ opacity:1; }
+.term-cursor{ position:absolute; left:15ch; bottom:.3em; width:.6em; height:2px; background:#cccccc; opacity:0; animation:term-blink 1.06s steps(1) infinite; pointer-events:none; }
+@keyframes term-blink{ 50%{ visibility:hidden; } }
 .pw-mask{ -webkit-text-security:disc; text-security:disc; }
-.login-field:focus-within{ background:#e6e8f1; box-shadow:0 0 0 2px rgba(255,255,255,.35); }
-.login-row{ display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:24px; margin-top:-4px; font-size:16px; }
-.login-row a{ color:#c9cde0; font-style:italic; text-decoration:none; white-space:nowrap; }
-.login-row a:hover{ color:#fff; }
-.login-hint{ color:#c9cde0; }
-.login-error{ color:#ffd1d1; background:rgba(160,30,50,.45); padding:4px 10px; border-radius:3px; }
-.login-form button{
-  align-self:center; width:min(320px, 100%); height:70px; margin-top:28px; border:0; cursor:pointer;
-  background:rgba(48,38,72,.82); color:#c9cde0; font:inherit; font-size:21px; letter-spacing:.06em; text-transform:uppercase;
-  transition: background .15s ease, color .15s ease;
-}
-.login-form button:hover{ background:rgba(36,28,58,.95); color:#fff; }
-@media (max-width:520px){
-  .login-field{ height:58px; }
-  .login-field svg{ width:24px; height:24px; margin:0 18px; }
-  .login-field input{ font-size:17px; }
-  .login-row{ font-size:14px; }
-  .login-form button{ height:58px; font-size:18px; }
+.term-hint{ color:#61d6d6; margin-top:.5em; }
+.term-error{ color:#e74856; margin-top:.5em; }
+.term-foot{ display:flex; align-items:center; flex-wrap:wrap; gap:14px 26px; margin:0 20px; padding:14px 0 12px; border-top:1px solid #2a2a2a; font-size:13.5px; }
+.term-foot button{ padding:12px 20px; border:0; background:#cccccc; color:#0c0c0c; font:inherit; font-weight:700; cursor:pointer; }
+.term-foot button:hover{ background:#ffffff; }
+.term-foot button:focus-visible{ outline:2px solid #61d6d6; outline-offset:2px; }
+.term-switch{ color:#767676; }
+.term-switch a{ color:#61d6d6; text-decoration:underline; text-underline-offset:3px; }
+.term-switch a:hover{ color:#9ef0f0; }
+@media (max-width:600px){
+  .term{ min-height:0; }
+  .term-body{ padding:14px 14px 20px; font-size:13px; }
+  .term-field > span{ flex-basis:13ch; }
+  .term-field input{ height:1.9em; }
+  .term-cursor{ left:13ch; bottom:.42em; }
+  .term-foot{ margin:0 14px; font-size:12.5px; }
+  .term-ctrls i{ width:34px; }
+  .term-ctrls .min::before, .term-ctrls .max::before, .term-ctrls .close::before, .term-ctrls .close::after{ left:12px; }
 }
 .account-box{ display:flex; align-items:center; gap:6px; margin:0; padding:4px 4px 4px 12px; border-radius:22px; background:var(--board-2); border:1px solid var(--line); }
 .account-name{ font-family:'JetBrains Mono'; font-size:0.8rem; color:rgb(var(--fg)); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

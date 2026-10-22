@@ -29,11 +29,13 @@ export default async function Login({ searchParams }) {
         {neu && <h1 className="login-title">Neues Konto</h1>}
         <label className="login-field">
           <UserIcon />
-          <input name="name" placeholder={neu ? 'Benutzername wählen' : 'Benutzername'} autoComplete="username" autoCapitalize="none" autoCorrect="off" required autoFocus />
+          <input name="name" placeholder={neu ? 'Benutzername wählen' : 'Benutzername'} autoComplete="off" autoCapitalize="none" autoCorrect="off" required autoFocus />
         </label>
         <label className="login-field">
           <LockIcon />
-          <input type="password" name="password" placeholder="Passwort" autoComplete={neu ? 'new-password' : 'current-password'} required minLength={neu ? 6 : undefined} />
+          {/* Absichtlich kein type="password": so bietet der Browser nie an, das Passwort zu speichern.
+              Die Zeichen werden per CSS verdeckt; Autokorrektur & Co. sind aus, damit die Tastatur nichts lernt. */}
+          <input type="text" className="pw-mask" name="password" placeholder="Passwort" autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} data-lpignore="true" data-1p-ignore="true" data-form-type="other" required minLength={neu ? 6 : undefined} />
         </label>
         <div className="login-row">
           {fehler ? <span className="login-error">{fehler}</span> : <span className="login-hint">{neu ? 'Ein neues Konto startet bei 0.' : ''}</span>}
@@ -41,6 +43,8 @@ export default async function Login({ searchParams }) {
         </div>
         <button type="submit" name="action" value={neu ? 'register' : 'login'}>{neu ? 'Erstellen' : 'Login'}</button>
       </form>
+      {/* Browser ohne Verdecken per CSS: dann doch ein normales Passwortfeld, damit nie Klartext sichtbar ist */}
+      <script dangerouslySetInnerHTML={{ __html: "if(!(window.CSS && (CSS.supports('-webkit-text-security','disc') || CSS.supports('text-security','disc')))) document.querySelectorAll('.pw-mask').forEach(function(i){ i.type = 'password'; });" }} />
     </main>
   );
 }

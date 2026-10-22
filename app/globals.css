@@ -3856,6 +3856,7 @@
 .login-field svg{ width:30px; height:30px; flex-shrink:0; margin:0 28px 0 26px; fill:#1e4a78; }
 .login-field input{ flex:1; min-width:0; height:100%; border:0; outline:none; background:transparent; font:inherit; font-size:20px; color:#33384a; padding-right:16px; }
 .login-field input::placeholder{ color:#6c7082; }
+.pw-mask{ -webkit-text-security:disc; text-security:disc; }
 .login-field:focus-within{ background:#e6e8f1; box-shadow:0 0 0 2px rgba(255,255,255,.35); }
 .login-row{ display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:24px; margin-top:-4px; font-size:16px; }
 .login-row a{ color:#c9cde0; font-style:italic; text-decoration:none; white-space:nowrap; }

@@ -811,6 +811,7 @@ const boardTime = document.getElementById('board-time');
 const citySelect = document.getElementById('city-select');
 const wxDetail = document.getElementById('wx-detail');
 let activeCity = cities.find(c => c.name === "Aarau") || cities[0];
+try{ const sc = cities.find(c => c.name === localStorage.getItem('weltuhr_city') && c.name !== "Zürich"); if(sc) activeCity = sc; } catch(err){}
 
 function buildAnalogClockFace(){
   let ticks = '';
@@ -854,16 +855,21 @@ function buildTimeCard(city){
   boardTime.appendChild(card);
 }
 
+function selectCity(city){
+  activeCity = city;
+  document.querySelectorAll('.city-chip').forEach(c => c.classList.toggle('active', c.dataset.city === city.name));
+  loadFullWeather(city);
+}
+
 function buildCitySelect(){
   cities.filter(c => c.name !== "Zürich").forEach(city => {
     const chip = document.createElement('button');
     chip.className = 'city-chip' + (city === activeCity ? ' active' : '');
     chip.textContent = city.name;
+    chip.dataset.city = city.name;
     chip.addEventListener('click', () => {
-      activeCity = city;
-      document.querySelectorAll('.city-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      loadFullWeather(city);
+      selectCity(city);
+      try{ localStorage.setItem('weltuhr_city', city.name); } catch(err){}
     });
     citySelect.appendChild(chip);
   });
@@ -1021,6 +1027,12 @@ function makeGameResizable(targetEl, storageKey){
   });
 
   gameResizeInstances.push({
+    key: storageKey,
+    apply(v){
+      const z = Number(v);
+      zoomVal = z >= 0.5 && z <= 2.5 ? z : 1;
+      targetEl.style.zoom = zoomVal;
+    },
     reset(){
       zoomVal = 1;
       targetEl.style.zoom = 1;
@@ -4350,6 +4362,7 @@ function wotdSubmitGuess(){
 
 // Jedes Wort kommt erst wieder, wenn alle anderen dieser Länge dran waren (gemischter Stapel pro Länge)
 const wotdBags = {};
+try{ Object.assign(wotdBags, JSON.parse(localStorage.getItem('wotd_bags') || '{}')); } catch(err){}
 function wotdDraw(len){
   if(!wotdBags[len] || !wotdBags[len].length){
     const bag = [...wotdWordLists[len]];
@@ -4357,7 +4370,9 @@ function wotdDraw(len){
     if(bag.length > 1 && bag[bag.length - 1] === wotdAnswer) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];
     wotdBags[len] = bag;
   }
-  return wotdBags[len].pop();
+  const w = wotdBags[len].pop();
+  try{ localStorage.setItem('wotd_bags', JSON.stringify(wotdBags)); } catch(err){}
+  return w;
 }
 function wotdNextWord(){
   wotdAnswer = wotdDraw(wotdLength);
@@ -9155,4 +9170,43 @@ document.getElementById('to-top-btn')?.addEventListener('click', () => window.sc
   apply();
 })();
 
-
+// Live-Abgleich mit anderen Geräten: alles, was dort gespeichert wird (Design, Stadt, Spielstände,
+// Highscores, CS-Geld und Inventar …), wird hier sofort übernommen und angezeigt
+window.addEventListener('board-sync', (e) => {
+  const get = (k) => { try{ return localStorage.getItem(k); } catch(err){ return null; } };
+  const json = (k, fb) => { try{ return JSON.parse(get(k) || 'null') ?? fb; } catch(err){ return fb; } };
+  for(const k of e.detail.keys){
+    const v = get(k);
+    if(k === 'weltuhr_theme'){
+      if(v && v !== document.documentElement.getAttribute('data-theme')) applyTheme(v);
+    } else if(k === 'weltuhr_bg_color'){
+      if(v) applyBackgroundColor(v);
+      else { document.documentElement.style.removeProperty('--board'); document.documentElement.style.removeProperty('--fg'); }
+    } else if(k === 'weltuhr_city'){
+      const c = cities.find(x => x.name === v);
+      if(c && c !== activeCity) selectCity(c);
+    } else if(k === 'c4_level' || k === 'c4_hiscore'){
+      c4Level = Math.max(1, Number(get('c4_level')) || 1);
+      c4HiScore = Number(get('c4_hiscore')) || 0;
+      ttUpdateSide();
+    } else if(k === 'mp_stars'){
+      mpStars = Number(v) || 0; mpUpdateStats();
+    } else if(k === 'ea_teams'){
+      const sv = json(k, null);
+      if(sv && eaTeams[sv.w] && eaTeams[sv.b] && sv.w !== sv.b){ eaPicked = sv; eaApplyTeams(); }
+    } else if(k === 'cs_state'){
+      Object.assign(csState, json(k, {})); csHud();
+      if(document.getElementById('cs-shop')) csRenderShop();
+    } else if(k === 'cs_inv'){
+      if(!csSpinning){ csInv = json(k, []).filter(x => x && (x.kind === 'case' || x.kind === 'skin')); csRenderAll(); }
+    } else if(k === 'snake_best'){
+      snakeBest = Math.max(snakeBest, Number(v) || 0); snakeBestEl.textContent = snakeBest * 100;
+    } else if(k === 'g2048_best'){
+      g2048Best = Math.max(g2048Best, Number(v) || 0); g2048BestEl.textContent = g2048Pad(g2048Best);
+    } else if(k === 'wotd_bags'){
+      const b = json(k, {}); for(const l in wotdBags) delete wotdBags[l]; Object.assign(wotdBags, b);
+    } else {
+      gameResizeInstances.forEach(inst => { if(inst.key === k) inst.apply(v); });
+    }
+  }
+});

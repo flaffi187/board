@@ -42,3 +42,13 @@ next-env.d.ts
 
 # lokale Datenbank des Boards
 /data/
+
+# Daten-Backup (Repo ist öffentlich – nicht committen)
+/backup/
+/login-link.txt
+/callback.txt
+
+# Cloudflare (OpenNext)
+/.open-next/
+/.wrangler/
+/.dev.vars

@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "board",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-15",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      // Speicher für To-Dos, Notizen, Highscores, CS-Inventar … (siehe lib/db.js)
+      "binding": "DB",
+      "database_name": "board",
+      "database_id": "28428daa-0d0f-4aec-bf18-23fa0f8da41b"
+    }
+  ]
+}

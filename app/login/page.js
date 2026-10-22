@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { SESSION_COOKIE, userFromToken } from '../../lib/auth';
 
 const FEHLER = {
-  falsch: 'Benutzername/E-Mail oder Passwort falsch.',
+  falsch: 'Benutzername oder Passwort falsch.',
   vergeben: 'Diesen Benutzernamen gibt es schon.',
   kurz: 'Das Passwort braucht mindestens 6 Zeichen.',
   name: 'Benutzername: 3–20 Zeichen, nur Buchstaben, Zahlen, . _ -',
@@ -29,7 +29,7 @@ export default async function Login({ searchParams }) {
         {neu && <h1 className="login-title">Neues Konto</h1>}
         <label className="login-field">
           <UserIcon />
-          <input name="name" placeholder={neu ? 'Benutzername wählen' : 'Benutzername oder E-Mail'} autoComplete={neu ? "username" : "username email"} autoCapitalize="none" autoCorrect="off" required autoFocus />
+          <input name="name" placeholder={neu ? 'Benutzername wählen' : 'Benutzername'} autoComplete="username" autoCapitalize="none" autoCorrect="off" required autoFocus />
         </label>
         <label className="login-field">
           <LockIcon />

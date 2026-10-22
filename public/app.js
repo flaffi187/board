@@ -9290,3 +9290,45 @@ window.addEventListener('board-sync', (e) => {
 });
 
 recRender();
+
+// Konto: E-Mail hinzufügen/ändern (oben rechts). Danach geht die Anmeldung auch mit der E-Mail.
+(function(){
+  const btn = document.getElementById('account-mail-btn'), pop = document.getElementById('account-pop');
+  if(!btn || !pop) return;
+  const emailIn = document.getElementById('account-email'), pwIn = document.getElementById('account-pw'), msg = document.getElementById('account-msg');
+  const token = document.querySelector('.account-box input[name="token"]')?.value || '';
+  const show = (open) => {
+    pop.hidden = !open; btn.setAttribute('aria-expanded', String(open));
+    if(open) place();
+    if(open){ msg.textContent = ''; msg.className = 'account-pop-msg'; pwIn.value = ''; emailIn.focus(); }
+  };
+  // Unter dem Konto-Feld, rechtsbündig – aber nie über den Bildschirmrand hinaus (Handy)
+  function place(){
+    const box = btn.closest('.account-box').getBoundingClientRect();
+    const w = pop.offsetWidth, vw = document.documentElement.clientWidth;
+    const left = Math.min(Math.max(16, box.right - w), vw - 16 - w);
+    pop.style.left = left + 'px'; pop.style.top = (box.bottom + 10) + 'px';
+  }
+  window.addEventListener('resize', () => { if(!pop.hidden) place(); });
+  window.addEventListener('scroll', () => { if(!pop.hidden) place(); }, { passive: true });
+  btn.addEventListener('click', () => show(pop.hidden));
+  document.getElementById('account-cancel').addEventListener('click', () => show(false));
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && !pop.hidden) show(false); });
+  document.addEventListener('pointerdown', (e) => { if(!pop.hidden && !pop.contains(e.target) && !btn.contains(e.target)) show(false); });
+  pop.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.className = 'account-pop-msg'; msg.textContent = 'Speichere …';
+    try{
+      const r = await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Board-Token': token }, body: JSON.stringify({ email: emailIn.value, password: pwIn.value }) });
+      if(r.status === 401){ location.href = '/login'; return; }
+      const res = await r.json();
+      if(res.error){ msg.className = 'account-pop-msg err'; msg.textContent = res.error; return; }
+      emailIn.value = res.email; pwIn.value = '';
+      btn.classList.toggle('has-mail', !!res.email);
+      btn.title = res.email ? 'E-Mail: ' + res.email : 'E-Mail hinzufügen';
+      msg.className = 'account-pop-msg ok';
+      msg.textContent = res.email ? 'Gespeichert – du kannst dich jetzt auch mit ' + res.email + ' anmelden.' : 'E-Mail entfernt.';
+      setTimeout(() => { if(msg.classList.contains('ok')) show(false); }, 2600);
+    } catch(err){ msg.className = 'account-pop-msg err'; msg.textContent = 'Keine Verbindung – nochmal versuchen.'; }
+  });
+})();

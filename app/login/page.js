@@ -2,6 +2,13 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { SESSION_COOKIE, userFromToken } from '../../lib/auth';
 
+const FEHLER = {
+  falsch: 'Benutzername/E-Mail oder Passwort falsch.',
+  vergeben: 'Diesen Benutzernamen gibt es schon.',
+  kurz: 'Das Passwort braucht mindestens 6 Zeichen.',
+  name: 'Benutzername: 3–20 Zeichen, nur Buchstaben, Zahlen, . _ -',
+};
+
 export const metadata = { title: 'ufl home – Anmelden' };
 
 const UserIcon = () => (
@@ -13,7 +20,8 @@ const LockIcon = () => (
 
 export default async function Login({ searchParams }) {
   if (await userFromToken((await cookies()).get(SESSION_COOKIE)?.value)) redirect('/');
-  const { fehler, name, modus } = await searchParams;
+  const { fehler: code, modus } = await searchParams;
+  const fehler = FEHLER[code];
   const neu = modus === 'neu';
   return (
     <main className="login-page">
@@ -21,11 +29,11 @@ export default async function Login({ searchParams }) {
         {neu && <h1 className="login-title">Neues Konto</h1>}
         <label className="login-field">
           <UserIcon />
-          <input name="name" placeholder={neu ? 'Benutzername wählen' : 'Benutzername'} defaultValue={name || ''} autoComplete="username" autoCapitalize="none" autoCorrect="off" required autoFocus={!name} />
+          <input name="name" placeholder={neu ? 'Benutzername wählen' : 'Benutzername oder E-Mail'} autoComplete={neu ? "username" : "username email"} autoCapitalize="none" autoCorrect="off" required autoFocus />
         </label>
         <label className="login-field">
           <LockIcon />
-          <input type="password" name="password" placeholder="Passwort" autoComplete={neu ? 'new-password' : 'current-password'} required autoFocus={!!name} minLength={neu ? 6 : undefined} />
+          <input type="password" name="password" placeholder="Passwort" autoComplete={neu ? 'new-password' : 'current-password'} required minLength={neu ? 6 : undefined} />
         </label>
         <div className="login-row">
           {fehler ? <span className="login-error">{fehler}</span> : <span className="login-hint">{neu ? 'Ein neues Konto startet bei 0.' : ''}</span>}

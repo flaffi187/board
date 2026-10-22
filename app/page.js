@@ -25,12 +25,26 @@ export default async function Page() {
       <input type="color" id="accent-color-input" defaultValue="#1A1918" />
     </label>
     <form method="post" action="/api/auth" className="account-box">
+      <button type="button" id="account-mail-btn" className={'account-mail-btn' + (user.email ? ' has-mail' : '')} title={user.email ? 'E-Mail: ' + user.email : 'E-Mail hinzufügen'} aria-label="E-Mail fürs Konto" aria-expanded="false" aria-controls="account-pop">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      </button>
       <span className="account-name" title="Angemeldet als">{user.name}</span>
       <input type="hidden" name="token" value={pageToken} />
       <div id="board-token" data-token={pageToken} hidden />
       <button type="submit" name="action" value="logout" className="logout-btn" title="Abmelden" aria-label="Abmelden">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       </button>
+    </form>
+    <form id="account-pop" className="account-pop" hidden>
+      <b>E-Mail fürs Konto</b>
+      <p>Danach kannst du dich auch mit der E-Mail statt dem Benutzernamen anmelden.</p>
+      <input type="email" id="account-email" placeholder="deine@email.ch" defaultValue={user.email} autoComplete="email" />
+      <input type="password" id="account-pw" placeholder="Passwort zur Bestätigung" autoComplete="current-password" required />
+      <div className="account-pop-msg" id="account-msg" role="status"></div>
+      <div className="account-pop-btns">
+        <button type="button" id="account-cancel">Abbrechen</button>
+        <button type="submit">Speichern</button>
+      </div>
     </form>
   </div>
 </header>

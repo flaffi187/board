@@ -22,8 +22,8 @@ export async function POST(request) {
   const result = action === 'register' ? await register(name, password) : await login(name, password);
   if (result.error) {
     await new Promise(r => setTimeout(r, 600));   // Raten bremsen
-    const q = new URLSearchParams({ fehler: result.error, name: String(name || ''), modus: action === 'register' ? 'neu' : '' });
-    return go('/login?' + q);
+    // Nur ein Fehler-Code in die Adresse – Benutzername und Passwort tauchen nie in der URL oder im Verlauf auf
+    return go('/login?' + new URLSearchParams({ fehler: result.error, ...(action === 'register' ? { modus: 'neu' } : {}) }));
   }
   const token = await createSession(result.user.id);
   return go('/', `${SESSION_COOKIE}=${token}; Path=/; Max-Age=120; HttpOnly; SameSite=Lax${secure}`);

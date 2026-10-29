@@ -479,28 +479,56 @@ export default async function Page() {
 </div>
 
 <div className="view" id="timer-view">
-  <div className="panel-label">Timer</div>
-  <div className="timer-display" id="timer-display">00:00</div>
+  <div className="tm-cards">
+    {/* Küchentimer: Drehknopf stellt die Minuten ein und dreht sich beim Ablaufen zurück */}
+    <section className="tm-card">
+      <h2 className="tm-title">Küchentimer</h2>
+      <div className="tm-digital" id="timer-display">00:00</div>
+      <div className="kt-dial">
+        <div className="kt-ticks" aria-hidden="true">{Array.from({ length: 60 }, (_, i) => <i key={i} className={i % 5 === 0 ? 'major' : ''} style={{ transform: `rotate(${i * 6}deg)` }}></i>)}</div>
+        <div className="kt-knob" id="kt-knob" role="slider" tabIndex={0} aria-label="Minuten einstellen" aria-valuemin={0} aria-valuemax={60} aria-valuenow={0}>
+          <span className="kt-pointer"></span>
+        </div>
+      </div>
+      <div className="tm-hint">Knopf drehen = Minuten einstellen</div>
+      <div className="tm-buttons">
+        <button className="tm-btn tm-btn-main" id="timer-start-btn"><span className="when-off">Start</span><span className="when-on">Pause</span></button>
+        <button className="tm-btn" id="timer-reset-btn">Reset</button>
+      </div>
+      <div className="tm-status" id="timer-status" role="status"></div>
+      {/* bleiben für Speicherung und Logik erhalten, sind aber versteckt */}
+      <div hidden>
+        <input type="number" id="timer-hour-input" min="0" />
+        <input type="number" id="timer-min-input" min="0" max="59" />
+        <input type="number" id="timer-sec-input" min="0" max="59" />
+        <button id="timer-set-btn">Übernehmen</button>
+        <button id="timer-pause-btn">Pause</button>
+      </div>
+    </section>
 
-  <div className="timer-input-row">
-    <input type="number" id="timer-hour-input" placeholder="Stunden" min="0" />
-    <input type="number" id="timer-min-input" placeholder="Minuten" min="0" max="59" />
-    <input type="number" id="timer-sec-input" placeholder="Sekunden" min="0" max="59" />
-    <button id="timer-set-btn">Übernehmen</button>
-  </div>
-
-  <div className="timer-controls">
-    <button className="timer-ctrl-btn" id="timer-start-btn">▶ Start</button>
-    <button className="timer-ctrl-btn" id="timer-pause-btn">⏸ Pause</button>
-    <button className="timer-ctrl-btn" id="timer-reset-btn">↺ Reset</button>
-  </div>
-  <div className="todo-empty" id="timer-status"></div>
-
-  <div className="panel-label" style={{ marginTop: "44px" }}>Stoppuhr (zählt nach oben)</div>
-  <div className="timer-display timer-display-ms" id="stopwatch-display">00:00.00</div>
-  <div className="timer-controls">
-    <button className="timer-ctrl-btn" id="stopwatch-toggle-btn">▶ Start</button>
-    <button className="timer-ctrl-btn" id="stopwatch-reset-btn">↺ Reset</button>
+    {/* Stoppuhr: Krone oben = Start/Stopp, schräger Knopf = Reset */}
+    <section className="tm-card">
+      <h2 className="tm-title">Stoppuhr</h2>
+      <div className="sw-watch">
+        <button className="sw-crown" id="sw-crown" title="Start / Stopp" aria-label="Stoppuhr starten oder stoppen"><span></span></button>
+        <button className="sw-side" id="sw-side" title="Reset" aria-label="Stoppuhr zurücksetzen"></button>
+        <div className="sw-case">
+          <div className="sw-face">
+            <div className="sw-ticks" aria-hidden="true">{Array.from({ length: 60 }, (_, i) => <i key={i} className={i % 5 === 0 ? 'major' : ''} style={{ transform: `rotate(${i * 6}deg)` }}></i>)}</div>
+            <span className="sw-num n60">60</span><span className="sw-num n15">15</span><span className="sw-num n30">30</span><span className="sw-num n45">45</span>
+            <div className="sw-sub" aria-hidden="true"><span>MIN</span><i id="sw-min-hand"></i></div>
+            <div className="sw-hand" id="sw-sec-hand" aria-hidden="true"></div>
+            <span className="sw-hub" aria-hidden="true"></span>
+            <div className="sw-digital" id="stopwatch-display">00:00.00</div>
+          </div>
+        </div>
+      </div>
+      <div className="tm-hint">Krone oben = Start / Stopp · Knopf schräg = Reset</div>
+      <div hidden>
+        <button id="stopwatch-toggle-btn">Start</button>
+        <button id="stopwatch-reset-btn">Reset</button>
+      </div>
+    </section>
   </div>
 </div>
 

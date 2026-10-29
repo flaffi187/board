@@ -4008,3 +4008,63 @@
   #todo-view .cork-day{ align-self:flex-start; margin-left:10px; }
   #todo-view .cork-sticky{ width:auto; margin:0 6px; }
 }
+
+/* ===== Timer: Küchentimer + analoge Stoppuhr ===== */
+#timer-view .tm-cards{ display:flex; flex-wrap:wrap; gap:26px; align-items:flex-start; }
+#timer-view .tm-card{ flex:1 1 300px; max-width:340px; display:flex; flex-direction:column; align-items:center; padding:24px 20px 22px; border-radius:24px; background:#2a2623; border:1px solid rgba(255,255,255,.06); box-shadow:0 10px 0 #201d1a, 0 14px 30px rgba(0,0,0,.35); color:#d9d2c3; }
+#timer-view .tm-title{ margin:0 0 16px; font-family:'Permanent Marker', cursive; font-weight:400; font-size:1.05rem; letter-spacing:.06em; text-transform:uppercase; color:#d98f2e; }
+#timer-view .tm-digital{ width:100%; padding:10px 0; text-align:center; border-radius:8px; background:#14100d; box-shadow:inset 0 2px 10px rgba(0,0,0,.7); border:2px solid #0e0b09;
+  font-family:'JetBrains Mono', monospace; font-weight:700; font-size:3.4rem; letter-spacing:.06em; color:#f0a33a; text-shadow:0 0 14px rgba(240,163,58,.55); }
+#timer-view .tm-hint{ margin-top:14px; font-family:'JetBrains Mono', monospace; font-size:.72rem; text-align:center; color:#8d8578; }
+#timer-view .tm-buttons{ display:flex; gap:14px; margin-top:18px; }
+#timer-view .tm-btn{ min-width:78px; padding:12px 18px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#1f1c1a; color:#eae4d8; cursor:pointer;
+  font-family:'JetBrains Mono', monospace; font-weight:700; font-size:.85rem; letter-spacing:.12em; text-transform:uppercase; box-shadow:0 4px 0 #151311; transition:transform .1s ease, box-shadow .1s ease; }
+#timer-view .tm-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 #151311; }
+#timer-view .tm-btn-main{ box-shadow:0 5px 0 #9a5f17; }
+#timer-view .tm-btn-main:active{ box-shadow:0 2px 0 #9a5f17; }
+#timer-view .tm-btn .when-on{ display:none; }
+#timer-view .tm-btn.running .when-on{ display:inline; }
+#timer-view .tm-btn.running .when-off{ display:none; }
+#timer-view .tm-btn.running{ color:#f0a33a; }
+#timer-view .tm-status{ min-height:1.3em; margin-top:12px; font-family:'JetBrains Mono', monospace; font-size:.9rem; color:#f0a33a; }
+#timer-view .tm-status:not(:empty){ animation:tm-ring .5s ease-in-out 6; }
+@keyframes tm-ring{ 25%{ transform:rotate(-4deg); } 75%{ transform:rotate(4deg); } }
+/* Drehknopf mit Skala */
+#timer-view .kt-dial{ position:relative; width:150px; height:150px; margin-top:24px; }
+#timer-view .kt-ticks i, #timer-view .sw-ticks i{ position:absolute; left:50%; top:0; width:2px; height:50%; margin-left:-1px; transform-origin:50% 100%; }
+#timer-view .kt-ticks i::before{ content:''; position:absolute; left:0; top:0; width:2px; height:5px; background:#6f665a; }
+#timer-view .kt-ticks i.major::before{ height:9px; background:#d98f2e; }
+#timer-view .kt-knob{ position:absolute; inset:18px; border-radius:50%; cursor:grab; touch-action:none; outline:none;
+  background:radial-gradient(circle at 40% 35%, #eeebe3, #d8d3c8 60%, #bdb7aa); box-shadow:0 0 0 5px #8b8478, 0 0 0 7px #5b554c, 0 8px 14px rgba(0,0,0,.45), inset 0 -4px 8px rgba(0,0,0,.12); }
+#timer-view .kt-knob.turning{ cursor:grabbing; }
+#timer-view .kt-knob:focus-visible{ box-shadow:0 0 0 5px #8b8478, 0 0 0 9px #d98f2e, 0 8px 14px rgba(0,0,0,.45); }
+#timer-view .kt-pointer{ position:absolute; left:50%; top:12px; width:7px; height:36%; margin-left:-3.5px; border-radius:4px; background:#b8352b; }
+/* Analoge Stoppuhr */
+#timer-view .sw-watch{ position:relative; width:250px; height:282px; margin-top:4px; }
+#timer-view .sw-crown{ position:absolute; left:50%; top:0; width:32px; height:36px; margin-left:-16px; padding:0; border:0; background:none; cursor:pointer; z-index:2; }
+#timer-view .sw-crown::before{ content:''; position:absolute; left:0; top:0; width:32px; height:20px; border-radius:4px; background:linear-gradient(180deg, #e0a04a, #b9781f); box-shadow:inset 0 -2px 0 rgba(0,0,0,.2); }
+#timer-view .sw-crown span{ position:absolute; left:9px; top:20px; width:14px; height:16px; background:linear-gradient(90deg, #8f8a80, #c4bfb4, #8f8a80); }
+#timer-view .sw-crown.press::before{ animation:sw-press .18s ease; }
+#timer-view .sw-side{ position:absolute; right:32px; top:48px; width:22px; height:14px; padding:0; border:0; border-radius:3px; background:linear-gradient(180deg, #6c6862, #45423e); transform:rotate(40deg); cursor:pointer; z-index:2; }
+#timer-view .sw-side.press{ animation:sw-press-side .18s ease; }
+@keyframes sw-press{ 50%{ transform:translateY(5px); } }
+@keyframes sw-press-side{ 50%{ transform:rotate(40deg) translate(-4px, 0); } }
+#timer-view .sw-case{ position:absolute; left:0; right:0; bottom:0; height:250px; border-radius:50%; background:radial-gradient(circle at 40% 30%, #d6d1c6, #a9a397 70%, #8e897e); box-shadow:0 10px 20px rgba(0,0,0,.45), inset 0 -4px 10px rgba(0,0,0,.2); }
+#timer-view .sw-face{ position:absolute; inset:14px; border-radius:50%; background:#f3efe6; box-shadow:inset 0 0 0 2px #cfc8ba, inset 0 3px 8px rgba(0,0,0,.15); overflow:hidden; }
+#timer-view .sw-ticks{ position:absolute; inset:6px; }
+#timer-view .sw-ticks i::before{ content:''; position:absolute; left:.5px; top:0; width:1px; height:5px; background:#7f8696; }
+#timer-view .sw-ticks i.major::before{ left:0; width:3px; height:13px; background:#22305a; }
+#timer-view .sw-num{ position:absolute; font-family:'JetBrains Mono', monospace; font-weight:700; font-size:.82rem; color:#2a4f98; transform:translate(-50%, -50%); }
+#timer-view .sw-num.n60{ left:50%; top:16%; } #timer-view .sw-num.n15{ left:85%; top:50%; } #timer-view .sw-num.n30{ left:50%; top:84%; } #timer-view .sw-num.n45{ left:15%; top:50%; }
+#timer-view .sw-sub{ position:absolute; left:50%; top:24%; width:46px; height:46px; margin-left:-23px; border-radius:50%; border:1.5px solid #cfc8ba; }
+#timer-view .sw-sub span{ position:absolute; left:0; right:0; bottom:5px; text-align:center; font-family:'JetBrains Mono', monospace; font-size:.5rem; color:#7f8696; }
+#timer-view .sw-sub i{ position:absolute; left:50%; top:5px; width:2px; height:18px; margin-left:-1px; background:#22305a; transform-origin:50% 100%; border-radius:1px; }
+#timer-view .sw-hand{ position:absolute; left:50%; top:10px; width:2px; height:calc(50% - 10px + 18px); margin-left:-1px; background:#b8352b; transform-origin:50% calc(100% - 18px); border-radius:1px; }
+#timer-view .sw-hub{ position:absolute; left:50%; top:50%; width:12px; height:12px; margin:-6px 0 0 -6px; border-radius:50%; background:#b8352b; box-shadow:0 1px 2px rgba(0,0,0,.4); }
+#timer-view .sw-digital{ position:absolute; left:50%; top:69%; transform:translate(-50%, -50%); padding:3px 8px; border-radius:4px; background:#14100d; font-family:'JetBrains Mono', monospace; font-weight:700; font-size:1rem; color:#f0a33a; white-space:nowrap; }
+#timer-view .sw-watch.running .sw-case{ box-shadow:0 10px 20px rgba(0,0,0,.45), 0 0 0 3px rgba(240,163,58,.35), inset 0 -4px 10px rgba(0,0,0,.2); }
+@media (max-width:700px){
+  #timer-view .tm-cards{ justify-content:center; }
+  #timer-view .tm-card{ max-width:none; }
+  #timer-view .tm-digital{ font-size:2.8rem; }
+}

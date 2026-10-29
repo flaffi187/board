@@ -3038,6 +3038,7 @@ function fmtTimer(totalSec){
 
 function timerRender(){
   timerDisplay.textContent = fmtTimer(timerRemaining);
+  ktUpdateKnob();
 }
 
 function timerTick(){
@@ -3068,7 +3069,8 @@ timerSetBtn.addEventListener('click', () => {
 });
 
 timerStartBtn.addEventListener('click', () => {
-  if(timerInterval || timerRemaining <= 0) return;
+  if(timerInterval){ timerPauseBtn.click(); return; }   // derselbe Knopf pausiert
+  if(timerRemaining <= 0) return;
   timerStatus.textContent = '';
   timerEndAt = Date.now() + timerRemaining * 1000;
   timerRun();
@@ -3093,6 +3095,50 @@ timerResetBtn.addEventListener('click', () => {
   timerStatus.textContent = '';
   timerRender();
 });
+
+// Küchentimer-Drehknopf: Ziehen (Maus/Finger), Mausrad oder Pfeiltasten stellen die Minuten (0–60) ein.
+// Der Knopf zeigt die Restzeit an – läuft der Timer, dreht er sich langsam zurück auf 0.
+const ktKnob = document.getElementById('kt-knob');
+function ktUpdateKnob(){
+  if(!ktKnob) return;
+  const deg = Math.min(360, timerRemaining / 3600 * 360);
+  ktKnob.style.transform = `rotate(${deg}deg)`;
+  ktKnob.setAttribute('aria-valuenow', Math.round(timerRemaining / 60));
+}
+function ktSetMinutes(min){
+  if(timerInterval) return;   // während er läuft nicht verstellen
+  min = Math.max(0, Math.min(60, Math.round(min)));
+  timerHourInput.value = ''; timerMinInput.value = min ? String(min) : ''; timerSecInput.value = '';
+  timerTotalSeconds = timerRemaining = min * 60;
+  timerEndAt = null;
+  timerStatus.textContent = '';
+  timerRender();
+}
+if(ktKnob){
+  let dragging = false, lastMin = 0;
+  const minutesAt = (e) => {
+    const r = ktKnob.getBoundingClientRect();
+    const a = (Math.atan2(e.clientX - (r.left + r.width / 2), -(e.clientY - (r.top + r.height / 2))) * 180 / Math.PI + 360) % 360;
+    let m = Math.round(a / 6);
+    if(m === 0 && lastMin > 40) m = 60;   // über die 12 hinaus = volle Stunde
+    if(m === 60 && lastMin < 20) m = 0;
+    return m;
+  };
+  ktKnob.addEventListener('pointerdown', (e) => {
+    if(timerInterval) return;
+    dragging = true; lastMin = Math.round(timerRemaining / 60);
+    ktKnob.setPointerCapture(e.pointerId); ktKnob.classList.add('turning');
+    e.preventDefault();
+  });
+  ktKnob.addEventListener('pointermove', (e) => { if(dragging){ lastMin = minutesAt(e); ktSetMinutes(lastMin); } });
+  const stop = () => { dragging = false; ktKnob.classList.remove('turning'); };
+  ktKnob.addEventListener('pointerup', stop); ktKnob.addEventListener('pointercancel', stop);
+  ktKnob.addEventListener('wheel', (e) => { if(timerInterval) return; e.preventDefault(); ktSetMinutes(Math.round(timerRemaining / 60) + (e.deltaY < 0 ? 1 : -1)); }, { passive: false });
+  ktKnob.addEventListener('keydown', (e) => {
+    const step = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 5, PageDown: -5 }[e.key];
+    if(step){ e.preventDefault(); ktSetMinutes(Math.round(timerRemaining / 60) + step); }
+  });
+}
 
 timerRender();
 
@@ -3127,7 +3173,12 @@ function stopwatchCurrentMs(){
 }
 
 function stopwatchRender(){
-  stopwatchDisplay.textContent = fmtStopwatch(Math.floor(stopwatchCurrentMs()));
+  const ms = Math.floor(stopwatchCurrentMs());
+  stopwatchDisplay.textContent = fmtStopwatch(ms);
+  // Zeiger: grosser = Sekunden (eine Runde pro Minute), kleiner = Minuten (eine Runde pro 30 Minuten)
+  const sec = document.getElementById('sw-sec-hand'), min = document.getElementById('sw-min-hand');
+  if(sec) sec.style.transform = `rotate(${(ms / 1000 % 60) * 6}deg)`;
+  if(min) min.style.transform = `rotate(${(ms / 60000 % 30) * 12}deg)`;
 }
 
 stopwatchToggleBtn.addEventListener('click', () => {
@@ -3163,6 +3214,16 @@ stopwatchResetBtn.addEventListener('click', () => {
 });
 
 stopwatchRender();
+// Analoge Stoppuhr: Krone drückt Start/Stopp, der schräge Knopf setzt zurück
+[['sw-crown', stopwatchToggleBtn], ['sw-side', stopwatchResetBtn]].forEach(([id, target]) => {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('click', () => {
+    target.click();
+    el.classList.remove('press'); void el.offsetWidth; el.classList.add('press');
+    document.querySelector('.sw-watch')?.classList.toggle('running', !!stopwatchInterval);
+  });
+});
 
 // Rekorde: Siege, Niederlagen, Bestzeiten und Serien aller Spiele ohne eigenen Highscore.
 // Alles in einem Eintrag ("game_records"), damit es im Konto gespeichert und auf allen Geräten gleich ist.
@@ -9463,6 +9524,7 @@ persist('stopwatch_state', () => ({ el: stopwatchStartWall ? 0 : Math.round(stop
     stopwatchStartWall = null; stopwatchStartTime = null; stopwatchElapsed = Number(st.el) || 0;
     stopwatchToggleBtn.classList.remove('running'); stopwatchToggleBtn.textContent = '▶ Start';
   }
+  document.querySelector('.sw-watch')?.classList.toggle('running', !!stopwatchInterval);
   stopwatchRender();
 });
 

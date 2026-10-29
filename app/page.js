@@ -169,6 +169,7 @@ export default async function Page() {
       <button className="cork-menu" id="todo-menu-btn" title="Mehr" aria-label="Mehr" aria-haspopup="menu" aria-expanded="false"><i></i><i></i><i></i></button>
       <div className="cork-menu-pop" id="todo-menu" role="menu" hidden>
         <button role="menuitem" id="todo-clear-done">Erledigte entfernen</button>
+        <button role="menuitem" id="todo-clear-all" className="danger">Alle löschen</button>
       </div>
     </div>
     <div className="cork-paper">
@@ -180,10 +181,23 @@ export default async function Page() {
       </div>
       <ul className="cork-list" id="todo-list"></ul>
     </div>
+    <div className="cork-bottom">
+    {/* Abreisskalender-Blatt mit Klebeband: heutiges Datum und Fortschritt */}
+    <div className="cork-day">
+      <span className="cork-tape" aria-hidden="true"></span>
+      <div className="cork-day-month" id="cork-day-month"></div>
+      <div className="cork-day-num" id="cork-day-num"></div>
+      <div className="cork-day-week" id="cork-day-week"></div>
+      <div className="cork-day-progress">
+        <div className="cork-day-bar"><i id="cork-day-fill"></i></div>
+        <span id="cork-day-text"></span>
+      </div>
+    </div>
     <div className="cork-sticky">
       <span className="cork-pin" aria-hidden="true"></span>
       <div className="cork-sticky-title">Notizen</div>
       <textarea id="notes-box" placeholder="Kritzel hier was hin …"></textarea>
+    </div>
     </div>
     <div className="cork-stamp" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>

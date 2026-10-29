@@ -1278,10 +1278,22 @@ const todoInput = document.getElementById('todo-input');
 const todoAddBtn = document.getElementById('todo-add-btn');
 const todoListEl = document.getElementById('todo-list');
 
+// Kalenderblatt auf der Pinnwand: heutiges Datum und wie viel schon erledigt ist
+function renderTodoDay(){
+  const d = new Date(), set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  set('cork-day-month', d.toLocaleDateString('de-CH', { month: 'long' }));
+  set('cork-day-num', d.getDate());
+  set('cork-day-week', d.toLocaleDateString('de-CH', { weekday: 'long' }));
+  const done = todos.filter(t => t.done).length;
+  set('cork-day-text', !todos.length ? 'Nichts geplant' : done === todos.length ? 'Alles erledigt!' : `${done} von ${todos.length} erledigt`);
+  const fill = document.getElementById('cork-day-fill');
+  if(fill) fill.style.width = (todos.length ? done / todos.length * 100 : 0) + '%';
+}
 function renderTodos(){
   const open = todos.filter(t => !t.done).length;
   const countEl = document.getElementById('todo-count');
   if(countEl) countEl.textContent = todos.length ? `(${open} offen)` : '';
+  renderTodoDay();
   if(todos.length === 0){
     todoListEl.innerHTML = `<li class="cork-empty">Noch nichts drauf – schreib oben was hin.</li>`;
     return;
@@ -1337,6 +1349,14 @@ todoAddBtn.addEventListener('click', addTodo);
     todos = todos.filter(t => !t.done);
     saveTodos(); renderTodos(); show(false);
   });
+  document.getElementById('todo-clear-all').addEventListener('click', () => {
+    show(false);
+    if(!todos.length || !confirm('Wirklich alle Aufgaben löschen?')) return;
+    todos = [];
+    saveTodos(); renderTodos();
+  });
+  // Um Mitternacht springt das Kalenderblatt auf den neuen Tag
+  setInterval(renderTodoDay, 60000);
 })();
 todoInput.addEventListener('keydown', e => {
   if(e.key === 'Enter') addTodo();

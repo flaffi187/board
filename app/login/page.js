@@ -52,14 +52,14 @@ export default async function Login({ searchParams }) {
           <div className="term-line"><span className="term-prompt">C:\ufl\home&gt;</span>{exe}</div>
           <label className="term-field">
             <span>Benutzername:</span>
-            <input name="name" autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} required autoFocus placeholder=" " aria-label="Benutzername" />
+            <input name="name" enterKeyHint="next" autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} required autoFocus placeholder=" " aria-label="Benutzername" />
             <i className="term-cursor" aria-hidden="true" />
           </label>
           <label className="term-field">
             <span>Passwort:</span>
             {/* Absichtlich kein type="password": so bietet der Browser nie an, das Passwort zu speichern.
                 Die Zeichen werden per CSS verdeckt; Autokorrektur & Co. sind aus, damit die Tastatur nichts lernt. */}
-            <input type="text" className="pw-mask" name="password" autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} data-lpignore="true" data-1p-ignore="true" data-form-type="other" required minLength={neu ? 6 : undefined} placeholder=" " aria-label="Passwort" />
+            <input type="text" className="pw-mask" name="password" enterKeyHint="go" autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} data-lpignore="true" data-1p-ignore="true" data-form-type="other" required minLength={neu ? 6 : undefined} placeholder=" " aria-label="Passwort" />
             <i className="term-cursor" aria-hidden="true" />
           </label>
           {neu && <div className="term-line term-hint">Neues Konto – startet bei 0.</div>}
@@ -75,6 +75,8 @@ export default async function Login({ searchParams }) {
       </form>
       {/* Browser ohne Verdecken per CSS: dann doch ein normales Passwortfeld, damit nie Klartext sichtbar ist */}
       <script dangerouslySetInnerHTML={{ __html: "if(!(window.CSS && (CSS.supports('-webkit-text-security','disc') || CSS.supports('text-security','disc')))) document.querySelectorAll('.pw-mask').forEach(function(i){ i.type = 'password'; });" }} />
+      {/* Enter im Namensfeld: ohne Meldung zum Passwort springen (erst Enter im Passwortfeld meldet an) */}
+      <script dangerouslySetInnerHTML={{ __html: "document.querySelector('.term input[name=name]').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); document.querySelector('.term input[name=password]').focus(); } });" }} />
     </main>
   );
 }

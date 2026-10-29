@@ -1279,17 +1279,24 @@ const todoAddBtn = document.getElementById('todo-add-btn');
 const todoListEl = document.getElementById('todo-list');
 
 function renderTodos(){
+  const open = todos.filter(t => !t.done).length;
+  const countEl = document.getElementById('todo-count');
+  if(countEl) countEl.textContent = todos.length ? `(${open} offen)` : '';
   if(todos.length === 0){
-    todoListEl.innerHTML = `<div class="todo-empty">Noch keine Aufgaben — trag oben etwas ein.</div>`;
+    todoListEl.innerHTML = `<li class="cork-empty">Noch nichts drauf – schreib oben was hin.</li>`;
     return;
   }
+  const esc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // Radiergummi zum Löschen
+  const eraser = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l5.6 5.6a1 1 0 0 1 0 1.4L11 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>';
   todoListEl.innerHTML = todos.map((todo, i) => `
-    <li class="todo-item${todo.done ? ' done' : ''}">
-      <div class="todo-top">
+    <li class="cork-item${todo.done ? ' done' : ''}">
+      <label>
         <input type="checkbox" data-idx="${i}" ${todo.done ? 'checked' : ''}>
-        <button class="todo-del" data-idx="${i}">✕</button>
-      </div>
-      <span class="todo-text">${String(todo.text).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))}</span>
+        <span class="cork-box" aria-hidden="true"></span>
+        <span class="todo-text">${esc(todo.text)}</span>
+      </label>
+      <button class="todo-del" data-idx="${i}" title="Wegradieren" aria-label="Löschen">${eraser}</button>
     </li>
   `).join('');
 
@@ -1319,6 +1326,18 @@ function addTodo(){
 }
 
 todoAddBtn.addEventListener('click', addTodo);
+// Menü ⋯ oben rechts auf der Pinnwand
+(function(){
+  const btn = document.getElementById('todo-menu-btn'), menu = document.getElementById('todo-menu');
+  if(!btn || !menu) return;
+  const show = (open) => { menu.hidden = !open; btn.setAttribute('aria-expanded', String(open)); };
+  btn.addEventListener('click', (e) => { e.stopPropagation(); show(menu.hidden); });
+  document.addEventListener('click', (e) => { if(!menu.hidden && !menu.contains(e.target)) show(false); });
+  document.getElementById('todo-clear-done').addEventListener('click', () => {
+    todos = todos.filter(t => !t.done);
+    saveTodos(); renderTodos(); show(false);
+  });
+})();
 todoInput.addEventListener('keydown', e => {
   if(e.key === 'Enter') addTodo();
 });

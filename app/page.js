@@ -163,16 +163,31 @@ export default async function Page() {
 </div>
 
 <div className="view" id="todo-view">
-  <div className="panel-label">Neue Aufgabe</div>
-  <div className="todo-input-row">
-    <input type="text" id="todo-input" placeholder="Was steht an? …" />
-    <button id="todo-add-btn">+ Hinzufügen</button>
-  </div>
-  <ul className="todo-list" id="todo-list"></ul>
-
-  <div className="notes-section">
-    <div className="panel-label">Notizen</div>
-    <textarea id="notes-box" placeholder="Hier kannst du dir Notizen aufschreiben …"></textarea>
+  {/* Pinnwand: Kork mit Holzrahmen, Spiralblock für die To-Dos und gelber Zettel für Notizen */}
+  <div className="cork">
+    <div className="cork-menu-wrap">
+      <button className="cork-menu" id="todo-menu-btn" title="Mehr" aria-label="Mehr" aria-haspopup="menu" aria-expanded="false"><i></i><i></i><i></i></button>
+      <div className="cork-menu-pop" id="todo-menu" role="menu" hidden>
+        <button role="menuitem" id="todo-clear-done">Erledigte entfernen</button>
+      </div>
+    </div>
+    <div className="cork-paper">
+      <div className="cork-rings" aria-hidden="true">{Array.from({ length: 9 }, (_, i) => <i key={i}></i>)}</div>
+      <div className="cork-title"><h2>To-Do</h2><span id="todo-count"></span></div>
+      <div className="cork-input-row">
+        <input type="text" id="todo-input" placeholder="Was steht an? …" autoComplete="off" />
+        <button id="todo-add-btn">+ Drauf</button>
+      </div>
+      <ul className="cork-list" id="todo-list"></ul>
+    </div>
+    <div className="cork-sticky">
+      <span className="cork-pin" aria-hidden="true"></span>
+      <div className="cork-sticky-title">Notizen</div>
+      <textarea id="notes-box" placeholder="Kritzel hier was hin …"></textarea>
+    </div>
+    <div className="cork-stamp" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+    </div>
   </div>
 </div>
 

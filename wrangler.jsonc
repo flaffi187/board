@@ -15,5 +15,19 @@
       "database_name": "board",
       "database_id": "28428daa-0d0f-4aec-bf18-23fa0f8da41b"
     }
-  ]
+  ],
+  "env": {
+    // Nur für "next dev" im Codespace: dieselbe echte D1-Datenbank wie online, damit dort dieselben Konten
+    // und Daten gelten. Deploy und "wrangler dev" benutzen weiter die normale Einstellung oben.
+    "codespace": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "board",
+          "database_id": "28428daa-0d0f-4aec-bf18-23fa0f8da41b",
+          "remote": true
+        }
+      ]
+    }
+  }
 }

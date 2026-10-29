@@ -3899,3 +3899,94 @@
 .game-record-tag{ padding:2px 7px; border-radius:4px; background:#e8b04a; color:#1A1918; font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-size:0.66rem; }
 .rec-new{ display:inline-block; margin-left:8px; padding:2px 8px; border-radius:4px; background:#e8b04a; color:#1A1918; font-weight:700; font-size:0.8em; }
 
+
+/* ===== To-Do als Pinnwand ===== */
+#todo-view .cork{
+  position:relative; max-width:860px; min-height:600px; padding:38px 30px 80px; border-radius:12px;
+  background-color:#a8744a;
+  background-image:
+    radial-gradient(rgba(70,40,18,.35) 1px, transparent 1.4px),
+    radial-gradient(rgba(255,226,180,.18) 1px, transparent 1.4px);
+  background-size:7px 7px, 11px 11px; background-position:0 0, 3px 5px;
+  border:10px solid #6b4426; box-shadow:inset 0 0 0 2px #845530, inset 0 4px 18px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.35);
+}
+/* Spiralblock */
+#todo-view .cork-paper{
+  position:relative; padding:44px 24px 26px 64px; transform:rotate(-.5deg);
+  background-color:#fdfaf2;
+  background-image:
+    linear-gradient(90deg, transparent 47px, rgba(222,110,110,.75) 47px, rgba(222,110,110,.75) 49px, transparent 49px),
+    repeating-linear-gradient(180deg, transparent 0 33px, #bcd3e8 33px 34px);
+  background-position:0 0, 0 8px;
+  box-shadow:0 6px 14px rgba(0,0,0,.28);
+}
+#todo-view .cork-rings{ position:absolute; left:20px; right:20px; top:-14px; display:flex; justify-content:space-between; pointer-events:none; }
+#todo-view .cork-rings i{ width:10px; height:28px; border-radius:6px; background:linear-gradient(90deg, #4c4c4c, #9a9a9a 45%, #5a5a5a); box-shadow:0 2px 3px rgba(0,0,0,.35); }
+#todo-view .cork-title{ display:flex; align-items:baseline; gap:18px; margin-bottom:12px; }
+#todo-view .cork-title h2{ margin:0; font-family:'Permanent Marker', cursive; font-size:2.2rem; font-weight:400; letter-spacing:.02em; text-transform:uppercase; color:#b4312b; line-height:1; }
+#todo-view #todo-count{ font-family:'Caveat', cursive; font-size:1.55rem; color:#8c93a8; }
+#todo-view .cork-input-row{ display:flex; align-items:center; gap:18px; margin-bottom:6px; }
+#todo-view .cork-input-row input{
+  flex:1; min-width:0; height:38px; padding:0 14px; border:0; border-radius:6px; transform:rotate(-.6deg);
+  background:#1c1c1c; color:#f1ede2; font-family:'Caveat', cursive; font-size:1.35rem; outline:none;
+}
+#todo-view .cork-input-row input::placeholder{ color:#a6a8b3; }
+#todo-view .cork-input-row input:focus{ box-shadow:0 0 0 2px rgba(180,49,43,.5); }
+#todo-view .cork-input-row button{
+  flex-shrink:0; padding:4px 6px; border:0; background:none; cursor:pointer;
+  font-family:'Permanent Marker', cursive; font-size:1rem; text-transform:uppercase; color:rgba(40,55,95,.3); transform:rotate(-3deg);
+  transition:color .15s ease, transform .15s ease;
+}
+#todo-view .cork-input-row button:hover, #todo-view .cork-input-row input:not(:placeholder-shown) + button{ color:#b4312b; }
+#todo-view .cork-input-row button:active{ transform:rotate(-3deg) scale(.94); }
+#todo-view .cork-list{ list-style:none; margin:0; padding:0; }
+#todo-view .cork-item, #todo-view .cork-empty{ display:flex; align-items:center; min-height:34px; }
+#todo-view .cork-empty{ font-family:'Caveat', cursive; font-size:1.35rem; color:#9aa0b3; }
+#todo-view .cork-item label{ flex:1; min-width:0; display:flex; align-items:center; gap:14px; cursor:pointer; }
+#todo-view .cork-item input{ position:absolute; opacity:0; width:1px; height:1px; }
+#todo-view .cork-box{ flex-shrink:0; width:20px; height:20px; border:2px solid #2d3b63; border-radius:5px; position:relative; transition:transform .12s ease; }
+#todo-view .cork-item label:hover .cork-box{ transform:scale(1.08); }
+#todo-view .cork-item input:focus-visible + .cork-box{ outline:2px solid #b4312b; outline-offset:2px; }
+#todo-view .cork-item.done .cork-box::after{ content:''; position:absolute; left:4px; top:-5px; width:7px; height:15px; border:solid #b4312b; border-width:0 3px 3px 0; transform:rotate(40deg); }
+#todo-view .cork-item .todo-text{ font-family:'Caveat', cursive; font-size:1.5rem; line-height:1.1; color:#2d3b63; word-break:break-word; }
+#todo-view .cork-item.done .todo-text{ text-decoration:line-through; text-decoration-color:#b4312b; text-decoration-thickness:2px; color:#8c93a8; }
+#todo-view .cork-item .todo-del{ flex-shrink:0; width:30px; height:30px; display:grid; place-items:center; border:0; background:none; color:rgba(40,55,95,.22); cursor:pointer; border-radius:6px; }
+#todo-view .cork-item .todo-del svg{ width:16px; height:16px; }
+#todo-view .cork-item .todo-del:hover{ color:#b4312b; background:rgba(180,49,43,.08); }
+/* Gelber Zettel mit Pinnnadel */
+#todo-view .cork-sticky{
+  position:relative; width:300px; margin:28px 0 0 auto; margin-right:2%; padding:34px 22px 22px; transform:rotate(1.6deg);
+  background:linear-gradient(180deg, #fae38f, #f6dc84); box-shadow:0 8px 16px rgba(0,0,0,.3), inset 0 -6px 12px rgba(160,120,20,.12);
+}
+#todo-view .cork-pin{ position:absolute; left:50%; top:-8px; width:20px; height:20px; margin-left:-10px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #e46a5f, #a8231c 60%, #6f1410); box-shadow:0 3px 4px rgba(0,0,0,.4); }
+#todo-view .cork-sticky-title{ margin-bottom:10px; font-family:'Permanent Marker', cursive; font-size:1.05rem; text-transform:uppercase; color:#8a6512; }
+#todo-view .cork-sticky textarea{
+  display:block; width:100%; min-height:150px; padding:12px 16px; border:0; border-radius:6px; resize:vertical; transform:rotate(-1deg);
+  background:#1c1c1c; color:#e9cf7b; font-family:'Caveat', cursive; font-size:1.3rem; line-height:1.3; outline:none;
+}
+#todo-view .cork-sticky textarea::placeholder{ color:#a68d47; }
+#todo-view .cork-sticky textarea:focus{ box-shadow:0 0 0 2px rgba(138,101,18,.55); }
+/* Briefmarke unten rechts */
+#todo-view .cork-stamp{
+  position:absolute; right:18px; bottom:16px; width:46px; height:46px; display:grid; place-items:center; transform:rotate(-8deg);
+  background:#9c6a40; border:2px dashed rgba(255,235,205,.55); outline:3px solid #9c6a40; border-radius:3px; color:#fff6e6; box-shadow:0 3px 6px rgba(0,0,0,.35);
+}
+#todo-view .cork-stamp svg{ width:24px; height:24px; }
+/* Menü ⋯ */
+#todo-view .cork-menu-wrap{ position:absolute; right:-2px; top:-2px; z-index:3; }
+#todo-view .cork-menu{ width:30px; height:26px; display:flex; align-items:center; justify-content:center; gap:3px; border:0; border-radius:6px; background:#1c1c1c; cursor:pointer; }
+#todo-view .cork-menu i{ width:3px; height:3px; border-radius:50%; background:#e6e6e6; }
+#todo-view .cork-menu-pop{ position:absolute; right:0; top:32px; min-width:190px; padding:6px; border-radius:8px; background:#1c1c1c; box-shadow:0 10px 24px rgba(0,0,0,.4); }
+#todo-view .cork-menu-pop[hidden]{ display:none; }
+#todo-view .cork-menu-pop button{ width:100%; padding:9px 12px; border:0; border-radius:5px; background:none; color:#eee; font:inherit; font-size:.9rem; text-align:left; cursor:pointer; }
+#todo-view .cork-menu-pop button:hover{ background:#2c2c2c; }
+@media (max-width:700px){
+  #todo-view .cork{ padding:30px 12px 74px; border-width:8px; min-height:0; }
+  #todo-view .cork-paper{ padding:40px 12px 20px 44px; background-image:
+    linear-gradient(90deg, transparent 31px, rgba(222,110,110,.75) 31px, rgba(222,110,110,.75) 33px, transparent 33px),
+    repeating-linear-gradient(180deg, transparent 0 33px, #bcd3e8 33px 34px); }
+  #todo-view .cork-rings{ left:12px; right:12px; }
+  #todo-view .cork-rings i:nth-child(n+7){ display:none; }
+  #todo-view .cork-input-row{ gap:10px; }
+  #todo-view .cork-sticky{ width:auto; margin:30px 6px 0; }
+}

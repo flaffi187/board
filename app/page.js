@@ -1,4 +1,5 @@
 import Script from 'next/script';
+import { OVEN_FOOD_SVG } from './oven-food';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { SESSION_COOKIE, consumeLogin } from '../lib/auth';
@@ -480,17 +481,64 @@ export default async function Page() {
 
 <div className="view" id="timer-view">
   <div className="tm-cards">
-    {/* Küchentimer: Drehknopf stellt die Minuten ein und dreht sich beim Ablaufen zurück */}
-    <section className="tm-card">
-      <h2 className="tm-title">Küchentimer</h2>
-      <div className="tm-digital" id="timer-display">00:00</div>
-      <div className="kt-dial">
-        <div className="kt-ticks" aria-hidden="true">{Array.from({ length: 60 }, (_, i) => <i key={i} className={i % 5 === 0 ? 'major' : ''} style={{ transform: `rotate(${i * 6}deg)` }}></i>)}</div>
-        <div className="kt-knob" id="kt-knob" role="slider" tabIndex={0} aria-label="Minuten einstellen" aria-valuemin={0} aria-valuemax={60} aria-valuenow={0}>
-          <span className="kt-pointer"></span>
+    {/* Backofen-Timer: rechter Knopf = Zeit, linker Knopf = Heizart, Anzeige antippen = Zeit eintippen.
+        Der Kuchen im Fenster geht auf und wird braun, je mehr Zeit vergangen ist. */}
+    <section className="tm-card tm-kitchen">
+      <header className="tm-head">
+        <h2 className="tm-title">
+          <svg className="tm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.46.32-.85.74-1.03a4 4 0 0 0-2.42-7.53A5 5 0 0 0 7.68 6.1a4 4 0 0 0-2.42 7.53c.42.18.74.57.74 1.03V20a1 1 0 0 0 1 1z"/><path d="M6 17h12"/></svg>
+          Backofen
+        </h2>
+        <span className="tm-badge" id="kt-badge">Bereit</span>
+      </header>
+      <div className="tm-stage">
+        <div className="oven" id="oven" data-mode="umluft">
+          <div className="oven-panel">
+            <div className="oven-ctl">
+              <button className="oven-knob" id="oven-mode-btn" title="Heizart wechseln" aria-label="Heizart wechseln"><span className="oven-mark"></span></button>
+              <span className="oven-lbl" id="oven-mode-lbl">Umluft</span>
+            </div>
+            <div className="oven-display">
+              <span className="oven-lbl">Timer</span>
+              <div className="tm-digital-wrap">
+                <div className="tm-digital" id="timer-display" role="button" tabIndex={0} title="Antippen und Zeit eintippen" aria-label="Zeit eintippen">00:00</div>
+                <input className="tm-digital tm-digital-edit" id="timer-edit" inputMode="decimal" autoComplete="off" placeholder="mm:ss" aria-label="Zeit eintippen, z.B. 5 oder 5:30" hidden />
+              </div>
+            </div>
+            <div className="oven-ctl">
+              <div className="kt-dial" id="kt-dial">
+                <div className="oven-knob kt-knob" id="kt-knob" role="slider" tabIndex={0} aria-label="Zeit einstellen (Minuten)" aria-valuemin={0} aria-valuemax={60} aria-valuenow={0}><span className="oven-mark red"></span></div>
+              </div>
+              <span className="oven-lbl">Zeit</span>
+            </div>
+          </div>
+          <div className="oven-body">
+            {/* Innenraum: Heizstäbe, Ventilator, Rost und das Essen (je nach Heizart) */}
+            <div className="oven-cavity">
+              <div className="oven-inner">
+                <svg className="oven-heat top" viewBox="0 0 200 10" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,2 10,8 20,2 30,8 40,2 50,8 60,2 70,8 80,2 90,8 100,2 110,8 120,2 130,8 140,2 150,8 160,2 170,8 180,2 190,8 200,2" /></svg>
+                <svg className="oven-fan" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" /><g>{Array.from({ length: 8 }, (_, i) => <line key={i} x1="20" y1="20" x2="20" y2="3" transform={`rotate(${i * 45} 20 20)`} />)}</g><circle cx="20" cy="20" r="3" className="hub" /></svg>
+                <div className="oven-rack"><i></i><i></i><i></i><i></i></div>
+                <svg className="oven-food" viewBox="0 0 170 74" aria-hidden="true" dangerouslySetInnerHTML={{ __html: OVEN_FOOD_SVG }} />
+                <div className="oven-steam" aria-hidden="true"><i></i><i></i><i></i></div>
+                <svg className="oven-heat bottom" viewBox="0 0 200 10" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,5 200,5" /></svg>
+                <span className="oven-stage" id="oven-stage">Teig</span>
+                <div className="oven-glow"></div>
+              </div>
+            </div>
+            {/* Tür: antippen = auf/zu */}
+            <button className="oven-door" id="oven-door" aria-label="Ofentür öffnen" aria-pressed="false">
+              <span className="oven-handle"><i></i><i></i></span>
+              <span className="oven-glass"></span>
+            </button>
+            {/* offene Tür: liegt als Klappe vor dem Ofen (2D gezeichnet, damit es in jedem Browser gleich aussieht) */}
+            <span className="oven-flap" aria-hidden="true"></span>
+          </div>
         </div>
       </div>
-      <div className="tm-hint">Knopf drehen = Minuten einstellen</div>
+      <div className="tm-chips" id="kt-presets" aria-label="Schnellwahl Minuten">
+        {[1, 5, 10, 20, 40, 60].map(m => <button key={m} className="tm-chip" data-min={m}>{m}′</button>)}
+      </div>
       <div className="tm-buttons">
         <button className="tm-btn tm-btn-main" id="timer-start-btn"><span className="when-off">Start</span><span className="when-on">Pause</span></button>
         <button className="tm-btn" id="timer-reset-btn">Reset</button>
@@ -506,24 +554,41 @@ export default async function Page() {
       </div>
     </section>
 
-    {/* Stoppuhr: Krone oben = Start/Stopp, schräger Knopf = Reset */}
-    <section className="tm-card">
-      <h2 className="tm-title">Stoppuhr</h2>
-      <div className="sw-watch">
-        <button className="sw-crown" id="sw-crown" title="Start / Stopp" aria-label="Stoppuhr starten oder stoppen"><span></span></button>
-        <button className="sw-side" id="sw-side" title="Reset" aria-label="Stoppuhr zurücksetzen"></button>
-        <div className="sw-case">
-          <div className="sw-face">
-            <div className="sw-ticks" aria-hidden="true">{Array.from({ length: 60 }, (_, i) => <i key={i} className={i % 5 === 0 ? 'major' : ''} style={{ transform: `rotate(${i * 6}deg)` }}></i>)}</div>
-            <span className="sw-num n60">60</span><span className="sw-num n15">15</span><span className="sw-num n30">30</span><span className="sw-num n45">45</span>
-            <div className="sw-sub" aria-hidden="true"><span>MIN</span><i id="sw-min-hand"></i></div>
-            <div className="sw-hand" id="sw-sec-hand" aria-hidden="true"></div>
-            <span className="sw-hub" aria-hidden="true"></span>
-            <div className="sw-digital" id="stopwatch-display">00:00.00</div>
+    {/* Stoppuhr: Krone oben oder Knopf unten = Start/Stopp, schräger Knopf oder Reset = zurücksetzen */}
+    <section className="tm-card tm-stopwatch">
+      <header className="tm-head">
+        <h2 className="tm-title">
+          <svg className="tm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="14" r="8"/><path d="M12 14V10M10 2h4M12 2v4M19 7l1.5-1.5"/></svg>
+          Stoppuhr
+        </h2>
+        <span className="tm-badge" id="sw-badge">Bereit</span>
+      </header>
+      <div className="tm-stage">
+        <div className="sw-watch">
+          <button className="sw-crown" id="sw-crown" title="Start / Stopp" aria-label="Stoppuhr starten oder stoppen"><span></span></button>
+          <button className="sw-side" id="sw-side" title="Reset" aria-label="Stoppuhr zurücksetzen"></button>
+          <div className="sw-case">
+            <div className="sw-face">
+              <div className="sw-ticks" aria-hidden="true">{Array.from({ length: 60 }, (_, i) => <i key={i} className={i % 5 === 0 ? 'major' : ''} style={{ transform: `rotate(${i * 6}deg)` }}></i>)}</div>
+              <span className="sw-num n60">60</span><span className="sw-num n15">15</span><span className="sw-num n30">30</span><span className="sw-num n45">45</span>
+              <div className="sw-sub" aria-hidden="true"><span>MIN</span><i id="sw-min-hand"></i></div>
+              <div className="sw-digital" id="stopwatch-display">00:00.00</div>
+              <div className="sw-hand" id="sw-sec-hand" aria-hidden="true"></div>
+              <span className="sw-hub" aria-hidden="true"></span>
+            </div>
           </div>
         </div>
       </div>
-      <div className="tm-hint">Krone oben = Start / Stopp · Knopf schräg = Reset</div>
+      <div className="tm-chips" id="sw-laps-row">
+        <button className="tm-chip tm-chip-add" id="sw-lap-btn" disabled>+ Runde</button>
+        <div className="sw-laps" id="sw-laps" aria-live="polite"></div>
+      </div>
+      <div className="tm-hint"><span>⏻ Krone = Start / Stopp</span><span>↺ Seitenknopf = Reset</span></div>
+      <div className="tm-buttons">
+        <button className="tm-btn tm-btn-main" id="sw-start-btn"><span className="when-off">Start</span><span className="when-on">Stopp</span></button>
+        <button className="tm-btn" id="sw-reset-btn">Reset</button>
+      </div>
+      <div className="tm-status" aria-hidden="true"></div>
       <div hidden>
         <button id="stopwatch-toggle-btn">Start</button>
         <button id="stopwatch-reset-btn">Reset</button>

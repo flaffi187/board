@@ -3039,6 +3039,41 @@ function fmtTimer(totalSec){
 function timerRender(){
   timerDisplay.textContent = fmtTimer(timerRemaining);
   ktUpdateKnob();
+  ovenUpdate();
+}
+// Backofen: wie weit der Kuchen ist (0 = roh, 1 = fertig gebacken), ob er heizt und ob er fertig ist
+function ovenUpdate(){
+  const o = document.getElementById('oven');
+  if(!o) return;
+  const bake = timerTotalSeconds > 0 ? Math.min(1, Math.max(0, 1 - timerRemaining / timerTotalSeconds)) : 0;
+  const done = timerStatus.textContent.includes('abgelaufen');
+  o.style.setProperty('--bake', (done ? 1 : bake).toFixed(3));
+  o.classList.toggle('on', !!timerInterval);
+  o.classList.toggle('done', done);
+  // Stufe des Essens (je nach Heizart anders benannt)
+  const stage = done ? 3 : bake < 0.34 ? 0 : bake < 0.75 ? 1 : 2;
+  o.dataset.stage = stage;
+  const names = OVEN_STAGES[o.dataset.mode] || OVEN_STAGES.umluft;
+  const tag = document.getElementById('oven-stage');
+  if(tag && tag.textContent !== names[stage]) tag.textContent = names[stage];
+}
+const OVEN_STAGES = {
+  umluft: ['Teig', 'Geht auf', 'Goldbraun', 'Fertig ✓'],
+  ober: ['Teig', 'Geht auf', 'Kruste', 'Fertig ✓'],
+  grill: ['Roh', 'Brutzelt', 'Gebräunt', 'Fertig ✓'],
+  pizza: ['Roh', 'Käse schmilzt', 'Knusprig', 'Fertig ✓'],
+};
+// "Ding!" wenn der Timer abläuft (kurzer Glockenton, ohne Audiodatei)
+function ovenDing(){
+  try{
+    const ctx = ovenDing.ctx || (ovenDing.ctx = new (window.AudioContext || window.webkitAudioContext)());
+    [0, 0.45].forEach(delay => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain(), t = ctx.currentTime + delay;
+      osc.type = 'sine'; osc.frequency.setValueAtTime(1318, t);
+      gain.gain.setValueAtTime(0.0001, t); gain.gain.exponentialRampToValueAtTime(0.35, t + 0.01); gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+      osc.connect(gain).connect(ctx.destination); osc.start(t); osc.stop(t + 1.25);
+    });
+  } catch(err){}
 }
 
 function timerTick(){
@@ -3050,6 +3085,8 @@ function timerTick(){
     timerEndAt = null;
     timerStartBtn.classList.remove('running');
     timerStatus.textContent = '⏰ Zeit abgelaufen!';
+    ovenUpdate();
+    ovenDing();
   }
 }
 function timerRun(){
@@ -3103,6 +3140,7 @@ function ktUpdateKnob(){
   if(!ktKnob) return;
   const deg = Math.min(360, timerRemaining / 3600 * 360);
   ktKnob.style.transform = `rotate(${deg}deg)`;
+  document.getElementById('kt-dial')?.style.setProperty('--kt-deg', deg + 'deg');   // oranger Ring = Restzeit
   ktKnob.setAttribute('aria-valuenow', Math.round(timerRemaining / 60));
 }
 function ktSetMinutes(min){
@@ -3138,6 +3176,45 @@ if(ktKnob){
     const step = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 5, PageDown: -5 }[e.key];
     if(step){ e.preventDefault(); ktSetMinutes(Math.round(timerRemaining / 60) + step); }
   });
+}
+
+// Zeit von Hand eintippen: Anzeige antippen → Eingabefeld. "5" = 5 Min, "5:30" / "5.30" = 5 Min 30 s, "1:30:00" = 1 h 30 Min
+const timerEdit = document.getElementById('timer-edit');
+function timerParse(text){
+  const parts = String(text).trim().split(/[:.,\s]+/).filter(Boolean);
+  if(!parts.length || parts.length > 3 || parts.some(x => !/^\d+$/.test(x))) return null;
+  const n = parts.map(Number);
+  const [h, m, sec] = n.length === 3 ? n : n.length === 2 ? [0, n[0], n[1]] : [0, n[0], 0];
+  if(sec > 59 || (n.length === 3 && m > 59)) return null;
+  return Math.min(99 * 3600 + 59 * 60 + 59, h * 3600 + m * 60 + sec);
+}
+function timerEditOpen(){
+  if(!timerEdit || timerInterval) return;   // läuft er, erst pausieren
+  timerEdit.value = timerRemaining ? fmtTimer(timerRemaining) : '';
+  timerDisplay.hidden = true; timerEdit.hidden = false;
+  timerEdit.classList.remove('bad');
+  timerEdit.focus(); timerEdit.select();
+}
+function timerEditClose(apply){
+  if(!timerEdit || timerEdit.hidden) return;
+  if(apply && timerEdit.value.trim() !== ''){
+    const total = timerParse(timerEdit.value);
+    if(total === null){ timerEdit.classList.remove('bad'); void timerEdit.offsetWidth; timerEdit.classList.add('bad'); timerEdit.focus(); return; }
+    timerHourInput.value = Math.floor(total / 3600) || '';
+    timerMinInput.value = Math.floor(total % 3600 / 60) || '';
+    timerSecInput.value = total % 60 || '';
+    timerSetBtn.click();
+  }
+  timerEdit.hidden = true; timerDisplay.hidden = false;
+}
+if(timerEdit){
+  timerDisplay.addEventListener('click', timerEditOpen);
+  timerDisplay.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); timerEditOpen(); } });
+  timerEdit.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ e.preventDefault(); timerEditClose(true); }
+    else if(e.key === 'Escape'){ e.preventDefault(); timerEditClose(false); }
+  });
+  timerEdit.addEventListener('blur', () => timerEditClose(true));
 }
 
 timerRender();
@@ -3214,16 +3291,81 @@ stopwatchResetBtn.addEventListener('click', () => {
 });
 
 stopwatchRender();
-// Analoge Stoppuhr: Krone drückt Start/Stopp, der schräge Knopf setzt zurück
-[['sw-crown', stopwatchToggleBtn], ['sw-side', stopwatchResetBtn]].forEach(([id, target]) => {
+// Analoge Stoppuhr: Krone (oder Start unten) = Start/Stopp, schräger Knopf (oder Reset unten) = zurücksetzen
+[['sw-crown', stopwatchToggleBtn], ['sw-side', stopwatchResetBtn], ['sw-start-btn', stopwatchToggleBtn], ['sw-reset-btn', stopwatchResetBtn]].forEach(([id, target]) => {
   const el = document.getElementById(id);
   if(!el) return;
   el.addEventListener('click', () => {
     target.click();
     el.classList.remove('press'); void el.offsetWidth; el.classList.add('press');
     document.querySelector('.sw-watch')?.classList.toggle('running', !!stopwatchInterval);
+    tmUpdateBadges();
   });
 });
+// Backofen: linker Knopf wechselt die Heizart (wird im Konto gespeichert, siehe persist unten)
+const OVEN_MODES = [['umluft', 'Umluft'], ['ober', 'Ober/Unter'], ['grill', 'Grill'], ['pizza', 'Pizza']];
+function ovenSetMode(mode){
+  const i = Math.max(0, OVEN_MODES.findIndex(m => m[0] === mode));
+  const o = document.getElementById('oven'), btn = document.getElementById('oven-mode-btn'), lbl = document.getElementById('oven-mode-lbl');
+  if(o) o.dataset.mode = OVEN_MODES[i][0];
+  if(btn) btn.style.transform = `rotate(${i * 90}deg)`;
+  if(lbl) lbl.textContent = OVEN_MODES[i][1];
+  ovenUpdate();
+}
+// Ofentür auf/zu: irgendwo auf Tür oder Innenraum tippen (die offene Tür ist nur noch ein schmaler Streifen)
+function ovenSetDoor(open){
+  const o = document.getElementById('oven'), door = document.getElementById('oven-door');
+  if(!o || !door) return;
+  o.classList.toggle('open', open);
+  door.setAttribute('aria-pressed', String(open));
+  door.setAttribute('aria-label', open ? 'Ofentür schliessen' : 'Ofentür öffnen');
+}
+document.querySelector('#oven .oven-body')?.addEventListener('click', () => ovenSetDoor(!document.getElementById('oven').classList.contains('open')));
+// Zum Backen geht die Tür zu (START), und Escape schliesst sie auch
+timerStartBtn.addEventListener('click', () => { if(timerInterval) ovenSetDoor(false); });
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && document.getElementById('oven')?.classList.contains('open')) ovenSetDoor(false); });
+document.getElementById('oven-mode-btn')?.addEventListener('click', () => {
+  const cur = document.getElementById('oven')?.dataset.mode;
+  ovenSetMode(OVEN_MODES[(OVEN_MODES.findIndex(m => m[0] === cur) + 1) % OVEN_MODES.length][0]);
+});
+// Schnellwahl beim Küchentimer
+document.querySelectorAll('#kt-presets .tm-chip').forEach(btn => btn.addEventListener('click', () => {
+  if(timerInterval) return;
+  ktSetMinutes(Number(btn.dataset.min));
+  btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
+}));
+// Rundenzeiten der Stoppuhr (die letzten 4 werden angezeigt, Reset löscht sie)
+let swLaps = [];
+const swLapsEl = document.getElementById('sw-laps');
+function swRenderLaps(){
+  if(!swLapsEl) return;
+  swLapsEl.innerHTML = swLaps.slice(-4).map((ms, i, arr) => {
+    const nr = swLaps.length - arr.length + i + 1;
+    return `<span class="sw-lap"><b>R${nr}</b>${fmtStopwatch(Math.floor(ms))}</span>`;
+  }).join('');
+}
+document.getElementById('sw-lap-btn')?.addEventListener('click', () => {
+  if(!stopwatchInterval) return;
+  const now = stopwatchCurrentMs(), prev = swLaps.reduce((a, b) => a + b, 0);
+  swLaps.push(now - prev);   // Zeit dieser Runde
+  swRenderLaps();
+});
+['sw-side', 'sw-reset-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', () => { swLaps = []; swRenderLaps(); }));
+// Status oben rechts in beiden Karten: Bereit / Läuft / Pause / Fertig
+function tmUpdateBadges(){
+  const set = (id, text, cls) => { const el = document.getElementById(id); if(el && el.textContent !== text){ el.textContent = text; el.className = 'tm-badge ' + cls; } };
+  const done = timerStatus.textContent.includes('abgelaufen');
+  set('kt-badge', timerInterval ? 'Läuft' : done ? 'Fertig' : timerRemaining > 0 ? 'Pause' : 'Bereit', timerInterval ? 'run' : done ? 'done' : timerRemaining > 0 ? 'pause' : '');
+  const swMs = stopwatchCurrentMs();
+  set('sw-badge', stopwatchInterval ? 'Läuft' : swMs > 0 ? 'Pause' : 'Bereit', stopwatchInterval ? 'run' : swMs > 0 ? 'pause' : '');
+  document.getElementById('sw-start-btn')?.classList.toggle('running', !!stopwatchInterval);
+  const lap = document.getElementById('sw-lap-btn'); if(lap) lap.disabled = !stopwatchInterval;
+  document.querySelector('.tm-kitchen')?.classList.toggle('is-running', !!timerInterval);
+  ovenUpdate();
+  document.querySelector('.tm-stopwatch')?.classList.toggle('is-running', !!stopwatchInterval);
+}
+setInterval(tmUpdateBadges, 300);
+tmUpdateBadges();
 
 // Rekorde: Siege, Niederlagen, Bestzeiten und Serien aller Spiele ohne eigenen Highscore.
 // Alles in einem Eintrag ("game_records"), damit es im Konto gespeichert und auf allen Geräten gleich ist.
@@ -9527,6 +9669,9 @@ persist('stopwatch_state', () => ({ el: stopwatchStartWall ? 0 : Math.round(stop
   document.querySelector('.sw-watch')?.classList.toggle('running', !!stopwatchInterval);
   stopwatchRender();
 });
+
+// Backofen-Heizart
+persist('oven_mode', () => ({ m: document.getElementById('oven')?.dataset.mode || 'umluft' }), (st) => ovenSetMode(st.m));
 
 // Sudoku: Rätsel, Lösung und eigene Eingaben
 persist('game_sudoku', () => sudokuSolution && sudokuGivenMask ? {

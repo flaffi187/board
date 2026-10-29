@@ -17,6 +17,18 @@
     }
   ],
   "env": {
+    // Test-Version zum Ausprobieren: eigene Adresse (board-test.….workers.dev) und eigene Test-Datenbank,
+    // damit die echten Daten nie betroffen sind. Deployen mit "npm run deploy:test".
+    "test": {
+      "name": "board-test",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "board-test",
+          "database_id": "be9a90ca-27e2-44cd-9907-b41f95d32b99"
+        }
+      ]
+    },
     // Nur für "next dev" im Codespace: dieselbe echte D1-Datenbank wie online, damit dort dieselben Konten
     // und Daten gelten. Deploy und "wrangler dev" benutzen weiter die normale Einstellung oben.
     "codespace": {

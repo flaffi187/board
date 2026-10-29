@@ -4009,62 +4009,238 @@
   #todo-view .cork-sticky{ width:auto; margin:0 6px; }
 }
 
-/* ===== Timer: Küchentimer + analoge Stoppuhr ===== */
-#timer-view .tm-cards{ display:flex; flex-wrap:wrap; gap:26px; align-items:flex-start; }
-#timer-view .tm-card{ flex:1 1 300px; max-width:340px; display:flex; flex-direction:column; align-items:center; padding:24px 20px 22px; border-radius:24px; background:#2a2623; border:1px solid rgba(255,255,255,.06); box-shadow:0 10px 0 #201d1a, 0 14px 30px rgba(0,0,0,.35); color:#d9d2c3; }
-#timer-view .tm-title{ margin:0 0 16px; font-family:'Permanent Marker', cursive; font-weight:400; font-size:1.05rem; letter-spacing:.06em; text-transform:uppercase; color:#d98f2e; }
-#timer-view .tm-digital{ width:100%; padding:10px 0; text-align:center; border-radius:8px; background:#14100d; box-shadow:inset 0 2px 10px rgba(0,0,0,.7); border:2px solid #0e0b09;
-  font-family:'JetBrains Mono', monospace; font-weight:700; font-size:3.4rem; letter-spacing:.06em; color:#f0a33a; text-shadow:0 0 14px rgba(240,163,58,.55); }
-#timer-view .tm-hint{ margin-top:14px; font-family:'JetBrains Mono', monospace; font-size:.72rem; text-align:center; color:#8d8578; }
-#timer-view .tm-buttons{ display:flex; gap:14px; margin-top:18px; }
-#timer-view .tm-btn{ min-width:78px; padding:12px 18px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#1f1c1a; color:#eae4d8; cursor:pointer;
-  font-family:'JetBrains Mono', monospace; font-weight:700; font-size:.85rem; letter-spacing:.12em; text-transform:uppercase; box-shadow:0 4px 0 #151311; transition:transform .1s ease, box-shadow .1s ease; }
-#timer-view .tm-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 #151311; }
-#timer-view .tm-btn-main{ box-shadow:0 5px 0 #9a5f17; }
-#timer-view .tm-btn-main:active{ box-shadow:0 2px 0 #9a5f17; }
+/* ===== Timer: Küchentimer + analoge Stoppuhr (zwei gleich grosse Karten) ===== */
+#timer-view .tm-cards{ display:grid; grid-template-columns:repeat(2, minmax(0, 360px)); gap:28px; align-items:stretch; }
+#timer-view .tm-card{
+  position:relative; display:flex; flex-direction:column; align-items:center; padding:20px 22px 18px; border-radius:26px; color:#d9d2c3; overflow:hidden;
+  background:radial-gradient(120% 70% at 50% 0%, #34302c 0%, #2a2623 55%, #24211e 100%);
+  border:1px solid rgba(255,255,255,.07); box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 10px 0 #1c1a17, 0 18px 36px rgba(0,0,0,.4);
+}
+#timer-view .tm-card::before{ content:''; position:absolute; left:18%; right:18%; top:0; height:2px; border-radius:2px; background:linear-gradient(90deg, transparent, #f0a33a, transparent); opacity:.55; transition:opacity .3s ease, left .3s ease, right .3s ease; }
+#timer-view .tm-card.is-running::before{ opacity:1; left:6%; right:6%; box-shadow:0 0 14px rgba(240,163,58,.7); }
+#timer-view .tm-card::after{ content:''; position:absolute; inset:0; pointer-events:none; border-radius:inherit; background-image:radial-gradient(rgba(255,255,255,.025) 1px, transparent 1.4px); background-size:6px 6px; }
+#timer-view .tm-head{ width:100%; margin-top:0; padding:0; border:0; background:none; position:static; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
+#timer-view .tm-title{ display:flex; align-items:center; gap:9px; margin:0; font-family:'Permanent Marker', cursive; font-weight:400; font-size:1.1rem; letter-spacing:.06em; text-transform:uppercase; color:#e09a3a; }
+#timer-view .tm-icon{ width:20px; height:20px; padding:5px; box-sizing:content-box; border-radius:9px; color:#f0a33a; background:rgba(240,163,58,.12); }
+#timer-view .tm-badge{ padding:4px 10px; border-radius:999px; font-family:'JetBrains Mono', monospace; font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#8d8578; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); }
+#timer-view .tm-badge.run{ color:#1d1206; background:#f0a33a; border-color:#f0a33a; box-shadow:0 0 12px rgba(240,163,58,.45); }
+#timer-view .tm-badge.pause{ color:#f0a33a; border-color:rgba(240,163,58,.45); }
+#timer-view .tm-badge.done{ color:#fff; background:#c0392b; border-color:#c0392b; animation:tm-blink 1s steps(1) infinite; }
+@keyframes tm-blink{ 50%{ opacity:.45; } }
+/* Bühne: in beiden Karten gleich hoch, Inhalt mittig */
+#timer-view .tm-stage{ position:relative; width:100%; height:330px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; }
+#timer-view .tm-stage::before{ content:''; position:absolute; left:50%; bottom:6%; width:260px; height:260px; margin-left:-130px; border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle, rgba(240,163,58,.16), transparent 65%); transition:opacity .4s ease; opacity:.6; }
+#timer-view .tm-card.is-running .tm-stage::before{ opacity:1; }
+#timer-view .tm-stage > *{ position:relative; }
+#timer-view .tm-hint{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px 14px; margin-top:12px; font-family:'JetBrains Mono', monospace; font-size:.68rem; color:#857d70; }
+#timer-view .tm-hint span{ white-space:nowrap; }
+/* Schnellwahl / Runden */
+#timer-view .tm-chips{ width:100%; height:34px; display:flex; align-items:center; justify-content:center; gap:7px; margin-top:6px; }
+#timer-view .tm-chip{ height:30px; min-width:40px; padding:0 10px; border-radius:999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.04); color:#d9d2c3; cursor:pointer;
+  font-family:'JetBrains Mono', monospace; font-weight:700; font-size:.78rem; transition:background .15s ease, border-color .15s ease, color .15s ease, transform .1s ease; }
+#timer-view .tm-chip:hover:not(:disabled){ border-color:rgba(240,163,58,.6); color:#f0a33a; background:rgba(240,163,58,.08); }
+#timer-view .tm-chip:active:not(:disabled){ transform:scale(.94); }
+#timer-view .tm-chip.pop{ animation:tm-pop .3s ease; }
+@keyframes tm-pop{ 40%{ transform:scale(1.15); background:rgba(240,163,58,.25); } }
+#timer-view .tm-kitchen.is-running .tm-chip{ opacity:.35; pointer-events:none; }
+#timer-view .tm-chip-add{ flex-shrink:0; color:#f0a33a; border-color:rgba(240,163,58,.45); }
+#timer-view .tm-chip:disabled{ opacity:.35; cursor:default; }
+#timer-view .sw-laps{ display:flex; gap:6px; overflow:hidden; min-width:0; }
+#timer-view .sw-lap{ flex-shrink:0; height:30px; display:flex; align-items:center; gap:5px; padding:0 9px; border-radius:999px; background:#15100c; box-shadow:inset 0 1px 4px rgba(0,0,0,.6);
+  font-family:'JetBrains Mono', monospace; font-size:.7rem; color:#f4a63c; animation:tm-pop .3s ease; }
+#timer-view .sw-lap b{ color:#857d70; font-weight:700; }
+/* Zahlen am Drehknopf */
+#timer-view .kt-num{ position:absolute; z-index:1; font-family:'JetBrains Mono', monospace; font-weight:700; font-size:.62rem; color:#857d70; transform:translate(-50%, -50%); }
+#timer-view .kt-num.n0{ left:50%; top:-9px; } #timer-view .kt-num.n15{ left:calc(100% + 11px); top:50%; } #timer-view .kt-num.n30{ left:50%; top:calc(100% + 9px); } #timer-view .kt-num.n45{ left:-11px; top:50%; }
+#timer-view .tm-buttons{ display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; margin-top:14px; }
+#timer-view .tm-btn{ padding:13px 10px; border-radius:12px; border:1px solid rgba(255,255,255,.1); cursor:pointer;
+  background:linear-gradient(180deg, #2b2724, #1f1c1a); color:#eae4d8; font-family:'JetBrains Mono', monospace; font-weight:700; font-size:.85rem; letter-spacing:.14em; text-transform:uppercase;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 5px 0 #141210; transition:transform .1s ease, box-shadow .1s ease, filter .15s ease; }
+#timer-view .tm-btn:hover{ filter:brightness(1.15); }
+#timer-view .tm-btn:active{ transform:translateY(4px); box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 1px 0 #141210; }
+#timer-view .tm-btn-main{ background:linear-gradient(180deg, #f2aa45, #d98a22); color:#2a1606; border-color:#f5b65a; box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 5px 0 #8f5512; }
+#timer-view .tm-btn-main:active{ box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 1px 0 #8f5512; }
 #timer-view .tm-btn .when-on{ display:none; }
 #timer-view .tm-btn.running .when-on{ display:inline; }
 #timer-view .tm-btn.running .when-off{ display:none; }
-#timer-view .tm-btn.running{ color:#f0a33a; }
-#timer-view .tm-status{ min-height:1.3em; margin-top:12px; font-family:'JetBrains Mono', monospace; font-size:.9rem; color:#f0a33a; }
+#timer-view .tm-status{ min-height:1.4em; margin-top:10px; font-family:'JetBrains Mono', monospace; font-size:.85rem; color:#f0a33a; }
 #timer-view .tm-status:not(:empty){ animation:tm-ring .5s ease-in-out 6; }
 @keyframes tm-ring{ 25%{ transform:rotate(-4deg); } 75%{ transform:rotate(4deg); } }
-/* Drehknopf mit Skala */
-#timer-view .kt-dial{ position:relative; width:150px; height:150px; margin-top:24px; }
+/* LCD-Anzeige */
+#timer-view .tm-digital-wrap{ width:100%; }
+#timer-view .tm-digital{
+  position:relative; width:100%; padding:8px 0; text-align:center; border-radius:10px; border:2px solid #0b0907;
+  background:linear-gradient(180deg, rgba(255,255,255,.03), transparent 40%), repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 4px), #15100c;
+  box-shadow:inset 0 3px 12px rgba(0,0,0,.75), 0 1px 0 rgba(255,255,255,.06);
+  font-family:'JetBrains Mono', monospace; font-weight:700; font-size:3.3rem; letter-spacing:.06em; color:#f4a63c; text-shadow:0 0 6px rgba(244,166,60,.8), 0 0 18px rgba(244,166,60,.35);
+}
+#timer-view #timer-display{ cursor:text; }
+#timer-view #timer-display:hover{ border-color:#4a3217; }
+#timer-view #timer-display:focus-visible{ outline:2px solid #e09a3a; outline-offset:2px; }
+#timer-view .tm-digital-edit{ display:block; margin:0; outline:none; border-color:#e09a3a; caret-color:#f0a33a; }
+#timer-view .tm-digital-edit[hidden]{ display:none; }
+#timer-view .tm-digital-edit::placeholder{ color:#5e4220; text-shadow:none; }
+#timer-view .tm-digital-edit.bad{ border-color:#c0392b; animation:tm-shake .3s ease; }
+@keyframes tm-shake{ 25%{ transform:translateX(-6px); } 75%{ transform:translateX(6px); } }
+/* Drehknopf mit Skala und orangem Restzeit-Ring */
+#timer-view .kt-dial{ --kt-deg:0deg; position:relative; width:180px; height:180px; flex-shrink:0; margin-top:6px; }
+#timer-view .kt-dial::before{ content:''; position:absolute; inset:16px; border-radius:50%;
+  background:conic-gradient(#f0a33a var(--kt-deg), rgba(255,255,255,.06) 0);
+  -webkit-mask:radial-gradient(circle, transparent calc(50% - 5px), #000 calc(50% - 4px)); mask:radial-gradient(circle, transparent calc(50% - 5px), #000 calc(50% - 4px));
+  filter:drop-shadow(0 0 4px rgba(240,163,58,.45)); }
+#timer-view .kt-ticks{ position:absolute; inset:0; }
 #timer-view .kt-ticks i, #timer-view .sw-ticks i{ position:absolute; left:50%; top:0; width:2px; height:50%; margin-left:-1px; transform-origin:50% 100%; }
-#timer-view .kt-ticks i::before{ content:''; position:absolute; left:0; top:0; width:2px; height:5px; background:#6f665a; }
-#timer-view .kt-ticks i.major::before{ height:9px; background:#d98f2e; }
-#timer-view .kt-knob{ position:absolute; inset:18px; border-radius:50%; cursor:grab; touch-action:none; outline:none;
-  background:radial-gradient(circle at 40% 35%, #eeebe3, #d8d3c8 60%, #bdb7aa); box-shadow:0 0 0 5px #8b8478, 0 0 0 7px #5b554c, 0 8px 14px rgba(0,0,0,.45), inset 0 -4px 8px rgba(0,0,0,.12); }
-#timer-view .kt-knob.turning{ cursor:grabbing; }
-#timer-view .kt-knob:focus-visible{ box-shadow:0 0 0 5px #8b8478, 0 0 0 9px #d98f2e, 0 8px 14px rgba(0,0,0,.45); }
-#timer-view .kt-pointer{ position:absolute; left:50%; top:12px; width:7px; height:36%; margin-left:-3.5px; border-radius:4px; background:#b8352b; }
+#timer-view .kt-ticks i::before{ content:''; position:absolute; left:0; top:0; width:2px; height:5px; border-radius:1px; background:#5f574c; }
+#timer-view .kt-ticks i.major::before{ height:10px; background:#e09a3a; }
+#timer-view .kt-knob{ position:absolute; inset:30px; border-radius:50%; cursor:grab; touch-action:none; outline:none; transition:transform .25s ease;
+  background:repeating-conic-gradient(#b9b3a6 0 4deg, #9d978b 4deg 8deg);
+  box-shadow:0 10px 18px rgba(0,0,0,.5), 0 0 0 3px #4d4841, inset 0 2px 2px rgba(255,255,255,.4); }
+#timer-view .kt-knob.turning{ cursor:grabbing; transition:none; }
+#timer-view .kt-knob:focus-visible{ box-shadow:0 10px 18px rgba(0,0,0,.5), 0 0 0 3px #4d4841, 0 0 0 6px #e09a3a; }
+#timer-view .kt-cap{ position:absolute; inset:11px; border-radius:50%; background:radial-gradient(circle at 38% 32%, #f8f6f0, #dcd7cc 55%, #bdb7aa); box-shadow:inset 0 -3px 6px rgba(0,0,0,.15), 0 1px 3px rgba(0,0,0,.35); }
+#timer-view .kt-pointer{ position:absolute; left:50%; top:16px; width:8px; height:34%; margin-left:-4px; border-radius:4px; background:linear-gradient(180deg, #d9473a, #a72a20); box-shadow:0 1px 2px rgba(0,0,0,.3); }
 /* Analoge Stoppuhr */
-#timer-view .sw-watch{ position:relative; width:250px; height:282px; margin-top:4px; }
-#timer-view .sw-crown{ position:absolute; left:50%; top:0; width:32px; height:36px; margin-left:-16px; padding:0; border:0; background:none; cursor:pointer; z-index:2; }
-#timer-view .sw-crown::before{ content:''; position:absolute; left:0; top:0; width:32px; height:20px; border-radius:4px; background:linear-gradient(180deg, #e0a04a, #b9781f); box-shadow:inset 0 -2px 0 rgba(0,0,0,.2); }
-#timer-view .sw-crown span{ position:absolute; left:9px; top:20px; width:14px; height:16px; background:linear-gradient(90deg, #8f8a80, #c4bfb4, #8f8a80); }
+#timer-view .sw-watch{ position:relative; width:250px; height:290px; flex-shrink:0; }
+#timer-view .sw-crown{ position:absolute; left:50%; top:0; width:34px; height:40px; margin-left:-17px; padding:0; border:0; background:none; cursor:pointer; z-index:2; }
+#timer-view .sw-crown::before{ content:''; position:absolute; left:0; top:0; width:34px; height:20px; border-radius:6px;
+  background:repeating-linear-gradient(90deg, #f0b25a 0 3px, #cf8a2a 3px 5px); box-shadow:inset 0 -3px 0 rgba(0,0,0,.2), 0 2px 3px rgba(0,0,0,.35); }
+#timer-view .sw-crown span{ position:absolute; left:10px; top:20px; width:14px; height:20px; background:linear-gradient(90deg, #8f8a80, #d4cfc4, #8f8a80); }
 #timer-view .sw-crown.press::before{ animation:sw-press .18s ease; }
-#timer-view .sw-side{ position:absolute; right:32px; top:48px; width:22px; height:14px; padding:0; border:0; border-radius:3px; background:linear-gradient(180deg, #6c6862, #45423e); transform:rotate(40deg); cursor:pointer; z-index:2; }
+#timer-view .sw-side{ position:absolute; right:30px; top:52px; width:24px; height:15px; padding:0; border:0; border-radius:4px; background:linear-gradient(180deg, #7a766f, #46433f); box-shadow:0 2px 3px rgba(0,0,0,.4); transform:rotate(40deg); cursor:pointer; z-index:2; }
 #timer-view .sw-side.press{ animation:sw-press-side .18s ease; }
 @keyframes sw-press{ 50%{ transform:translateY(5px); } }
 @keyframes sw-press-side{ 50%{ transform:rotate(40deg) translate(-4px, 0); } }
-#timer-view .sw-case{ position:absolute; left:0; right:0; bottom:0; height:250px; border-radius:50%; background:radial-gradient(circle at 40% 30%, #d6d1c6, #a9a397 70%, #8e897e); box-shadow:0 10px 20px rgba(0,0,0,.45), inset 0 -4px 10px rgba(0,0,0,.2); }
-#timer-view .sw-face{ position:absolute; inset:14px; border-radius:50%; background:#f3efe6; box-shadow:inset 0 0 0 2px #cfc8ba, inset 0 3px 8px rgba(0,0,0,.15); overflow:hidden; }
-#timer-view .sw-ticks{ position:absolute; inset:6px; }
-#timer-view .sw-ticks i::before{ content:''; position:absolute; left:.5px; top:0; width:1px; height:5px; background:#7f8696; }
-#timer-view .sw-ticks i.major::before{ left:0; width:3px; height:13px; background:#22305a; }
+#timer-view .sw-case{ position:absolute; left:0; right:0; bottom:0; height:250px; border-radius:50%;
+  background:conic-gradient(from 200deg, #e7e3da, #a49e92, #d8d3c8, #8d887e, #e7e3da, #a49e92, #e7e3da);
+  box-shadow:0 12px 22px rgba(0,0,0,.5), inset 0 0 0 2px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.25); transition:box-shadow .3s ease; }
+#timer-view .sw-face{ position:absolute; inset:13px; border-radius:50%; overflow:hidden;
+  background:radial-gradient(circle at 50% 35%, #fbf9f4, #efe9dd 70%, #e3dccd); box-shadow:inset 0 0 0 2px #c9c1b1, inset 0 4px 10px rgba(0,0,0,.18); }
+#timer-view .sw-face::after{ content:''; position:absolute; inset:0; border-radius:50%; pointer-events:none; background:linear-gradient(150deg, rgba(255,255,255,.45) 0%, transparent 38%); }
+#timer-view .sw-ticks{ position:absolute; inset:7px; }
+#timer-view .sw-ticks i::before{ content:''; position:absolute; left:.5px; top:0; width:1px; height:6px; background:#8a90a0; }
+#timer-view .sw-ticks i.major::before{ left:0; width:3px; height:13px; border-radius:1px; background:#22305a; }
 #timer-view .sw-num{ position:absolute; font-family:'JetBrains Mono', monospace; font-weight:700; font-size:.82rem; color:#2a4f98; transform:translate(-50%, -50%); }
-#timer-view .sw-num.n60{ left:50%; top:16%; } #timer-view .sw-num.n15{ left:85%; top:50%; } #timer-view .sw-num.n30{ left:50%; top:84%; } #timer-view .sw-num.n45{ left:15%; top:50%; }
-#timer-view .sw-sub{ position:absolute; left:50%; top:24%; width:46px; height:46px; margin-left:-23px; border-radius:50%; border:1.5px solid #cfc8ba; }
-#timer-view .sw-sub span{ position:absolute; left:0; right:0; bottom:5px; text-align:center; font-family:'JetBrains Mono', monospace; font-size:.5rem; color:#7f8696; }
-#timer-view .sw-sub i{ position:absolute; left:50%; top:5px; width:2px; height:18px; margin-left:-1px; background:#22305a; transform-origin:50% 100%; border-radius:1px; }
-#timer-view .sw-hand{ position:absolute; left:50%; top:10px; width:2px; height:calc(50% - 10px + 18px); margin-left:-1px; background:#b8352b; transform-origin:50% calc(100% - 18px); border-radius:1px; }
-#timer-view .sw-hub{ position:absolute; left:50%; top:50%; width:12px; height:12px; margin:-6px 0 0 -6px; border-radius:50%; background:#b8352b; box-shadow:0 1px 2px rgba(0,0,0,.4); }
-#timer-view .sw-digital{ position:absolute; left:50%; top:69%; transform:translate(-50%, -50%); padding:3px 8px; border-radius:4px; background:#14100d; font-family:'JetBrains Mono', monospace; font-weight:700; font-size:1rem; color:#f0a33a; white-space:nowrap; }
-#timer-view .sw-watch.running .sw-case{ box-shadow:0 10px 20px rgba(0,0,0,.45), 0 0 0 3px rgba(240,163,58,.35), inset 0 -4px 10px rgba(0,0,0,.2); }
-@media (max-width:700px){
-  #timer-view .tm-cards{ justify-content:center; }
-  #timer-view .tm-card{ max-width:none; }
-  #timer-view .tm-digital{ font-size:2.8rem; }
+#timer-view .sw-num.n60{ left:50%; top:17%; } #timer-view .sw-num.n15{ left:84%; top:50%; } #timer-view .sw-num.n30{ left:50%; top:83%; } #timer-view .sw-num.n45{ left:16%; top:50%; }
+#timer-view .sw-sub{ position:absolute; left:50%; top:25%; width:48px; height:48px; margin-left:-24px; border-radius:50%; background:rgba(34,48,90,.04); box-shadow:inset 0 0 0 1.5px #cfc8ba; }
+#timer-view .sw-sub span{ position:absolute; left:0; right:0; bottom:6px; text-align:center; font-family:'JetBrains Mono', monospace; font-size:.5rem; color:#7f8696; }
+#timer-view .sw-sub i{ position:absolute; left:50%; top:6px; width:2px; height:18px; margin-left:-1px; background:#22305a; transform-origin:50% 100%; border-radius:1px; }
+#timer-view .sw-hand{ position:absolute; left:50%; top:11px; width:2px; height:calc(50% - 11px + 24px); margin-left:-1px; transform-origin:50% calc(100% - 24px); border-radius:1px;
+  background:linear-gradient(180deg, #c0392b 0 calc(100% - 24px), #c0392b calc(100% - 24px)); box-shadow:0 1px 2px rgba(0,0,0,.25); }
+#timer-view .sw-hand::after{ content:''; position:absolute; left:50%; bottom:4px; width:8px; height:12px; margin-left:-4px; border-radius:4px; background:#c0392b; }   /* Gegengewicht */
+#timer-view .sw-hub{ position:absolute; left:50%; top:50%; width:13px; height:13px; margin:-6.5px 0 0 -6.5px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #e5584a, #a52a1f); box-shadow:0 1px 3px rgba(0,0,0,.45); }
+#timer-view .sw-digital{ position:absolute; left:50%; top:69%; transform:translate(-50%, -50%); padding:4px 9px; border-radius:6px; background:#15100c; box-shadow:inset 0 2px 5px rgba(0,0,0,.7);
+  font-family:'JetBrains Mono', monospace; font-weight:700; font-size:1rem; color:#f4a63c; text-shadow:0 0 6px rgba(244,166,60,.6); white-space:nowrap; }
+#timer-view .sw-watch.running .sw-case{ box-shadow:0 12px 22px rgba(0,0,0,.5), 0 0 0 4px rgba(240,163,58,.35), 0 0 24px rgba(240,163,58,.25), inset 0 0 0 2px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.25); }
+@media (max-width:760px){
+  #timer-view .tm-cards{ grid-template-columns:minmax(0, 420px); justify-content:center; }
 }
+
+/* ===== Backofen-Timer ===== */
+#timer-view .oven{ --bake:0; position:relative; width:280px; padding:8px; border-radius:16px;
+  background:linear-gradient(180deg, #dcdcdc, #a9a9a9 45%, #cfcfcf); box-shadow:inset 0 1px 0 rgba(255,255,255,.8), inset 0 -2px 3px rgba(0,0,0,.25), 0 14px 24px rgba(0,0,0,.5); }
+#timer-view .oven-panel{ display:grid; grid-template-columns:56px 1fr 56px; align-items:center; gap:8px; height:78px; padding:6px 10px; border-radius:10px; background:linear-gradient(180deg, #2a2b2e, #17181a); box-shadow:inset 0 2px 5px rgba(0,0,0,.6); }
+#timer-view .oven-ctl{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+#timer-view .oven-lbl{ font-family:'JetBrains Mono', monospace; font-size:.5rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#7ab4e6; white-space:nowrap; }
+#timer-view .oven-ctl:last-child .oven-lbl{ color:#e9a04a; }
+#timer-view .oven-display{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+#timer-view .oven-display .oven-lbl{ color:#8d8578; }
+#timer-view .oven-display .tm-digital{ padding:4px 6px; font-size:1.75rem; border-radius:6px; }
+#timer-view .oven-knob{ position:relative; width:38px; height:38px; padding:0; border-radius:50%; border:0; cursor:pointer; transition:transform .25s ease;
+  background:radial-gradient(circle at 38% 30%, #ffffff, #c9c9c9 55%, #8e8e8e); box-shadow:0 3px 5px rgba(0,0,0,.6), inset 0 -2px 3px rgba(0,0,0,.25), 0 0 0 2px #0e0e10; }
+#timer-view .oven-knob:focus-visible{ outline:2px solid #e9a04a; outline-offset:3px; }
+#timer-view .oven-mark{ position:absolute; left:50%; top:4px; width:3px; height:12px; margin-left:-1.5px; border-radius:2px; background:#2b2b2b; }
+#timer-view .oven-mark.red{ background:#c8372b; }
+/* Zeit-Knopf: nutzt die Drehknopf-Logik (kt-knob), aber klein */
+#timer-view .oven .kt-dial{ position:relative; width:38px; height:38px; margin:0; }
+#timer-view .oven .kt-dial::before{ display:none; }
+#timer-view .oven .kt-knob{ position:absolute; inset:0; }
+/* Ofen-Körper: Innenraum hinten, Tür davor (klappt nach unten auf) */
+#timer-view .oven-body{ position:relative; height:176px; margin-top:8px; perspective:700px; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+#timer-view .oven-cavity{ position:absolute; inset:0; border-radius:10px; background:linear-gradient(180deg, #121214, #1d1d20); box-shadow:inset 0 3px 10px rgba(0,0,0,.8); }
+#timer-view .oven-inner{ position:absolute; inset:30px 14px 14px; border-radius:8px; overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 40%, #3a332c, #1d1a17 70%); box-shadow:inset 0 0 18px rgba(0,0,0,.7); transition:filter .5s ease; }
+#timer-view .oven-door{ position:absolute; inset:0; padding:0; cursor:pointer; border-radius:10px; transform-origin:50% 100%; transition:transform .7s cubic-bezier(.3,1.2,.4,1), box-shadow .5s ease;
+  background:transparent; border:solid #232428; border-width:30px 14px 14px; box-shadow:inset 0 0 0 3px #0d0d0f, 0 0 0 1px rgba(255,255,255,.05); }
+#timer-view .oven-door:focus-visible{ outline:2px solid #e9a04a; outline-offset:2px; }
+#timer-view .oven-glass{ position:absolute; inset:0; border-radius:6px; background:linear-gradient(125deg, rgba(255,255,255,.13) 0 18%, transparent 18% 30%, rgba(255,255,255,.05) 30% 36%, transparent 36%), rgba(20,16,12,.28); }
+#timer-view .oven-handle{ position:absolute; left:14%; right:14%; top:-23px; height:10px; border-radius:6px; background:linear-gradient(180deg, #f2f2f2, #9a9a9a); box-shadow:0 3px 5px rgba(0,0,0,.5); transition:filter .2s ease; }
+#timer-view .oven-door:hover .oven-handle{ filter:brightness(1.12); }
+#timer-view .oven-handle i{ position:absolute; top:8px; width:6px; height:8px; background:#8a8a8a; }
+#timer-view .oven-handle i:first-child{ left:10px; } #timer-view .oven-handle i:last-child{ right:10px; }
+/* Tür offen: klappt nach vorne-unten, Ofenlicht an */
+/* Aufmachen: Tür schwingt in 3D nach unten (wie vorher), unten angekommen erscheint die grosse Klappe zum Wieder-Zumachen.
+   Zumachen: Klappe weg, dann schwingt die Tür wieder hoch. */
+#timer-view .oven-door{ transition:transform .5s cubic-bezier(.2,.7,.3,1) .12s, box-shadow .5s ease; }
+#timer-view .oven.open .oven-door{ transform:rotateX(-82deg); pointer-events:none; transition:transform .38s cubic-bezier(.55,0,.85,.55), box-shadow .4s ease; box-shadow:inset 0 0 0 3px #0d0d0f, 0 18px 18px rgba(0,0,0,.45); }
+#timer-view .oven-flap{ position:absolute; left:-16px; right:-16px; top:calc(100% - 2px); height:86px; z-index:3; cursor:pointer; transform-origin:50% 0; transform:scaleY(0); opacity:0; transition:transform .18s ease-in, opacity .12s ease .06s;
+  clip-path:polygon(16px 0, calc(100% - 16px) 0, 100% 100%, 0 100%); background:linear-gradient(180deg, #17181b, #2d2e33 70%, #3a3b40); }
+#timer-view .oven-flap::before{ content:''; position:absolute; inset:7px 24px 20px; clip-path:polygon(12px 0, calc(100% - 12px) 0, 100% 100%, 0 100%);
+  background:linear-gradient(115deg, rgba(255,255,255,.14) 0 16%, transparent 16% 30%, rgba(255,255,255,.06) 30% 37%, transparent 37%), linear-gradient(180deg, #121214, #24252a); }
+#timer-view .oven-flap::after{ content:''; position:absolute; left:17%; right:17%; bottom:6px; height:8px; border-radius:5px; background:linear-gradient(180deg, #f4f4f4, #9a9a9a); box-shadow:0 2px 3px rgba(0,0,0,.5); }
+#timer-view .oven.open .oven-flap{ transform:scaleY(1); opacity:1; transition:transform .3s cubic-bezier(.15,.75,.35,1) .26s, opacity .08s linear .26s; }   /* startet noch während die Tür fällt → eine durchgehende Bewegung */
+#timer-view .oven-flap:hover::after{ filter:brightness(1.12); }
+#timer-view .oven.open .oven-inner{ filter:brightness(1.45) saturate(1.1); }
+#timer-view .oven.open .oven-inner::before{ content:''; position:absolute; left:50%; top:-20px; width:140px; height:70px; margin-left:-70px; background:radial-gradient(closest-side, rgba(255,236,190,.45), transparent); pointer-events:none; }
+/* Innenraum */
+#timer-view .oven-heat{ position:absolute; left:8%; width:84%; height:10px; fill:none; stroke:#5a4a3c; stroke-width:2.2; transition:stroke .6s ease, filter .6s ease; }
+#timer-view .oven-heat.top{ top:6px; } #timer-view .oven-heat.bottom{ bottom:8px; }
+#timer-view .oven-fan{ position:absolute; left:50%; top:14px; width:44px; height:44px; margin-left:-22px; fill:none; stroke:#5c544b; stroke-width:1.6; opacity:.8; }
+#timer-view .oven-fan .hub{ fill:#5c544b; }
+#timer-view .oven-rack{ position:absolute; left:6%; right:6%; top:104px; height:2px; background:#6b6157; }
+#timer-view .oven[data-mode="grill"] .oven-rack{ display:none; }   /* der Grillrost ersetzt den Ofenrost */
+#timer-view .oven-rack i{ position:absolute; top:-3px; width:2px; height:8px; background:#6b6157; }
+#timer-view .oven-rack i:nth-child(1){ left:8%; } #timer-view .oven-rack i:nth-child(2){ left:36%; } #timer-view .oven-rack i:nth-child(3){ left:64%; } #timer-view .oven-rack i:nth-child(4){ left:92%; }
+/* Essen (Zeichnungen in app/oven-food.js) */
+#timer-view .oven-food{ position:absolute; left:50%; top:22px; width:190px; height:83px; margin-left:-95px; overflow:visible; }
+#timer-view .oven .food{ display:none; }
+#timer-view .oven[data-mode="umluft"] .food-cake, #timer-view .oven[data-mode="ober"] .food-bread,
+#timer-view .oven[data-mode="grill"] .food-grill, #timer-view .oven[data-mode="pizza"] .food-pizza{ display:inline; }
+#timer-view .oven .food .baked{ opacity:var(--bake); transition:opacity .8s ease; }
+#timer-view .oven .food .raw{ opacity:calc(1 - var(--bake)); transition:opacity .8s ease; }
+#timer-view .oven .food .late{ opacity:clamp(0, calc((var(--bake) - .5) * 2.2), 1); transition:opacity .8s ease; }
+#timer-view .oven .food .done-only{ opacity:0; transition:opacity .8s ease; }
+#timer-view .oven[data-stage="3"] .food .done-only{ opacity:1; }
+/* Kuchen steigt aus der Form und wölbt sich */
+#timer-view .oven .cake-body{ transform:translateY(calc((1 - var(--bake)) * 16px)); transition:transform .9s ease; }
+#timer-view .oven .cake-dome{ transform-box:fill-box; transform-origin:50% 100%; transform:scaleY(calc(.22 + .78 * var(--bake))); transition:transform .9s ease; }
+/* Brot geht auf, Schnitte öffnen sich */
+#timer-view .oven .loaf{ transform-box:fill-box; transform-origin:50% 100%; transform:scale(calc(.86 + .14 * var(--bake)), calc(.6 + .4 * var(--bake))); transition:transform .9s ease; }
+#timer-view .oven .score-crumb{ transform-box:fill-box; transform-origin:50% 50%; transform:scaleY(calc(.15 + .85 * var(--bake))); opacity:calc(.3 + .7 * var(--bake)); transition:transform .9s ease, opacity .9s ease; }
+#timer-view .oven .flour{ opacity:calc(.9 - .5 * var(--bake)); }
+/* Pizza: Käse wirft Blasen, dann goldene Flecken */
+#timer-view .oven .food .bubble{ opacity:0; transition:opacity .6s ease; }
+#timer-view .oven[data-stage="1"] .food .bubble, #timer-view .oven[data-stage="2"] .food .bubble{ opacity:.9; animation:ov-bubble 1.2s ease-in-out infinite alternate; transform-box:fill-box; transform-origin:center; }
+@keyframes ov-bubble{ to{ transform:scale(1.7); } }
+/* Würstchen brutzeln leicht, solange der Ofen an ist */
+#timer-view .oven.on .food-grill .saus{ animation:ov-sizzle .25s steps(2) infinite; }
+@keyframes ov-sizzle{ 50%{ translate:0 -.4px; } }
+/* Stufe als Schild im Ofen */
+#timer-view .oven-stage{ position:absolute; right:6px; bottom:6px; padding:2px 7px; border-radius:999px; background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.12);
+  font-family:'JetBrains Mono', monospace; font-size:.55rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#d9d2c3; z-index:2; }
+#timer-view .oven[data-stage="1"] .oven-stage{ color:#f6c35a; }
+#timer-view .oven[data-stage="2"] .oven-stage{ color:#f0a33a; border-color:rgba(240,163,58,.5); }
+#timer-view .oven[data-stage="3"] .oven-stage{ color:#1d1206; background:#f0a33a; border-color:#f0a33a; }
+/* Dampf, wenn es fertig ist */
+#timer-view .oven-steam{ position:absolute; left:50%; top:22px; width:80px; height:40px; margin-left:-40px; pointer-events:none; opacity:0; transition:opacity .6s ease; }
+#timer-view .oven[data-stage="3"] .oven-steam{ opacity:1; }
+#timer-view .oven-steam i{ position:absolute; bottom:0; width:10px; height:26px; border-radius:50%; background:radial-gradient(closest-side, rgba(255,255,255,.55), transparent); filter:blur(1px); animation:ov-steam 2.2s ease-in infinite; }
+#timer-view .oven-steam i:nth-child(1){ left:18px; } #timer-view .oven-steam i:nth-child(2){ left:36px; animation-delay:.7s; } #timer-view .oven-steam i:nth-child(3){ left:54px; animation-delay:1.4s; }
+@keyframes ov-steam{ 0%{ transform:translateY(8px) scaleX(.8); opacity:0; } 30%{ opacity:1; } 100%{ transform:translateY(-26px) scaleX(1.4); opacity:0; } }
+#timer-view .oven-glow{ position:absolute; inset:0; pointer-events:none; opacity:0; background:radial-gradient(90% 80% at 50% 55%, rgba(255,150,40,.5), rgba(255,90,20,.14) 60%, transparent 80%); transition:opacity .8s ease; mix-blend-mode:screen; }
+/* Ofen an */
+#timer-view .oven.on .oven-glow{ opacity:1; animation:oven-flicker 2.4s ease-in-out infinite; }
+@keyframes oven-flicker{ 50%{ opacity:.8; } }
+#timer-view .oven.on[data-mode="umluft"] .oven-fan g{ transform-origin:20px 20px; animation:oven-spin .6s linear infinite; }
+@keyframes oven-spin{ to{ transform:rotate(360deg); } }
+#timer-view .oven.on[data-mode="ober"] .oven-heat, #timer-view .oven.on[data-mode="pizza"] .oven-heat.bottom, #timer-view .oven.on[data-mode="umluft"] .oven-heat.bottom{ stroke:#ff6a1f; filter:drop-shadow(0 0 4px #ff7a2a); }
+#timer-view .oven.on[data-mode="grill"] .oven-heat.top{ stroke:#ff3d10; filter:drop-shadow(0 0 6px #ff5a1f); }
+#timer-view .oven[data-mode="grill"] .oven-fan, #timer-view .oven[data-mode="ober"] .oven-fan, #timer-view .oven[data-mode="pizza"] .oven-fan{ opacity:.22; }
+/* Fertig: Fenster blinkt kurz */
+#timer-view .oven.done .oven-inner{ animation:oven-done 1s ease-in-out 3; }
+@keyframes oven-done{ 50%{ box-shadow:inset 0 0 18px rgba(0,0,0,.7), inset 0 0 0 3px #f0a33a; } }
+@media (max-width:400px){ #timer-view .oven{ width:262px; } }
+
+/* Offene Tür liegt sichtbar vor dem Ofen (Blick von schräg oben): darunter wird Platz gemacht */
+#timer-view .tm-kitchen .tm-stage{ justify-content:flex-start; padding-top:24px; box-sizing:border-box; transition:height .6s cubic-bezier(.3,1.2,.4,1); }
+#timer-view .tm-kitchen:has(.oven.open) .tm-stage{ height:418px; }

@@ -4244,3 +4244,40 @@
 /* Offene Tür liegt sichtbar vor dem Ofen (Blick von schräg oben): darunter wird Platz gemacht */
 #timer-view .tm-kitchen .tm-stage{ justify-content:flex-start; padding-top:24px; box-sizing:border-box; transition:height .6s cubic-bezier(.3,1.2,.4,1); }
 #timer-view .tm-kitchen:has(.oven.open) .tm-stage{ height:418px; }
+
+  /* Tetris im Casino-Stil: grüner Filz, Gold, Neon-Zahlen */
+  .tetris-wrap{ position:relative; display:flex; flex-direction:column; align-items:center; width:100%; max-width:420px; margin:0; padding:16px 14px 18px; box-sizing:border-box;
+    background: radial-gradient(120% 90% at 50% 30%, #0f6b3a 0%, #0a4a29 55%, #052a17 100%);
+    border:3px solid #d9a63a; border-radius:16px; box-shadow:0 0 0 3px #5a0f14, 0 0 0 5px #d9a63a, 0 10px 30px rgba(0,0,0,0.5), inset 0 0 40px rgba(0,0,0,0.45); }
+  .tc-marquee{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; margin-bottom:12px; text-align:center; }
+  .tc-marquee b{ font-family:'Oswald', sans-serif; font-weight:700; font-size:1.5rem; letter-spacing:0.14em; color:#ffd86b; text-shadow:0 0 6px #ff9f1c, 0 0 16px rgba(255,159,28,0.7), 0 2px 0 #7a4a00; animation:tc-neon 2.2s ease-in-out infinite; }
+  @keyframes tc-neon{ 0%,100%{ opacity:1; } 50%{ opacity:0.8; text-shadow:0 0 3px #ff9f1c, 0 0 8px rgba(255,159,28,0.5), 0 2px 0 #7a4a00; } }
+  .tc-suit{ font-size:1.3rem; color:#101010; text-shadow:0 0 0 #fff; background:#f6f0dc; border-radius:50%; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px #d9a63a; }
+  .tc-suit.red{ color:#c4161c; }
+  .tc-sub{ flex-basis:100%; font-family:'JetBrains Mono'; font-size:0.6rem; letter-spacing:0.22em; text-transform:uppercase; color:#f3d98a; opacity:0.85; }
+  .tetris-wrap .tc-hud{ justify-content:center; gap:8px; margin-bottom:12px; }
+  .tetris-wrap .tc-hud .snake-hud-item{ padding:6px 10px 5px; min-width:62px; background:linear-gradient(#1b1b1b, #050505); border:2px solid #d9a63a; border-radius:8px; box-shadow:inset 0 0 8px #000, 0 2px 0 #5a3d00; }
+  .tetris-wrap .tc-hud .snake-hud-label{ font-size:0.5rem; color:#f3d98a; letter-spacing:0.16em; }
+  .tetris-wrap .tc-hud .ms-counter{ font-family:'Oswald', sans-serif; font-weight:700; font-size:1.25rem; color:#ff3b30; text-shadow:0 0 6px rgba(255,59,48,0.85); letter-spacing:0.08em; background:none; padding:0; box-shadow:none; min-width:0; }
+  .tetris-wrap .tc-hud .snake-hud-item:last-child .ms-counter{ color:#ffd86b; text-shadow:0 0 6px rgba(255,200,60,0.85); }
+  .tetris-wrap .game-resize-wrap{ display:inline-block; }
+  .tetris-board{ display:flex; align-items:flex-start; gap:12px; line-height:0; touch-action:none; outline:none; }
+  #tetris-canvas{ width:240px; height:480px; flex:none; display:block; background:#06150d; border:4px solid #d9a63a; border-radius:8px; box-shadow:0 0 0 2px #5a0f14, 0 0 16px rgba(255,200,60,0.35), inset 0 0 14px #000; }
+  #tetris-next{ flex:none; width:80px; height:80px; background:#06150d; border:3px solid #d9a63a; border-radius:50%; box-shadow:0 0 0 2px #5a0f14, inset 0 0 10px #000; }
+  .tetris-wrap .sudoku-controls{ justify-content:center; }
+  .tetris-wrap .action-btn{ font-family:'Oswald', sans-serif; letter-spacing:0.12em; text-transform:uppercase; color:#3a1a00; background:linear-gradient(#ffe38a, #d9a63a 55%, #a8741a); border:2px solid #fff2b8; border-radius:999px; box-shadow:0 3px 0 #6b4306, 0 0 10px rgba(255,200,60,0.4); }
+  .tetris-wrap .action-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #6b4306; }
+  .tetris-wrap #tetris-status{ color:#f3d98a; text-align:center; }
+  .tetris-pad{ display:none; grid-template-columns:repeat(5, 52px); gap:6px; margin-top:14px; }
+  .tetris-pad button{ height:48px; border:2px solid #d9a63a; border-radius:50%; background:radial-gradient(circle at 35% 30%, #d02a2f, #7a0d12); color:#fff2b8; font-size:1.2rem; cursor:pointer; touch-action:manipulation; -webkit-user-select:none; user-select:none; box-shadow:inset 0 0 0 3px rgba(255,255,255,0.25), 0 3px 0 #3a0508; }
+  .tetris-pad button:active{ transform:translateY(2px); box-shadow:inset 0 0 0 3px rgba(255,255,255,0.25), 0 1px 0 #3a0508; }
+  @media (pointer:coarse), (hover:none), (max-width:700px){
+    .tetris-pad{ display:grid; }
+  }
+  @media (max-width:420px){
+    .tetris-wrap{ padding:12px 8px 14px; }
+    #tetris-next{ width:64px; height:64px; }
+    .tetris-board{ gap:8px; }
+    .tc-marquee b{ font-size:1.25rem; }
+    .tetris-wrap .tc-hud{ gap:5px; } .tetris-wrap .tc-hud .snake-hud-item{ min-width:52px; padding:5px 6px 4px; }
+  }

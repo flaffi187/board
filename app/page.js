@@ -174,7 +174,7 @@ export default async function Page() {
       </div>
     </div>
     <div className="cork-paper">
-      <div className="cork-rings" aria-hidden="true">{Array.from({ length: 9 }, (_, i) => <i key={i}></i>)}</div>
+        <div className="cork-rings" aria-hidden="true">{Array.from({ length: 9 }, (_, i) => <i key={i}></i>)}</div>
       <div className="cork-title"><h2>To-Do</h2><span id="todo-count"></span></div>
       <div className="cork-input-row">
         <input type="text" id="todo-input" placeholder="Was steht an? …" autoComplete="off" />
@@ -186,7 +186,7 @@ export default async function Page() {
     {/* Abreisskalender-Blatt mit Klebeband: heutiges Datum und Fortschritt */}
     <div className="cork-day">
       <span className="cork-tape" aria-hidden="true"></span>
-      <div className="cork-day-month" id="cork-day-month"></div>
+        <div className="cork-day-month" id="cork-day-month"></div>
       <div className="cork-day-num" id="cork-day-num"></div>
       <div className="cork-day-week" id="cork-day-week"></div>
       <div className="cork-day-progress">
@@ -657,6 +657,7 @@ export default async function Page() {
     <button className="city-chip" data-target="game-label-ms">Minesweeper</button>
     <button className="city-chip" data-target="game-label-snake">Snake</button>
     <button className="city-chip" data-target="game-label-2048">2048</button>
+    <button className="city-chip" data-target="game-label-tetris">Tetris</button>
   </div>
 
   <div className="games-zoom-row" id="games-zoom-row">
@@ -1108,6 +1109,36 @@ export default async function Page() {
     </div>
     <div className="todo-empty" id="g2048-status" style={{ marginTop: "10px" }}></div>
     <div className="mc-book"><div className="mc-book-title">Erz-Liste</div><div className="mc-book-list" id="mc-book"></div></div>
+  </div>
+
+  <div className="panel-label" id="game-label-tetris" style={{ marginTop: "44px" }}>Tetris</div>
+  <div className="tetris-wrap">
+    <div className="tc-marquee"><span className="tc-suit">♠</span><b>ROYAL TETRIS</b><span className="tc-suit red">♥</span><span className="tc-sub">Casino · Jackpot-Reihen</span></div>
+    <div className="snake-hud tc-hud">
+      <div className="snake-hud-item"><div className="snake-hud-label">Jetons</div><div className="ms-counter" id="tetris-score">0</div></div>
+      <div className="snake-hud-item"><div className="snake-hud-label">Reihen</div><div className="ms-counter" id="tetris-lines">0</div></div>
+      <div className="snake-hud-item"><div className="snake-hud-label">Level</div><div className="ms-counter" id="tetris-level">1</div></div>
+      <div className="snake-hud-item"><div className="snake-hud-label">Jackpot</div><div className="ms-counter" id="tetris-best">0</div></div>
+    </div>
+    <div className="game-resize-wrap">
+      <div className="tetris-board" id="tetris-board">
+        <canvas id="tetris-canvas" width="240" height="480"></canvas>
+        <canvas id="tetris-next" width="80" height="80"></canvas>
+      </div>
+      <div className="game-resize-handle"></div>
+    </div>
+    <div className="sudoku-controls" style={{ marginTop: "14px" }}>
+      <button className="action-btn" id="tetris-new-btn">Neue Runde</button>
+      <button className="action-btn" id="tetris-pause-btn">Pause</button>
+    </div>
+    <div className="tetris-pad" id="tetris-pad">
+      <button type="button" data-act="rotate" aria-label="Drehen">⟳</button>
+      <button type="button" data-act="left" aria-label="Links">◀</button>
+      <button type="button" data-act="down" aria-label="Runter">▼</button>
+      <button type="button" data-act="right" aria-label="Rechts">▶</button>
+      <button type="button" data-act="drop" aria-label="Fallen lassen">⤓</button>
+    </div>
+    <div className="todo-empty" id="tetris-status" style={{ marginTop: "10px" }}></div>
   </div>
 </div>
 

@@ -43,9 +43,10 @@ export default async function Page() {
   <button className="tab-btn" data-view="todo-view">04 To-Do</button>
   <button className="tab-btn" data-view="cal-view">05 Kalender</button>
   <button className="tab-btn" data-view="calc-view">06 Rechner</button>
-  <button className="tab-btn" data-view="timer-view">07 Timer</button>
-  <button className="tab-btn" data-view="apps-view">08 Apps</button>
-  <button className="tab-btn" data-view="games-view">09 Spiele</button>
+  <button className="tab-btn" data-view="tr-view">07 Übersetzer</button>
+  <button className="tab-btn" data-view="timer-view">08 Timer</button>
+  <button className="tab-btn" data-view="apps-view">09 Apps</button>
+  <button className="tab-btn" data-view="games-view">10 Spiele</button>
 </div>
 
 <div className="view active" id="overview-view">
@@ -88,7 +89,7 @@ export default async function Page() {
 <div className="view" id="time-view">
   <div className="time-view-layout">
     <div className="wz-main">
-      <div className="wz-head"><h2>Weltzeit</h2><span id="wz-count"></span></div>
+      <div className="wz-head"><h2>Weltzeit</h2><span id="wz-count"></span><div className="wx-add wz-add" id="wz-add"></div></div>
       <div className="board-grid" id="board-time"></div>
     </div>
   </div>
@@ -200,6 +201,8 @@ export default async function Page() {
 </div>
 
 <div className="view" id="calc-view">
+  <div className="calc-row">
+  <div className="calc-col">
   <div className="panel-label">Rechner</div>
   {/* Rechner im Stil eines alten Nokia-Handys */}
   <div className="calc-box nokia">
@@ -285,7 +288,10 @@ export default async function Page() {
     <div className="nokia-mic"></div>
   </div>
 
-  <div className="panel-label" style={{ marginTop: "44px" }}>Umrechner</div>
+  </div>
+
+  <div className="calc-col">
+  <div className="panel-label">Umrechner</div>
   {/* Umrechner als Game Boy */}
   <div className="conv-wrap gameboy">
     <div className="gb-power"><span>◁ OFF</span><i></i><span>ON ▷</span></div>
@@ -412,6 +418,31 @@ export default async function Page() {
       <div className="gb-pill"><button data-gb="start" aria-label="Wert auf 1"></button><span>START</span></div>
     </div>
     <div className="gb-speaker"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+  </div>
+
+  </div>
+</div>
+
+<div className="view" id="tr-view">
+  <div className="panel-label">Übersetzer</div>
+  {/* Übersetzer im Stil von Google Übersetzer: links Eingabe, rechts Übersetzung */}
+  <div className="gt" id="gt">
+    <div className="gt-langs">
+      <div className="gt-pick" id="gt-from-pick"></div>
+      <button type="button" id="gt-swap" aria-label="Sprachen tauschen" title="Sprachen tauschen"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></button>
+      <div className="gt-pick" id="gt-to-pick"></div>
+    </div>
+    <div className="gt-panes">
+      <div className="gt-in">
+        <textarea id="gt-input" maxLength={500} placeholder="Text eingeben" spellCheck={false} autoComplete="off"></textarea>
+        <div className="gt-in-foot"><div className="gt-tools"><button type="button" id="gt-mic" className="gt-icon" aria-label="Sprechen" title="Sprechen (Mikrofon)"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z"/></svg></button><button type="button" id="gt-say-in" className="gt-icon" aria-label="Eingabe vorlesen" title="Vorlesen" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button><button type="button" id="gt-clear" className="gt-icon" aria-label="Text löschen" title="Text löschen" hidden>✕</button></div><span id="gt-count"></span></div>
+      </div>
+      <div className="gt-out">
+        <div className="gt-out-text" id="gt-out" aria-live="polite">Übersetzung</div>
+        <div className="gt-out-foot"><div className="gt-tools"><button type="button" id="gt-say" className="gt-icon" aria-label="Übersetzung vorlesen" title="Vorlesen" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button><button type="button" id="gt-copy" className="gt-icon" aria-label="Übersetzung kopieren" title="Kopieren" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg></button></div><span id="gt-status"></span></div>
+      </div>
+    </div>
   </div>
 </div>
 

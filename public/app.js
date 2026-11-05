@@ -809,8 +809,12 @@ function buildTimeCard(city){
     </div>
   `;
   boardTime.appendChild(card);
-  const cnt = document.getElementById('wz-count');
-  if(cnt) cnt.textContent = `${boardTime.children.length} Städte · Abweichung zu Zürich`;
+  if(wzList.length > 1){
+    const x = document.createElement('button');
+    x.type = 'button'; x.className = 'wz-x'; x.textContent = '×'; x.title = 'Stadt entfernen'; x.setAttribute('aria-label', city.name + ' entfernen');
+    x.addEventListener('click', () => wzRemove(city));
+    card.appendChild(x);
+  }
 }
 
 // Minuten, die die Ortszeit der Zeitzone gegenüber UTC vorgeht
@@ -819,127 +823,292 @@ function wzOffsetMin(tz, now){
   return (Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(now / 1000) * 1000) / 60000;
 }
 
+const dayNames = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+
+// ---------------------------------------------------------------------------------------------
+// Wetter im Redaktions-Stil: Stadt-Tabs, grosse Temperatur mit Satz, Kennzahlen, Tageslicht, 7 Tage
+// ---------------------------------------------------------------------------------------------
+const WX_TABS_KEY = 'wx_cities';
+const WX_DEFAULT = ['Aarau', 'New York', 'Tokio', 'London', 'Dubai'];
+const wxEsc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const wxSlim = (c) => ({ name: c.name, region: c.region || '', tz: c.tz, lat: c.lat, lon: c.lon });
+function wxLoadTabs(){
+  try{
+    const s = JSON.parse(localStorage.getItem(WX_TABS_KEY) || 'null');
+    if(Array.isArray(s)){
+      const ok = s.filter(c => c && c.name && isFinite(c.lat) && isFinite(c.lon) && c.tz);
+      if(ok.length) return ok;
+    }
+  } catch(err){}
+  return WX_DEFAULT.map(n => cities.find(c => c.name === n)).filter(Boolean).map(wxSlim);
+}
+let wxTabs = wxLoadTabs();
+function wxSaveTabs(){ try{ localStorage.setItem(WX_TABS_KEY, JSON.stringify(wxTabs)); } catch(err){} }
+(function(){
+  let saved = ''; try{ saved = localStorage.getItem('weltuhr_city') || ''; } catch(err){}
+  activeCity = wxTabs.find(c => c.name === saved) || wxTabs[0];
+})();
+let wxSeq = 0;
+
 function selectCity(city){
   activeCity = city;
-  document.querySelectorAll('.city-chip').forEach(c => c.classList.toggle('active', c.dataset.city === city.name));
+  document.querySelectorAll('#city-select .wx-tab').forEach(b => b.classList.toggle('active', b.dataset.city === city.name));
   loadFullWeather(city);
+}
+function wxRemove(name){
+  if(wxTabs.length <= 1) return;
+  wxTabs = wxTabs.filter(c => c.name !== name);
+  wxSaveTabs();
+  if(activeCity.name === name){ activeCity = wxTabs[0]; try{ localStorage.setItem('weltuhr_city', activeCity.name); } catch(err){} }
+  buildCitySelect();
+  loadFullWeather(activeCity);
+}
+function wxAdd(c){
+  const slim = wxSlim(c);
+  const have = wxTabs.find(t => t.name === slim.name && Math.abs(t.lat - slim.lat) < 0.5);
+  if(!have) wxTabs.push(slim);
+  wxSaveTabs();
+  const target = have || slim;
+  try{ localStorage.setItem('weltuhr_city', target.name); } catch(err){}
+  buildCitySelect();
+  selectCity(target);
+}
+
+// Städte-Auswahl: Knopf "+ Stadt hinzufügen" mit Suche (beliebige Stadt weltweit) und Vorschlägen aus der Liste
+function wxPicker(host, pool, onPick){
+  host.innerHTML = `<button type="button" class="wx-add-btn">+ Stadt hinzufügen</button>
+    <div class="wx-add-pop" hidden><input type="text" placeholder="Stadt suchen …" autocomplete="off" spellcheck="false" aria-label="Stadt suchen" /><div class="wx-add-res"></div></div>`;
+  const btn = host.querySelector('.wx-add-btn'), pop = host.querySelector('.wx-add-pop'), input = pop.querySelector('input'), res = pop.querySelector('.wx-add-res');
+  let timer = null, seq = 0;
+  const suggestions = () => {
+    const rest = pool();
+    res.innerHTML = rest.map((c, i) => `<button type="button" data-k="${i}"><b>${wxEsc(c.name)}</b><small>${wxEsc(c.region)}</small></button>`).join('') || '<div class="wx-add-note">Alle Städte aus der Liste sind schon da – such oben nach einer anderen.</div>';
+    res.querySelectorAll('button').forEach(x => x.addEventListener('click', () => { pop.hidden = true; onPick(rest[Number(x.dataset.k)]); }));
+  };
+  const search = async (q) => {
+    const mine = ++seq;
+    res.innerHTML = '<div class="wx-add-note">Suche …</div>';
+    try{
+      const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=6&language=de&format=json');
+      const j = await r.json();
+      if(mine !== seq) return;
+      const items = (j.results || []).filter(x => x.timezone);
+      if(!items.length){ res.innerHTML = '<div class="wx-add-note">Nichts gefunden.</div>'; return; }
+      res.innerHTML = items.map((x, i) => `<button type="button" data-k="${i}"><b>${wxEsc(x.name)}</b><small>${wxEsc([x.admin1, x.country].filter(Boolean).join(', '))}</small></button>`).join('');
+      res.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+        const x = items[Number(b.dataset.k)];
+        pop.hidden = true; input.value = '';
+        onPick({ name: x.name, region: x.country || '', tz: x.timezone, lat: x.latitude, lon: x.longitude });
+      }));
+    } catch(err){ if(mine === seq) res.innerHTML = '<div class="wx-add-note">Suche gerade nicht möglich.</div>'; }
+  };
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    pop.hidden = !pop.hidden;
+    if(!pop.hidden){ suggestions(); input.focus(); }
+  });
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    if(q.length < 2){ seq++; suggestions(); return; }
+    timer = setTimeout(() => search(q), 300);
+  });
+  input.addEventListener('keydown', (e) => { if(e.key === 'Escape') pop.hidden = true; });
+  pop.addEventListener('click', (e) => e.stopPropagation());
+  document.addEventListener('click', () => { pop.hidden = true; });
 }
 
 function buildCitySelect(){
-  cities.filter(c => c.name !== "Zürich").forEach(city => {
-    const chip = document.createElement('button');
-    chip.className = 'city-chip' + (city === activeCity ? ' active' : '');
-    chip.textContent = city.name;
-    chip.dataset.city = city.name;
-    chip.addEventListener('click', () => {
+  citySelect.innerHTML = '';
+  const list = document.createElement('div');
+  list.className = 'wx-tab-list';
+  wxTabs.forEach(city => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'wx-tab' + (city.name === activeCity.name ? ' active' : '');
+    b.dataset.city = city.name;
+    b.innerHTML = `<span>${wxEsc(city.name)}</span>` + (wxTabs.length > 1 ? `<i class="wx-tab-x" role="button" title="Stadt entfernen" aria-label="${wxEsc(city.name)} entfernen">×</i>` : '');
+    b.addEventListener('click', (e) => {
+      if(e.target.closest('.wx-tab-x')){ wxRemove(city.name); return; }
       selectCity(city);
       try{ localStorage.setItem('weltuhr_city', city.name); } catch(err){}
     });
-    citySelect.appendChild(chip);
+    list.appendChild(b);
   });
+  citySelect.appendChild(list);
+
+  const add = document.createElement('div');
+  add.className = 'wx-add';
+  citySelect.appendChild(add);
+  wxPicker(add, () => cities.filter(c => c.name !== 'Zürich' && !wxTabs.some(t => t.name === c.name)), wxAdd);
 }
 
-const dayNames = ['So','Mo','Di','Mi','Do','Fr','Sa'];
-
-function wxTheme(code, tz){
-  const hour = Number(new Date().toLocaleTimeString('en-GB', { hour:'2-digit', hour12:false, timeZone: tz }).slice(0,2));
-  const night = hour < 6 || hour >= 20;
-  if(code >= 95) return 'storm';
-  if(code >= 71 && code <= 86) return 'snow';
-  if(code >= 51) return 'rain';
+// Symbole nach Wetterart
+function wxKind(code){
+  if(code <= 1) return 'sun';
+  if(code === 2) return 'partly';
+  if(code === 3) return 'cloud';
   if(code === 45 || code === 48) return 'fog';
-  if(night) return code >= 2 ? 'nightcloud' : 'night';
-  if(code >= 2) return 'cloudy';
-  return 'sunny';
+  if(code >= 95) return 'storm';
+  if((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snow';
+  return 'rain';
+}
+const WX_ICON = {
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>',
+  partly: '<path d="M7 18a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6 1A3.5 3.5 0 0 1 17 18z"/><path d="M8.5 6.2 7.6 4.6M4.7 8.3 3.2 7.5M13 4.6V3"/>',
+  cloud: '<path d="M7 18a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6 1A3.5 3.5 0 0 1 17 18z"/>',
+  fog: '<path d="M4 8h16M3 12h18M5 16h14M8 20h8"/>',
+  rain: '<path d="M7 14a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6 1A3.5 3.5 0 0 1 17 14z"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/>',
+  snow: '<path d="M7 14a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6 1A3.5 3.5 0 0 1 17 14z"/><path d="M8 18h.01M12 20h.01M16 18h.01M10 21h.01M14 22h.01"/>',
+  storm: '<path d="M7 13a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6 1A3.5 3.5 0 0 1 17 13z"/><path d="M12 13l-2 4h3l-2 4"/>',
+};
+const wxIcon = (kind, size = 22) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${WX_ICON[kind]}</svg>`;
+const wxDesc = (code) => (wxMap[code] || ['', 'Unbekannt'])[1];
+// Beschreibung mitten im Satz: Adjektive klein, Substantive gross
+function wxLower(d){
+  if(/^(Gewitter|Nebel|Reifnebel|Nieselregen|Schneefall|Regenschauer)\b/.test(d)) return d;
+  if(d === 'Bedeckt') return 'bedeckt';
+  if(d.indexOf(' ') < 0) return d;
+  return d.charAt(0).toLowerCase() + d.slice(1);
+}
+// Temperatur -> Farbe (kalt blau, mild gelb, warm orange)
+function wxTempColor(t){
+  const S = [[-10, [110, 150, 215]], [0, [143, 166, 201]], [8, [150, 190, 180]], [14, [226, 190, 96]], [22, [232, 140, 70]], [32, [225, 95, 60]]];
+  if(t <= S[0][0]) return `rgb(${S[0][1].join(',')})`;
+  for(let i = 1; i < S.length; i++){
+    if(t <= S[i][0]){
+      const k = (t - S[i - 1][0]) / (S[i][0] - S[i - 1][0]), a = S[i - 1][1], b = S[i][1];
+      return `rgb(${a.map((v, j) => Math.round(v + (b[j] - v) * k)).join(',')})`;
+    }
+  }
+  return `rgb(${S[S.length - 1][1].join(',')})`;
 }
 
-async function loadFullWeather(city){
-  wxDetail.innerHTML = `<div class="wx-loading">Wetter wird geladen …</div>`;
+async function loadFullWeather(city, silent){
+  const mine = ++wxSeq;
+  if(!silent) wxDetail.innerHTML = `
+    <div class="wx-skel" aria-label="Wetter wird geladen">
+      <div class="wx-hero"><div class="wx-big">–°</div><div class="wx-text"><i class="sk sk-s"></i><i class="sk sk-l"></i><i class="sk sk-l"></i></div></div>
+      <div class="wx-stats"><div><span>Gefühlt</span><b>[–]</b></div><div><span>Wind</span><b>[–]</b></div><div><span>Luftfeuchtigkeit</span><b>[–]</b></div><div><span>Regenrisiko</span><b>[–]</b></div></div>
+    </div>`;
   try{
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}` +
-      `&current_weather=true` +
-      `&hourly=temperature_2m,weathercode` +
-      `&daily=weathercode,temperature_2m_max,temperature_2m_min` +
-      `&timezone=auto`;
+      `&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code` +
+      `&hourly=temperature_2m,weather_code,precipitation_probability` +
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,precipitation_probability_max` +
+      `&forecast_days=7&timezone=auto&wind_speed_unit=kmh`;
     const res = await fetch(url);
     const data = await res.json();
+    if(mine !== wxSeq) return;
+    if(!data.current || !data.daily) throw new Error('keine Daten');
     renderWeatherDetail(city, data);
   } catch(err){
-    wxDetail.innerHTML = `<div class="wx-loading">Wetter nicht verfügbar</div>`;
+    if(mine === wxSeq && !silent) wxDetail.innerHTML = `<div class="wx-loading">Wetter nicht verfügbar</div>`;
   }
 }
 
 function renderWeatherDetail(city, data){
-  const cw = data.current_weather;
-  const [nowIcon, nowDesc] = wxMap[cw.weathercode] || ["🌡️","Unbekannt"];
+  const cur = data.current, dl = data.daily, hr = data.hourly;
+  const now = new Date();
+  const nowDesc = wxDesc(cur.weather_code);
+  const dateStr = new Intl.DateTimeFormat('de-CH', { weekday: 'long', day: 'numeric', month: 'long', timeZone: city.tz }).format(now);
+  const timeStr = new Intl.DateTimeFormat('de-CH', { hour: '2-digit', minute: '2-digit', timeZone: city.tz }).format(now);
+  const tm = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: city.tz }).format(now).split(':').map(Number);
+  const nowPct = (tm[0] * 60 + tm[1]) / 1440 * 100;
 
-  // stündliche Werte nach Datum gruppieren (YYYY-MM-DD -> Einträge)
-  const hoursByDate = {};
-  data.hourly.time.forEach((t, i) => {
-    const date = t.substring(0,10);
-    if(!hoursByDate[date]) hoursByDate[date] = [];
-    hoursByDate[date].push({
-      time: t.substring(11,16),
-      temp: data.hourly.temperature_2m[i],
-      code: data.hourly.weathercode[i]
-    });
-  });
+  // Satz: aktuelles Wetter, morgen, wärmster Tag
+  const maxes = dl.temperature_2m_max;
+  let wi = 0; maxes.forEach((m, i) => { if(m > maxes[wi]) wi = i; });
+  const warm = Math.round(maxes[wi]);
+  const wdName = (i) => weekdayFull[new Date(dl.time[i] + 'T12:00:00').getDay()];
+  let s2 = '';
+  if(dl.time.length > 1){
+    s2 = 'Morgen ' + wxLower(wxDesc(dl.weather_code[1]));
+    if(wi === 0) s2 += `, heute ist es mit ${warm}° am wärmsten.`;
+    else if(wi === 1) s2 += `, dabei wird es mit ${warm}° am wärmsten.`;
+    else s2 += `, am ${wdName(wi)} wird es mit ${warm}° am wärmsten.`;
+  } else s2 = `Heute wird es mit ${warm}° am wärmsten.`;
 
-  const dayBlocks = data.daily.time.map((dateStr, i) => {
-    const d = new Date(dateStr + 'T12:00:00');
-    const label = i === 0 ? 'Heute' : dayNames[d.getDay()] + ', ' + dateStr.substring(8,10) + '.' + dateStr.substring(5,7) + '.';
-    const [icon, desc] = wxMap[data.daily.weathercode[i]] || ["🌡️","Unbekannt"];
+  // Regenrisiko dieser Stunde (sonst Tagesmaximum)
+  const hi = hr.time.findIndex(t => t.slice(0, 13) === cur.time.slice(0, 13));
+  let rain = hi >= 0 && hr.precipitation_probability ? hr.precipitation_probability[hi] : null;
+  if(rain == null) rain = dl.precipitation_probability_max ? dl.precipitation_probability_max[0] : null;
+  const val = (v, d = 0) => (v == null || !isFinite(v)) ? '–' : String(Math.round(v * 10 ** d) / 10 ** d).replace('.', ',');
 
-    const hours = hoursByDate[dateStr] || [];
-    const hourCards = hours.map((h, hi) => {
-      const [hIcon] = wxMap[h.code] || ["🌡️"];
-      return `
-        <div class="hour-card${h.code <= 1 ? ' hour-sun' : h.code === 45 || h.code === 48 ? ' hour-fog' : (h.code >= 51 && h.code <= 67) || (h.code >= 80 && h.code <= 82) || h.code >= 95 ? ' hour-rain' : h.code === 2 || h.code === 3 ? ' hour-cloud' : ''}" style="--i:${hi}">
-          <div class="h-time">${h.time}</div>
-          <div class="h-icon">${hIcon}</div>
-          <div class="h-temp">${Math.round(h.temp)}°</div>
-        </div>`;
-    }).join('');
+  // Nächste 12 Stunden
+  let nextHours = '';
+  if(hi >= 0){
+    const items = [];
+    for(let k = hi; k < Math.min(hr.time.length, hi + 12); k++){
+      const kd = wxKind(hr.weather_code[k]), pr = hr.precipitation_probability ? hr.precipitation_probability[k] : null;
+      items.push(`<div class="wx-nx"><span>${k === hi ? 'Jetzt' : hr.time[k].slice(11, 13) + ' Uhr'}</span><i class="k-${kd}">${wxIcon(kd, 20)}</i><b>${Math.round(hr.temperature_2m[k])}°</b><small>${pr != null && pr >= 10 ? Math.round(pr) + '%' : ''}</small></div>`);
+    }
+    nextHours = `<div class="wx-next"><div class="wx-sec-head"><span>Nächste Stunden</span><span>Temperatur · Regenrisiko</span></div><div class="wx-next-list">${items.join('')}</div></div>`;
+  }
 
+  // Tageslicht
+  const hm = (iso) => iso ? iso.slice(11, 16) : null;
+  const pct = (iso) => iso ? (Number(iso.slice(11, 13)) * 60 + Number(iso.slice(14, 16))) / 1440 * 100 : null;
+  const sr = hm(dl.sunrise[0]), ss = hm(dl.sunset[0]), a = pct(dl.sunrise[0]), b = pct(dl.sunset[0]);
+  const dur = dl.daylight_duration && dl.daylight_duration[0] != null ? `${Math.floor(dl.daylight_duration[0] / 3600)} h ${String(Math.round(dl.daylight_duration[0] % 3600 / 60)).padStart(2, '0')} min` : '';
+
+  // 7 Tage
+  const mins = dl.temperature_2m_min, wkMin = Math.min(...mins), wkMax = Math.max(...maxes), span = Math.max(1, wkMax - wkMin);
+  const rows = dl.time.map((ds, i) => {
+    const d = new Date(ds + 'T12:00:00');
+    const code = dl.weather_code[i], kind = wxKind(code);
+    const lo = Math.round(mins[i]), hiT = Math.round(maxes[i]);
+    const left = (mins[i] - wkMin) / span * 100, width = Math.max(4, (maxes[i] - mins[i]) / span * 100);
+    const label = i === 0 ? 'Heute' : weekdayFull[d.getDay()];
+    const dm = ds.substring(8, 10) + '.' + ds.substring(5, 7) + '.';
+    const dot = i === 0 ? `<b class="wx-dot" style="left:${Math.min(100, Math.max(0, (cur.temperature_2m - wkMin) / span * 100)).toFixed(1)}%"></b>` : '';
+    const hours = hr.time.map((t, k) => t.slice(0, 10) === ds ? k : -1).filter(k => k >= 0).map(k => `
+      <div class="wx-hour"><span>${hr.time[k].slice(11, 13)}</span><i class="k-${wxKind(hr.weather_code[k])}">${wxIcon(wxKind(hr.weather_code[k]), 16)}</i><b>${Math.round(hr.temperature_2m[k])}°</b></div>`).join('');
     return `
-      <div class="day-block${i === 0 ? ' open' : ''}" style="--d:${i}">
-        <div class="day-item" data-day-toggle>
-          <div class="d-name">${label}</div>
-          <div class="d-icon">${icon}</div>
-          <div class="d-desc">${desc}</div>
-          <div class="d-range"><span class="max">${Math.round(data.daily.temperature_2m_max[i])}°</span> / <span class="min">${Math.round(data.daily.temperature_2m_min[i])}°</span></div>
-          <div class="d-chevron">▾</div>
-        </div>
-        <div class="day-hours">${hourCards}</div>
-      </div>`;
+      <div class="wx-row${i === 0 ? ' today' : ''}" data-wx-row>
+        <div class="wx-dayname"><b>${label}</b><small>${i === 0 ? dayNames[d.getDay()] + ', ' : ''}${dm}</small></div>
+        <div class="wx-ic k-${kind}">${wxIcon(kind)}</div>
+        <div class="wx-desc k-${kind}">${wxDesc(code)}${dl.precipitation_probability_max && dl.precipitation_probability_max[i] >= 20 ? `<small>${Math.round(dl.precipitation_probability_max[i])}%</small>` : ''}</div>
+        <div class="wx-lo" style="color:${wxTempColor(mins[i])}">${lo}°</div>
+        <div class="wx-hi" style="color:${wxTempColor(maxes[i])}">${hiT}°</div>
+      </div>
+      <div class="wx-hours">${hours}</div>`;
   }).join('');
 
-  const localNow = new Date();
-  const localTime = localNow.toLocaleTimeString('de-CH', { hour:'2-digit', minute:'2-digit', timeZone: city.tz });
-  const localDate = localNow.toLocaleDateString('de-CH', { day:'2-digit', month:'2-digit', year:'numeric', timeZone: city.tz });
   wxDetail.innerHTML = `
-    <div class="wx-now wx-theme-${wxTheme(cw.weathercode, city.tz)}">
-      <span class="wx-fx" aria-hidden="true"></span>
-      <div class="wx-now-top">
-        <span class="wx-now-desc">${nowIcon} ${nowDesc}</span>
-        <span class="wx-now-time">${localTime}</span>
-      </div>
-      <div class="wx-now-temp">${Math.round(cw.temperature)}°</div>
-      <div class="wx-now-bottom">
-        <span class="wx-now-city">${city.name}</span>
-        <span class="wx-now-date">${localDate}</span>
+    <div class="wx-hero">
+      <div class="wx-big">${val(cur.temperature_2m)}°</div>
+      <div class="wx-text">
+        <div class="wx-meta"><span class="wx-meta-ic k-${wxKind(cur.weather_code)}">${wxIcon(wxKind(cur.weather_code), 15)}</span>${wxEsc(nowDesc)} · ${wxEsc(dateStr)} · ${timeStr} Uhr</div>
+        <h2 class="wx-headline">${wxEsc(s2)}</h2>
+        <div class="wx-sub"><span>Heute höchstens ${Math.round(maxes[0])}°,</span> <em>in der Nacht ${Math.round(mins[0])}°.</em></div>
       </div>
     </div>
 
-    <div class="day-list">${dayBlocks}</div>
-  `;
+    <div class="wx-stats">
+      <div><span>Gefühlt</span><b>${val(cur.apparent_temperature)}<small>°C</small></b></div>
+      <div><span>Wind</span><b>${val(cur.wind_speed_10m)}<small>km/h</small></b></div>
+      <div><span>Luftfeuchtigkeit</span><b>${val(cur.relative_humidity_2m)}<small>%</small></b></div>
+      <div><span>Regenrisiko</span><b>${val(rain)}<small>%</small></b></div>
+    </div>
 
-  wxDetail.querySelectorAll('[data-day-toggle]').forEach(item => {
-    item.addEventListener('click', () => {
-      item.closest('.day-block').classList.toggle('open');
-    });
-  });
+    ${nextHours}
+
+    ${sr && ss ? `<div class="wx-sun"><span>Sonnenaufgang <b>${sr}</b></span><span>Sonnenuntergang <b>${ss}</b></span>${dur ? `<span>Tageslicht <b>${dur}</b></span>` : ''}</div>` : ''}
+
+    <div class="wx-week">
+      <div class="wx-sec-head"><span>Die nächsten 7 Tage</span><span>tief · hoch</span></div>
+      ${rows}
+    </div>
+  `;
+  wxDetail.querySelectorAll('[data-wx-row]').forEach(r => r.addEventListener('click', () => r.classList.toggle('open')));
 }
+
+// Wetter alle 10 Minuten still aktualisieren, solange der Wetter-Tab offen ist
+setInterval(() => {
+  const v = document.getElementById('wx-view');
+  if(v && v.classList.contains('active') && !document.hidden && activeCity) loadFullWeather(activeCity, true);
+}, 10 * 60 * 1000);
 
 // Spiele: direkt zum gewählten Spiel springen
 document.querySelectorAll('#game-jump-row .city-chip').forEach(btn => {
@@ -1204,13 +1373,12 @@ function updateClocks(){
     const day = hour >= 6 && hour < 18;
     el.textContent = day ? 'Tag' : 'Nacht';
   });
-  // Kartenfarbe: um Mittag kräftiges Rot, danach stufenlos dunkler bis Mitternacht (nie ganz dunkel); Schrift wird dann hell
+  // Kartenfarbe: um Mittag kräftiges Rot, danach stufenlos dunkler bis Mitternacht (nie ganz dunkel)
   document.querySelectorAll('#board-time .city-card').forEach(card => {
     const t = new Intl.DateTimeFormat('en-GB', { timeZone: card.dataset.tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(now).split(':').map(Number);
     const f = (1 + Math.cos((t[0] + t[1] / 60 - 12) / 24 * 2 * Math.PI)) / 2;   // 1 = Mittag, 0 = Mitternacht
     const mix = (hell, dunkel) => Math.round(dunkel + (hell - dunkel) * f);
-    card.style.setProperty('--bg', `rgb(${mix(217, 132)},${mix(58, 30)},${mix(52, 38)})`);
-    card.classList.toggle('night', f < 0.55);
+    card.style.setProperty('--bg', `rgb(${mix(217, 150)},${mix(58, 34)},${mix(52, 40)})`);   // Schrift und Linien bleiben schwarz, deshalb nie ganz dunkel
   });
   const sec = now.getSeconds();
   document.querySelectorAll('[data-ss]').forEach(el => { el.textContent = ':' + String(sec).padStart(2, '0'); });
@@ -9637,13 +9805,212 @@ g2048Reset();
   reset();
 })();
 
-// Weltzeit: nach Zeitunterschied von West nach Ost, Zürich steht an seiner Stelle (gleiche Zeit: alphabetisch)
-(function(){
+// Weltzeit: nach Zeitunterschied von West nach Ost, Zürich steht an seiner Stelle (gleiche Zeit: alphabetisch).
+// Die Städte lassen sich hinzufügen und entfernen; die Auswahl wird gespeichert und mit den Geräten abgeglichen.
+const WZ_KEY = 'wz_cities';
+function wzLoadList(){
+  try{
+    const s = JSON.parse(localStorage.getItem(WZ_KEY) || 'null');
+    if(Array.isArray(s)){
+      const ok = s.filter(c => c && c.name && isFinite(c.lat) && isFinite(c.lon) && c.tz);
+      if(ok.length) return ok;
+    }
+  } catch(err){}
+  return cities.filter(c => c.name !== "Aarau").map(wxSlim);
+}
+let wzList = wzLoadList();
+function wzSave(){ try{ localStorage.setItem(WZ_KEY, JSON.stringify(wzList)); } catch(err){} }
+function wzBuild(){
+  boardTime.innerHTML = '';
   const now = new Date(), off = (c) => wzOffsetMin(c.tz, now);
-  cities.filter(c => c.name !== "Aarau")
-    .sort((a, b) => off(a) - off(b) || a.name.localeCompare(b.name, 'de'))
-    .forEach(buildTimeCard);
+  [...wzList].sort((a, b) => off(a) - off(b) || a.name.localeCompare(b.name, 'de')).forEach(buildTimeCard);
+  const cnt = document.getElementById('wz-count');
+  if(cnt) cnt.textContent = `${wzList.length} Städte · Abweichung zu Zürich`;
+  updateClocks();
+}
+function wzAdd(c){
+  const slim = wxSlim(c);
+  if(!wzList.some(t => t.name === slim.name && Math.abs(t.lat - slim.lat) < 0.5)){ wzList.push(slim); wzSave(); wzBuild(); }
+}
+function wzRemove(c){
+  if(wzList.length <= 1) return;
+  wzList = wzList.filter(t => !(t.name === c.name && Math.abs(t.lat - c.lat) < 0.5));
+  wzSave(); wzBuild();
+}
+wzBuild();
+(function(){
+  const host = document.getElementById('wz-add');
+  if(host) wxPicker(host, () => cities.filter(c => !wzList.some(t => t.name === c.name)), wzAdd);
 })();
+// Übersetzer im Stil von Google Übersetzer (MyMemory-Dienst ohne Schlüssel): übersetzt beim Tippen nach kurzer Pause
+(function translator(){
+  const root = document.getElementById('gt');
+  if(!root) return;
+  // Sprachen: Namen kommen auf Deutsch aus dem Browser (Intl.DisplayNames), Suche auch nach englischem Namen und Kürzel
+  const CODES = ['af','sq','am','ar','hy','az','eu','be','bn','bs','bg','my','ca','ceb','zh-CN','zh-TW','co','hr','cs','da','nl','en','eo','et','fi','fr','fy','gl','ka','de','el','gu','ht','ha','haw','he','hi','hmn','hu','is','ig','id','ga','it','ja','jv','kn','kk','km','rw','ko','ku','ky','lo','la','lv','lt','lb','mk','mg','ms','ml','mt','mi','mr','mn','ne','no','ny','or','ps','fa','pl','pt','pa','ro','ru','sm','gd','sr','st','sn','sd','si','sk','sl','so','es','su','sw','sv','tl','tg','ta','tt','te','th','tr','tk','uk','ur','ug','uz','vi','cy','xh','yi','yo','zu'];
+  let dnDe = null, dnEn = null;
+  try{ dnDe = new Intl.DisplayNames(['de'], { type: 'language' }); dnEn = new Intl.DisplayNames(['en'], { type: 'language' }); } catch(err){}
+  const FIX_DE = { 'zh-CN': 'Chinesisch (vereinfacht)', 'zh-TW': 'Chinesisch (traditionell)', 'ceb': 'Cebuano', 'haw': 'Hawaiisch', 'hmn': 'Hmong', 'ht': 'Haitianisch', 'tl': 'Filipino' };
+  const nm = (c, d) => { try{ return (d && d.of(c)) || c; } catch(err){ return c; } };
+  const LANGS = [['auto', 'Sprache erkennen', 'detect automatic']].concat(CODES.map(c => [c, FIX_DE[c] || nm(c, dnDe), nm(c, dnEn) + ' ' + c]).sort((a, b) => a[1].localeCompare(b[1], 'de')));
+  const fold = (t) => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const name = (c) => (LANGS.find(l => l[0] === c) || [c, c])[1];
+  const store = (k, v) => { try{ if(v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch(err){} };
+  const valid = (c, auto) => LANGS.some(l => l[0] === c && (auto || c !== 'auto'));
+  const state = { from: valid(store('gt_from'), true) ? store('gt_from') : 'de', to: valid(store('gt_to'), false) ? store('gt_to') : 'en' };
+  const input = document.getElementById('gt-input');
+  const out = document.getElementById('gt-out'), count = document.getElementById('gt-count'), status = document.getElementById('gt-status');
+  const clearBtn = document.getElementById('gt-clear'), copyBtn = document.getElementById('gt-copy');
+  const HINT = 'Übersetzung';
+  const micBtn = document.getElementById('gt-mic');
+  const sayInBtn = document.getElementById('gt-say-in');
+  const sayBtn = document.getElementById('gt-say');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const hasTTS = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+  // Auswahl-Knopf mit Suchfeld und Liste
+  const closers = [];
+  function makePicker(host, key, withAuto, onChange){
+    host.innerHTML = `<button type="button" class="gt-pick-btn" aria-haspopup="listbox" aria-expanded="false"><span></span><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="m7 10 5 5 5-5z"/></svg></button>
+      <div class="gt-pick-pop" hidden><div class="gt-pick-search"><input type="text" placeholder="Sprachen durchsuchen" autocomplete="off" spellcheck="false" aria-label="Sprachen durchsuchen" /></div><div class="gt-pick-list" role="listbox"></div></div>`;
+    const btn = host.querySelector('.gt-pick-btn'), label = btn.firstElementChild, pop = host.querySelector('.gt-pick-pop'), q = pop.querySelector('input'), list = pop.querySelector('.gt-pick-list');
+    let items = [], hi = 0;
+    const items0 = () => LANGS.filter(l => withAuto || l[0] !== 'auto');
+    const paint = () => { label.textContent = name(state[key]); };
+    const render = () => {
+      const t = fold(q.value.trim());
+      items = items0().filter(l => !t || fold(l[1]).includes(t) || fold(l[2]).includes(t));
+      hi = Math.max(0, items.findIndex(l => l[0] === state[key]));
+      if(t) hi = 0;
+      list.innerHTML = items.length ? items.map((l, i) => `<button type="button" role="option" class="gt-opt${l[0] === state[key] ? ' sel' : ''}${i === hi ? ' hi' : ''}" data-c="${l[0]}">${l[0] === state[key] ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>' : '<i></i>'}<span>${l[1]}</span></button>`).join('') : '<div class="gt-none">Keine Sprache gefunden</div>';
+      const sel = list.querySelector('.hi'); if(sel) sel.scrollIntoView({ block: 'nearest' });
+    };
+    const pick = (c) => { state[key] = c; store('gt_' + key, c); paint(); close(); onChange(); };
+    const open = () => { closers.forEach(f => f()); pop.hidden = false; btn.setAttribute('aria-expanded', 'true'); q.value = ''; render(); q.focus(); };
+    const close = () => { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+    closers.push(close);
+    btn.addEventListener('click', (e) => { e.stopPropagation(); pop.hidden ? open() : close(); });
+    q.addEventListener('input', render);
+    q.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape'){ close(); btn.focus(); }
+      else if(e.key === 'Enter'){ e.preventDefault(); if(items[hi]) pick(items[hi][0]); }
+      else if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+        e.preventDefault(); if(!items.length) return;
+        hi = (hi + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        list.querySelectorAll('.gt-opt').forEach((o, i) => o.classList.toggle('hi', i === hi));
+        const sel = list.querySelector('.hi'); if(sel) sel.scrollIntoView({ block: 'nearest' });
+      }
+    });
+    list.addEventListener('click', (e) => { const o = e.target.closest('.gt-opt'); if(o) pick(o.dataset.c); });
+    pop.addEventListener('click', (e) => e.stopPropagation());
+    paint();
+    return { paint };
+  }
+  document.addEventListener('click', () => closers.forEach(f => f()));
+  const fromPick = makePicker(document.getElementById('gt-from-pick'), 'from', true, () => { if(input.value.trim()) go(); });
+  const toPick = makePicker(document.getElementById('gt-to-pick'), 'to', false, () => { if(input.value.trim()) go(); });
+  let seq = 0, last = '', timer = null;
+  const decode = (t) => new DOMParser().parseFromString(t, 'text/html').documentElement.textContent || t;
+  const showEmpty = () => { out.textContent = HINT; out.classList.add('gt-hint'); last = ''; copyBtn.hidden = true; sayBtn.hidden = true; };
+  showEmpty();
+  async function go(){
+    const q = input.value.trim();
+    if(!q){ showEmpty(); status.textContent = ''; return; }
+    const mine = ++seq;
+    status.textContent = '…';
+    try{
+      const pair = (state.from === 'auto' ? 'Autodetect' : state.from) + '|' + state.to;
+      const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(q) + '&langpair=' + encodeURIComponent(pair));
+      const j = await r.json();
+      if(mine !== seq) return;
+      status.textContent = '';
+      if(Number(j.responseStatus) !== 200 || !j.responseData){
+        const msg = String(j.responseDetails || '') + String(j.responseData && j.responseData.translatedText || '');
+        out.classList.add('gt-hint'); out.textContent = /all available free translations|quota/i.test(msg) ? 'Für heute ist das Gratis-Limit erreicht.' : 'Übersetzung gerade nicht möglich.'; copyBtn.hidden = true; sayBtn.hidden = true;
+        return;
+      }
+      last = decode(j.responseData.translatedText || '').trim();
+      if(!/^[-–—•]/.test(q)) last = last.replace(/^[-–—•]\s+/, '');   // der Dienst setzt manchmal einen Strich davor
+      out.classList.remove('gt-hint'); out.textContent = last; copyBtn.hidden = !last; sayBtn.hidden = !last || !hasTTS;
+    } catch(err){
+      if(mine !== seq) return;
+      status.textContent = ''; out.classList.add('gt-hint'); out.textContent = 'Keine Verbindung.'; copyBtn.hidden = true; sayBtn.hidden = true;
+    }
+  }
+  const later = () => { clearTimeout(timer); timer = setTimeout(go, 600); };
+  input.addEventListener('input', () => {
+    count.textContent = input.value ? input.value.length + ' / 500' : '';
+    clearBtn.hidden = !input.value; sayInBtn.hidden = !input.value.trim() || !hasTTS;
+    if(!input.value.trim()){ clearTimeout(timer); seq++; showEmpty(); status.textContent = ''; return; }
+    status.textContent = '…'; later();
+  });
+  input.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); clearTimeout(timer); go(); } });
+  document.getElementById('gt-swap').addEventListener('click', () => {
+    if(state.from === 'auto'){ status.textContent = 'Bei „Sprache erkennen“ nicht möglich'; setTimeout(() => { status.textContent = ''; }, 2000); return; }
+    const f = state.from; state.from = state.to; state.to = f;
+    store('gt_from', state.from); store('gt_to', state.to);
+    fromPick.paint(); toPick.paint();
+    if(last){ input.value = last; input.dispatchEvent(new Event('input')); } else if(input.value.trim()) go();
+  });
+  // ---- Sprechen und Vorlesen (Browser-Funktionen: SpeechRecognition und speechSynthesis) ----
+  const BCP = { 'zh-CN': 'zh-CN', 'zh-TW': 'zh-TW', no: 'nb-NO', tl: 'fil-PH', he: 'he-IL', ceb: 'fil-PH', iw: 'he-IL' };
+  const bcp = (c) => BCP[c] || c;
+  const flash = (t) => { status.textContent = t; setTimeout(() => { if(status.textContent === t) status.textContent = ''; }, 2600); };
+  // Stimmen laden sich in manchen Browsern erst verzögert
+  let voices = [];
+  if(hasTTS){ const lv = () => { voices = speechSynthesis.getVoices(); }; lv(); speechSynthesis.addEventListener && speechSynthesis.addEventListener('voiceschanged', lv); }
+  function speak(text, code, btn){
+    if(!hasTTS){ flash('Vorlesen geht in diesem Browser nicht'); return; }
+    if(speechSynthesis.speaking){ speechSynthesis.cancel(); document.querySelectorAll('#gt .speaking').forEach(b => b.classList.remove('speaking')); if(btn && btn.dataset.wasSpeaking){ delete btn.dataset.wasSpeaking; return; } }
+    const u = new SpeechSynthesisUtterance(text);
+    const lang = code === 'auto' ? '' : bcp(code);
+    if(lang){
+      u.lang = lang;
+      const base = lang.split('-')[0].toLowerCase();
+      const v = voices.find(x => x.lang.toLowerCase() === lang.toLowerCase()) || voices.find(x => x.lang.toLowerCase().split(/[-_]/)[0] === base);
+      if(v) u.voice = v;
+      else if(voices.length){ flash('Keine Stimme für ' + name(code)); return; }
+    }
+    u.onstart = () => { if(btn){ btn.classList.add('speaking'); btn.dataset.wasSpeaking = '1'; } };
+    u.onend = u.onerror = () => { if(btn){ btn.classList.remove('speaking'); delete btn.dataset.wasSpeaking; } };
+    speechSynthesis.speak(u);
+  }
+  sayBtn.addEventListener('click', () => { if(last) speak(last, state.to, sayBtn); });
+  sayInBtn.addEventListener('click', () => { const t = input.value.trim(); if(t) speak(t, state.from, sayInBtn); });
+  // Mikrofon: sprechen statt tippen
+  let rec = null, listening = false;
+  function stopRec(){ if(rec){ try{ rec.stop(); }catch(err){} } }
+  micBtn.addEventListener('click', () => {
+    if(!SR){ flash('Spracheingabe geht in diesem Browser nicht (Chrome, Edge oder Safari nutzen)'); return; }
+    if(listening){ stopRec(); return; }
+    if(hasTTS) speechSynthesis.cancel();
+    rec = new SR();
+    rec.lang = state.from === 'auto' ? (navigator.language || 'de-CH') : bcp(state.from);
+    rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+    const before = input.value ? input.value.replace(/\s*$/, ' ') : '';
+    rec.onstart = () => { listening = true; micBtn.classList.add('listening'); status.textContent = 'Ich höre zu …'; };
+    rec.onresult = (e) => {
+      let t = '';
+      for(let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      input.value = (before + t).slice(0, 500);
+      input.dispatchEvent(new Event('input'));
+    };
+    rec.onerror = (e) => {
+      const m = { 'not-allowed': 'Mikrofon ist gesperrt – im Browser erlauben', 'service-not-allowed': 'Mikrofon ist gesperrt – im Browser erlauben', 'no-speech': 'Nichts gehört', 'audio-capture': 'Kein Mikrofon gefunden', 'network': 'Spracherkennung braucht Internet', 'language-not-supported': 'Diese Sprache wird nicht erkannt' }[e.error];
+      flash(m || 'Spracheingabe nicht möglich');
+    };
+    rec.onend = () => { listening = false; micBtn.classList.remove('listening'); if(status.textContent === 'Ich höre zu …') status.textContent = ''; if(input.value.trim()){ clearTimeout(timer); go(); } };
+    try{ rec.start(); } catch(err){ flash('Spracheingabe nicht möglich'); }
+  });
+  if(!SR) micBtn.classList.add('gt-off');
+  window.addEventListener('pagehide', () => { try{ if(hasTTS) speechSynthesis.cancel(); }catch(err){} });
+
+  clearBtn.addEventListener('click', () => { input.value = ''; input.dispatchEvent(new Event('input')); input.focus(); });
+  copyBtn.addEventListener('click', async () => {
+    try{ await navigator.clipboard.writeText(last); status.textContent = 'Kopiert'; } catch(err){ status.textContent = 'Kopieren nicht möglich'; }
+    setTimeout(() => { status.textContent = ''; }, 1800);
+  });
+})();
+
 buildCitySelect();
 loadFullWeather(activeCity);
 updateClocks();
@@ -9695,9 +10062,15 @@ window.addEventListener('board-sync', (e) => {
     } else if(k === 'weltuhr_bg_color'){
       if(v) applyBackgroundColor(v);
       else { document.documentElement.style.removeProperty('--board'); document.documentElement.style.removeProperty('--fg'); }
+    } else if(k === 'wz_cities'){
+      wzList = wzLoadList(); wzBuild();
+    } else if(k === 'wx_cities'){
+      wxTabs = wxLoadTabs();
+      if(!wxTabs.some(c => c.name === activeCity.name)) activeCity = wxTabs[0];
+      buildCitySelect();
     } else if(k === 'weltuhr_city'){
-      const c = cities.find(x => x.name === v);
-      if(c && c !== activeCity) selectCity(c);
+      const c = wxTabs.find(x => x.name === v);
+      if(c && c.name !== activeCity.name) selectCity(c);
     } else if(k === 'c4_level' || k === 'c4_hiscore'){
       c4Level = Math.max(1, Number(get('c4_level')) || 1);
       c4HiScore = Number(get('c4_hiscore')) || 0;

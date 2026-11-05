@@ -37,6 +37,11 @@ export default async function Login({ searchParams }) {
   const { cmd, lines } = randomCode();
   return (
     <main className="login-page">
+      {/* Matrix-Zahlenregen im Hintergrund (public/matrix.js) */}
+      <canvas id="matrix" aria-hidden="true" />
+      <canvas id="matrix-big" aria-hidden="true" />
+      <script src="/matrix.js" defer />
+      <script src="/cmd.js" defer />
       <form className="term" method="post" action="/api/auth">
         <div className="term-bar">
           <span className="term-icon" aria-hidden="true">&gt;_</span>
@@ -48,6 +53,15 @@ export default async function Login({ searchParams }) {
           <div className="term-gap" />
           <div className="term-line"><span className="term-prompt">C:\ufl\home&gt;</span>{cmd}</div>
           {lines.map((l, i) => <div className="term-line term-code" key={i}>{l}</div>)}
+          <div className="term-gap" />
+          <div className="term-line term-boot">Microsoft Windows [Version 10.0.26200.9106]</div>
+          <div className="term-line term-boot">(c) Microsoft Corporation. Alle Rechte vorbehalten.</div>
+          <div className="term-gap" />
+          {/* Echte Befehlszeile (public/cmd.js): help, login, register, matrix … */}
+          <label className="term-line cmd-row">
+            <span className="term-prompt">C:\ufl\home&gt;</span>
+            <input id="cmd-in" autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="send" data-lpignore="true" data-1p-ignore="true" data-form-type="other" aria-label="Befehl eingeben" placeholder="help" />
+          </label>
           <div className="term-gap" />
           <div className="term-line"><span className="term-prompt">C:\ufl\home&gt;</span>{exe}</div>
           <label className="term-field">
@@ -75,6 +89,8 @@ export default async function Login({ searchParams }) {
       </form>
       {/* Browser ohne Verdecken per CSS: dann doch ein normales Passwortfeld, damit nie Klartext sichtbar ist */}
       <script dangerouslySetInnerHTML={{ __html: "if(!(window.CSS && (CSS.supports('-webkit-text-security','disc') || CSS.supports('text-security','disc')))) document.querySelectorAll('.pw-mask').forEach(function(i){ i.type = 'password'; });" }} />
+      {/* Pfeil runter im Namensfeld springt zum Passwort, Pfeil hoch im Passwortfeld zurück zum Namen */}
+      <script dangerouslySetInnerHTML={{ __html: "(function(){ var n = document.querySelector('.term input[name=name]'), p = document.querySelector('.term input[name=password]'); function go(from, to){ from.addEventListener('keydown', function(e){ if(e.key === to.key){ e.preventDefault(); var f = to.el; f.focus(); var l = f.value.length; try{ f.setSelectionRange(l, l); }catch(x){} } }); } var c = document.getElementById('cmd-in'); go(n, { key: 'ArrowDown', el: p }); go(p, { key: 'ArrowUp', el: n }); if(c) go(n, { key: 'ArrowUp', el: c }); })();" }} />
       {/* Enter im Namensfeld: ohne Meldung zum Passwort springen (erst Enter im Passwortfeld meldet an) */}
       <script dangerouslySetInnerHTML={{ __html: "document.querySelector('.term input[name=name]').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); document.querySelector('.term input[name=password]').focus(); } });" }} />
     </main>

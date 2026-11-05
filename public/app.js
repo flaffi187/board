@@ -7,7 +7,7 @@ const cities = [
   { name:"Tokio",      region:"Japan",       tz:"Asia/Tokyo",         lat:35.6762,  lon:139.6503, accent:"#1FB6A6" },
   { name:"Sydney",     region:"Australien",  tz:"Australia/Sydney",   lat:-33.8688, lon:151.2093, accent:"#FFB100" },
   { name:"Bangkok",    region:"Thailand",    tz:"Asia/Bangkok",       lat:13.7563,  lon:100.5018, accent:"#E5568B" },
-  { name:"Canberra",   region:"Australien",  tz:"Australia/Canberra", lat:-35.2809, lon:149.1300, accent:"#3FA66B" },
+  { name:"Mexiko-Stadt", region:"Mexiko",    tz:"America/Mexico_City", lat:19.4326, lon:-99.1332, accent:"#3FA66B" },
   { name:"Moskau",     region:"Russland",    tz:"Europe/Moscow",      lat:55.7558,  lon:37.6173,  accent:"#7C8DA6" },
   { name:"Neu-Delhi",  region:"Indien",      tz:"Asia/Kolkata",       lat:28.6139,  lon:77.2090,  accent:"#F2762E" },
   { name:"London",     region:"Grossbritannien", tz:"Europe/London",  lat:51.5074,  lon:-0.1278,  accent:"#D1495B" },
@@ -785,17 +785,27 @@ function buildAnalogClockFace(){
 
 // Weltzeit im Stil „Plakat Blau“: kleine Uhr, Name und Land, grosse Stunde und Minute (mit Abstand), Tagesbalken, Tag/Nacht und Datum
 const WZ_REF_TZ = 'Europe/Zurich';
+// Zahl ändert sich: neue Ziffern klappen von oben herunter (Klapp-Anzeige)
+function wzFlip(box, val){
+  const fl = box.firstElementChild;
+  if(fl.textContent === val) return;
+  const first = fl.textContent === '';
+  fl.textContent = val;
+  if(first) return;
+  fl.classList.remove('flip'); void fl.offsetWidth; fl.classList.add('flip');
+}
+
 function buildTimeCard(city){
   const card = document.createElement('div');
   card.className = 'city-card';
+  card.dataset.tz = city.tz;
+  const no = String(boardTime.children.length + 1).padStart(2, '0');
   card.innerHTML = `
-    <div class="pb-head">
-      <div class="pb-name"><b class="${city.name.length > 7 ? 'long' : ''}">${city.name.toLowerCase()}</b></div>
-    </div>
-    <div class="pk-time" data-time="${city.tz}"><span class="pk-h"></span><span class="pk-m"></span></div>
-    <div class="pb-foot">
-      <div class="pb-bar"><i data-sec></i></div>
-      <div class="pb-meta"><span data-dn="${city.tz}"></span><span class="pb-sub">${city.region}<br><span data-off="${city.tz}" data-ref="Ortszeit"></span></span><span data-dshort="${city.tz}"></span></div>
+    <div class="pr-top"><span>${no}</span><span>${city.region}</span></div>
+    <div class="pr-name"><b class="${city.name.length > 7 ? 'long' : ''}">${city.name.toLowerCase()}</b></div>
+    <div class="pk-time" data-time="${city.tz}"><span class="pk-h"><b class="fl"></b></span><span class="pk-m"><b class="fl"></b></span></div>
+    <div class="pr-foot">
+      <div class="pr-meta"><span data-off="${city.tz}" data-ref="Ortszeit"></span><span class="pr-date" data-dshort="${city.tz}"></span><span><span data-dn="${city.tz}"></span> · <span data-ss></span></span></div>
     </div>
   `;
   boardTime.appendChild(card);
@@ -1183,7 +1193,7 @@ function updateClocks(){
     const timeStr = new Intl.DateTimeFormat('de-CH', {
       timeZone: tz, hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
     }).format(now);
-    if(el.classList.contains('pk-time')){ el.firstElementChild.textContent = timeStr.slice(0, 2); el.lastElementChild.textContent = timeStr.slice(3, 5); }
+    if(el.classList.contains('pk-time')){ wzFlip(el.firstElementChild, timeStr.slice(0, 2)); wzFlip(el.lastElementChild, timeStr.slice(3, 5)); }
     else if(el.classList.contains('wz-hm')) el.textContent = timeStr.slice(0, 5);
     else renderFlaps(el, timeStr);
   });
@@ -1191,21 +1201,27 @@ function updateClocks(){
   const refOff = wzOffsetMin(WZ_REF_TZ, now);
   document.querySelectorAll('[data-dn]').forEach(el => {
     const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: el.dataset.dn, hour: '2-digit', hourCycle: 'h23' }).format(now));
-    el.textContent = hour >= 6 && hour < 18 ? 'Tag' : 'Nacht';
+    const day = hour >= 6 && hour < 18;
+    el.textContent = day ? 'Tag' : 'Nacht';
   });
-  const sec = now.getSeconds();   // Balken: füllt sich in 60 Sekunden und springt dann auf null zurück
-  document.querySelectorAll('[data-sec]').forEach(el => {
-    el.style.transition = sec === 0 ? 'none' : '';
-    el.style.width = (sec / 60 * 100).toFixed(2) + '%';
+  // Kartenfarbe: um Mittag kräftiges Rot, danach stufenlos dunkler bis Mitternacht (nie ganz dunkel); Schrift wird dann hell
+  document.querySelectorAll('#board-time .city-card').forEach(card => {
+    const t = new Intl.DateTimeFormat('en-GB', { timeZone: card.dataset.tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(now).split(':').map(Number);
+    const f = (1 + Math.cos((t[0] + t[1] / 60 - 12) / 24 * 2 * Math.PI)) / 2;   // 1 = Mittag, 0 = Mitternacht
+    const mix = (hell, dunkel) => Math.round(dunkel + (hell - dunkel) * f);
+    card.style.setProperty('--bg', `rgb(${mix(217, 132)},${mix(58, 30)},${mix(52, 38)})`);
+    card.classList.toggle('night', f < 0.55);
+  });
+  const sec = now.getSeconds();
+  document.querySelectorAll('[data-ss]').forEach(el => { el.textContent = ':' + String(sec).padStart(2, '0'); });
+  document.querySelectorAll('[data-dshort]').forEach(el => {
+    el.textContent = new Intl.DateTimeFormat('de-CH', { timeZone: el.dataset.dshort, weekday: 'short', day: 'numeric', month: 'short' }).format(now);
   });
   document.querySelectorAll('[data-off]').forEach(el => {
     const tz = el.dataset.off;
     if(tz === WZ_REF_TZ){ el.textContent = el.dataset.ref || 'Ortszeit'; return; }
     const h = (wzOffsetMin(tz, now) - refOff) / 60;
     el.textContent = h === 0 ? '±0 Std.' : (h > 0 ? '+' : '−') + String(Math.abs(h)).replace('.', ',') + ' Std.';
-  });
-  document.querySelectorAll('[data-dshort]').forEach(el => {
-    el.textContent = new Intl.DateTimeFormat('de-CH', { timeZone: el.dataset.dshort, weekday: 'short', day: 'numeric', month: 'short' }).format(now);
   });
   document.querySelectorAll('.wz-dayn').forEach(el => {
     const tz = el.closest('[data-clock]')?.dataset.clock;
@@ -9621,11 +9637,11 @@ g2048Reset();
   reset();
 })();
 
-// Weltzeit: Zürich immer zuerst, danach nach Zeitunterschied von West nach Ost (gleiche Zeit: alphabetisch)
+// Weltzeit: nach Zeitunterschied von West nach Ost, Zürich steht an seiner Stelle (gleiche Zeit: alphabetisch)
 (function(){
   const now = new Date(), off = (c) => wzOffsetMin(c.tz, now);
   cities.filter(c => c.name !== "Aarau")
-    .sort((a, b) => (b.tz === WZ_REF_TZ && b.name === "Zürich") - (a.tz === WZ_REF_TZ && a.name === "Zürich") || off(a) - off(b) || a.name.localeCompare(b.name, 'de'))
+    .sort((a, b) => off(a) - off(b) || a.name.localeCompare(b.name, 'de'))
     .forEach(buildTimeCard);
 })();
 buildCitySelect();

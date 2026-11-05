@@ -87,73 +87,9 @@ export default async function Page() {
 
 <div className="view" id="time-view">
   <div className="time-view-layout">
-    <div className="board-grid" id="board-time"></div>
-    <div className="owl-nest">
-      <div className="nest-shadow"></div>
-      <div className="nest-bowl">
-        <div className="nest-inner">
-          <div className="owl-scale owl-scale-back owl-scale-back-left">
-            <div className="owl-egg"></div>
-          </div>
-          <div className="owl-scale owl-scale-back">
-            <div className="owl-egg"></div>
-          </div>
-          <div className="owl-scale">
-            <div className="baby-owl owl-1">
-              <div className="owl-ear owl-ear-l"></div>
-              <div className="owl-ear owl-ear-r"></div>
-              <div className="owl-body">
-                <div className="owl-wing owl-wing-l"></div>
-                <div className="owl-wing owl-wing-r"></div>
-                <div className="owl-face"></div>
-                <div className="owl-belly"></div>
-                <div className="owl-eye owl-eye-l"><span></span></div>
-                <div className="owl-eye owl-eye-r"><span></span></div>
-                <div className="owl-beak"></div>
-                <div className="owl-foot owl-foot-l"></div>
-                <div className="owl-foot owl-foot-r"></div>
-              </div>
-            </div>
-          </div>
-          <div className="owl-scale">
-            <div className="baby-owl owl-2">
-              <div className="owl-ear owl-ear-l"></div>
-              <div className="owl-ear owl-ear-r"></div>
-              <div className="owl-body">
-                <div className="owl-wing owl-wing-l"></div>
-                <div className="owl-wing owl-wing-r"></div>
-                <div className="owl-face"></div>
-                <div className="owl-belly"></div>
-                <div className="owl-eye owl-eye-l"><span></span></div>
-                <div className="owl-eye owl-eye-r"><span></span></div>
-                <div className="owl-beak"></div>
-                <div className="owl-foot owl-foot-l"></div>
-                <div className="owl-foot owl-foot-r"></div>
-              </div>
-            </div>
-          </div>
-          <div className="owl-scale">
-            <div className="baby-owl owl-3">
-              <div className="owl-ear owl-ear-l"></div>
-              <div className="owl-ear owl-ear-r"></div>
-              <div className="owl-body">
-                <div className="owl-wing owl-wing-l"></div>
-                <div className="owl-wing owl-wing-r"></div>
-                <div className="owl-face"></div>
-                <div className="owl-belly"></div>
-                <div className="owl-eye owl-eye-l"><span></span></div>
-                <div className="owl-eye owl-eye-r"><span></span></div>
-                <div className="owl-beak"></div>
-                <div className="owl-foot owl-foot-l"></div>
-                <div className="owl-foot owl-foot-r"></div>
-              </div>
-            </div>
-          </div>
-          <div className="owl-scale">
-            <div className="owl-egg"></div>
-          </div>
-        </div>
-      </div>
+    <div className="wz-main">
+      <div className="wz-head"><h2>Weltzeit</h2><span id="wz-count"></span></div>
+      <div className="board-grid" id="board-time"></div>
     </div>
   </div>
 </div>

@@ -3,9 +3,23 @@ const cities = [
   { name:"Aarau",     region:"Schweiz",     tz:"Europe/Zurich",      lat:47.3919,  lon:8.0448,   accent:"#7A9E3C" },
   { name:"New York",   region:"USA",         tz:"America/New_York",              lat:40.7128,  lon:-74.0060, accent:"#5B8DEF" },
   { name:"Buenos Aires", region:"Argentinien", tz:"America/Argentina/Buenos_Aires", lat:-34.6037, lon:-58.3816, accent:"#A45EE5" },
-  { name:"Kairo",      region:"Afrika",      tz:"Africa/Cairo",       lat:30.0444,  lon:31.2357,  accent:"#E08A3C" },
+  { name:"Kairo",      region:"Ägypten",     tz:"Africa/Cairo",       lat:30.0444,  lon:31.2357,  accent:"#E08A3C" },
   { name:"Tokio",      region:"Japan",       tz:"Asia/Tokyo",         lat:35.6762,  lon:139.6503, accent:"#1FB6A6" },
   { name:"Sydney",     region:"Australien",  tz:"Australia/Sydney",   lat:-33.8688, lon:151.2093, accent:"#FFB100" },
+  { name:"Bangkok",    region:"Thailand",    tz:"Asia/Bangkok",       lat:13.7563,  lon:100.5018, accent:"#E5568B" },
+  { name:"Canberra",   region:"Australien",  tz:"Australia/Canberra", lat:-35.2809, lon:149.1300, accent:"#3FA66B" },
+  { name:"Moskau",     region:"Russland",    tz:"Europe/Moscow",      lat:55.7558,  lon:37.6173,  accent:"#7C8DA6" },
+  { name:"Neu-Delhi",  region:"Indien",      tz:"Asia/Kolkata",       lat:28.6139,  lon:77.2090,  accent:"#F2762E" },
+  { name:"London",     region:"Grossbritannien", tz:"Europe/London",  lat:51.5074,  lon:-0.1278,  accent:"#D1495B" },
+  { name:"Seoul",      region:"Südkorea",    tz:"Asia/Seoul",         lat:37.5665,  lon:126.9780, accent:"#4C9BE8" },
+  { name:"Dubai",      region:"Vereinigte Arabische Emirate", tz:"Asia/Dubai", lat:25.2048, lon:55.2708, accent:"#D4AF37" },
+  { name:"Wellington", region:"Neuseeland",  tz:"Pacific/Auckland",   lat:-41.2866, lon:174.7756, accent:"#2FB8A0" },
+  { name:"Kathmandu",  region:"Nepal",       tz:"Asia/Kathmandu",     lat:27.7172,  lon:85.3240,  accent:"#C2512D" },
+  { name:"Ankara",     region:"Türkei",      tz:"Europe/Istanbul",    lat:39.9334,  lon:32.8597,  accent:"#E2483D" },
+  { name:"Brasília",   region:"Brasilien",   tz:"America/Sao_Paulo",  lat:-15.7939, lon:-47.8828, accent:"#3DAE5C" },
+  { name:"Dublin",     region:"Irland",      tz:"Europe/Dublin",      lat:53.3498,  lon:-6.2603,  accent:"#2E9E6B" },
+  { name:"Lissabon",   region:"Portugal",    tz:"Europe/Lisbon",      lat:38.7223,  lon:-9.1393,  accent:"#D9A441" },
+  { name:"Peking",     region:"China",       tz:"Asia/Shanghai",      lat:39.9042,  lon:116.4074, accent:"#C8372D" },
 ];
 
 const wxMap = {
@@ -483,75 +497,6 @@ function setupMeadow(){
 }
 setupMeadow();
 
-function setupNest(){
-  const bowl = document.querySelector('.nest-bowl');
-  if(!bowl) return;
-  const tones = [
-    ['#c08a4a', '#7a4f26'], ['#a9763f', '#6b4423'], ['#8a5a30', '#5c3a1d'], ['#7a5128', '#4a2f16'],
-    ['#d9c070', '#a68838'], ['#e2d28c', '#b5a052']
-  ];
-  const cx = 90, cy = 58, rx = 86, ry = 52;
-  const ringCount = 50;
-  for(let i = 0; i < ringCount; i++){
-    const angle = Math.random() * Math.PI * 2;
-    const spread = 0.72 + Math.random() * 0.3;
-    const x = cx + Math.cos(angle) * rx * spread;
-    const y = cy + Math.sin(angle) * ry * spread;
-    const tangentDeg = angle * 180 / Math.PI + 90 + (Math.random() * 36 - 18);
-    const [light, dark] = tones[Math.floor(Math.random() * tones.length)];
-    const twig = document.createElement('div');
-    twig.className = 'nest-twig';
-    twig.style.left = x.toFixed(1) + 'px';
-    twig.style.top = y.toFixed(1) + 'px';
-    twig.style.width = (16 + Math.random() * 24) + 'px';
-    twig.style.setProperty('--twig-light', light);
-    twig.style.setProperty('--twig-dark', dark);
-    twig.style.transform = `translate(-50%, -50%) rotate(${tangentDeg.toFixed(1)}deg)`;
-    bowl.appendChild(twig);
-  }
-  // Ein paar Zweige kreuz und quer über den Rand, für den "zusammengetragenen" Look
-  for(let i = 0; i < 14; i++){
-    const twig = document.createElement('div');
-    twig.className = 'nest-twig';
-    const [light, dark] = tones[Math.floor(Math.random() * tones.length)];
-    twig.style.left = (cx + (Math.random() * 2 - 1) * rx * 0.6).toFixed(1) + 'px';
-    twig.style.top = (cy + (Math.random() * 2 - 1) * ry * 0.5).toFixed(1) + 'px';
-    twig.style.width = (14 + Math.random() * 20) + 'px';
-    twig.style.setProperty('--twig-light', light);
-    twig.style.setProperty('--twig-dark', dark);
-    twig.style.transform = `translate(-50%, -50%) rotate(${(Math.random() * 360).toFixed(1)}deg)`;
-    bowl.appendChild(twig);
-  }
-  // Ein paar lose Zweige, die über den Rand hinausragen – für den unordentlichen, echten Look
-  for(let i = 0; i < 8; i++){
-    const angle = Math.random() * Math.PI * 2;
-    const x = cx + Math.cos(angle) * rx * 1.02;
-    const y = cy + Math.sin(angle) * ry * 1.02;
-    const tangentDeg = angle * 180 / Math.PI + (Math.random() * 40 - 20);
-    const [light, dark] = tones[Math.floor(Math.random() * tones.length)];
-    const twig = document.createElement('div');
-    twig.className = 'nest-twig';
-    twig.style.left = x.toFixed(1) + 'px';
-    twig.style.top = y.toFixed(1) + 'px';
-    twig.style.width = (22 + Math.random() * 20) + 'px';
-    twig.style.setProperty('--twig-light', light);
-    twig.style.setProperty('--twig-dark', dark);
-    twig.style.transform = `translate(-85%, -50%) rotate(${tangentDeg.toFixed(1)}deg)`;
-    bowl.appendChild(twig);
-  }
-  // Ein paar flauschige Daunenfedern, die im Geflecht hängen geblieben sind
-  for(let i = 0; i < 5; i++){
-    const angle = Math.random() * Math.PI * 2;
-    const spread = 0.65 + Math.random() * 0.35;
-    const wisp = document.createElement('div');
-    wisp.className = 'nest-wisp';
-    wisp.style.left = (cx + Math.cos(angle) * rx * spread).toFixed(1) + 'px';
-    wisp.style.top = (cy + Math.sin(angle) * ry * spread).toFixed(1) + 'px';
-    wisp.style.transform = `translate(-50%, -50%) rotate(${(Math.random() * 360).toFixed(1)}deg)`;
-    bowl.appendChild(wisp);
-  }
-}
-setupNest();
 
 let beeEls = [];
 const baseBeeCount = 5, lightModeBeeCount = 11;
@@ -837,22 +782,31 @@ function buildAnalogClockFace(){
     </svg>`;
 }
 
+
+// Weltzeit im Stil „Plakat Blau“: kleine Uhr, Name und Land, grosse Stunde und Minute (mit Abstand), Tagesbalken, Tag/Nacht und Datum
+const WZ_REF_TZ = 'Europe/Zurich';
 function buildTimeCard(city){
   const card = document.createElement('div');
   card.className = 'city-card';
   card.innerHTML = `
-    <div class="accent-bar" style="background:${city.accent}"></div>
-    <div class="analog-clock" data-clock="${city.tz}">${buildAnalogClockFace()}</div>
-    <div class="time-info">
-      <div class="row-top">
-        <div class="city">${city.name}</div>
-        <div class="region">${city.region}</div>
-      </div>
-      <div class="flap-row" data-time="${city.tz}"></div>
-      <div class="date-line" data-date="${city.tz}"></div>
+    <div class="pb-head">
+      <div class="pb-name"><b class="${city.name.length > 7 ? 'long' : ''}">${city.name.toLowerCase()}</b></div>
+    </div>
+    <div class="pk-time" data-time="${city.tz}"><span class="pk-h"></span><span class="pk-m"></span></div>
+    <div class="pb-foot">
+      <div class="pb-bar"><i data-sec></i></div>
+      <div class="pb-meta"><span data-dn="${city.tz}"></span><span class="pb-sub">${city.region}<br><span data-off="${city.tz}" data-ref="Ortszeit"></span></span><span data-dshort="${city.tz}"></span></div>
     </div>
   `;
   boardTime.appendChild(card);
+  const cnt = document.getElementById('wz-count');
+  if(cnt) cnt.textContent = `${boardTime.children.length} Städte · Abweichung zu Zürich`;
+}
+
+// Minuten, die die Ortszeit der Zeitzone gegenüber UTC vorgeht
+function wzOffsetMin(tz, now){
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }).formatToParts(now).filter(x => x.type !== 'literal').map(x => [x.type, Number(x.value)]));
+  return (Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(now / 1000) * 1000) / 60000;
 }
 
 function selectCity(city){
@@ -1213,6 +1167,10 @@ function updateGreeting(){
   if(h >= 5 && h < 12) greeting = 'Guten Morgen';
   else if(h >= 12 && h < 18) greeting = 'Guten Mittag';
   else greeting = 'Guten Abend';
+  // dahinter der Name des angemeldeten Kontos, z.B. „Guten Morgen Flavio“
+  const raw = (document.querySelector('.account-name')?.textContent || '').trim();
+  const name = raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : '';
+  if(name) greeting += ' ' + name;
   if(greetingTitleEl.textContent !== greeting) greetingTitleEl.textContent = greeting;
 }
 
@@ -1225,7 +1183,33 @@ function updateClocks(){
     const timeStr = new Intl.DateTimeFormat('de-CH', {
       timeZone: tz, hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
     }).format(now);
-    renderFlaps(el, timeStr);
+    if(el.classList.contains('pk-time')){ el.firstElementChild.textContent = timeStr.slice(0, 2); el.lastElementChild.textContent = timeStr.slice(3, 5); }
+    else if(el.classList.contains('wz-hm')) el.textContent = timeStr.slice(0, 5);
+    else renderFlaps(el, timeStr);
+  });
+
+  const refOff = wzOffsetMin(WZ_REF_TZ, now);
+  document.querySelectorAll('[data-dn]').forEach(el => {
+    const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: el.dataset.dn, hour: '2-digit', hourCycle: 'h23' }).format(now));
+    el.textContent = hour >= 6 && hour < 18 ? 'Tag' : 'Nacht';
+  });
+  const sec = now.getSeconds();   // Balken: füllt sich in 60 Sekunden und springt dann auf null zurück
+  document.querySelectorAll('[data-sec]').forEach(el => {
+    el.style.transition = sec === 0 ? 'none' : '';
+    el.style.width = (sec / 60 * 100).toFixed(2) + '%';
+  });
+  document.querySelectorAll('[data-off]').forEach(el => {
+    const tz = el.dataset.off;
+    if(tz === WZ_REF_TZ){ el.textContent = el.dataset.ref || 'Ortszeit'; return; }
+    const h = (wzOffsetMin(tz, now) - refOff) / 60;
+    el.textContent = h === 0 ? '±0 Std.' : (h > 0 ? '+' : '−') + String(Math.abs(h)).replace('.', ',') + ' Std.';
+  });
+  document.querySelectorAll('[data-dshort]').forEach(el => {
+    el.textContent = new Intl.DateTimeFormat('de-CH', { timeZone: el.dataset.dshort, weekday: 'short', day: 'numeric', month: 'short' }).format(now);
+  });
+  document.querySelectorAll('.wz-dayn').forEach(el => {
+    const tz = el.closest('[data-clock]')?.dataset.clock;
+    if(tz) el.textContent = new Intl.DateTimeFormat('de-CH', { timeZone: tz, day: 'numeric' }).format(now);
   });
 
   document.querySelectorAll('[data-date]').forEach(el => {
@@ -9637,7 +9621,13 @@ g2048Reset();
   reset();
 })();
 
-cities.filter(c => c.name !== "Aarau").forEach(buildTimeCard);
+// Weltzeit: Zürich immer zuerst, danach nach Zeitunterschied von West nach Ost (gleiche Zeit: alphabetisch)
+(function(){
+  const now = new Date(), off = (c) => wzOffsetMin(c.tz, now);
+  cities.filter(c => c.name !== "Aarau")
+    .sort((a, b) => (b.tz === WZ_REF_TZ && b.name === "Zürich") - (a.tz === WZ_REF_TZ && a.name === "Zürich") || off(a) - off(b) || a.name.localeCompare(b.name, 'de'))
+    .forEach(buildTimeCard);
+})();
 buildCitySelect();
 loadFullWeather(activeCity);
 updateClocks();

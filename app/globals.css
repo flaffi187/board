@@ -158,126 +158,6 @@
   .time-view-layout{ display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap; }
   .time-view-layout .board-grid{ flex:1 1 260px; }
 
-  .owl-nest{ position:relative; width:220px; height:175px; flex:0 0 220px; margin:0 auto; align-self:flex-start; }
-  .nest-shadow{
-    position:absolute; left:50%; bottom:2px; width:150px; height:18px; transform:translateX(-50%);
-    background: radial-gradient(ellipse, rgba(0,0,0,0.32), rgba(0,0,0,0) 72%);
-  }
-  .nest-bowl{
-    position:absolute; left:50%; bottom:14px; width:180px; height:112px; transform:translateX(-50%);
-  }
-  .nest-bowl::before{
-    content:''; position:absolute; left:4%; right:4%; top:14%; bottom:0;
-    background: radial-gradient(ellipse at 50% 20%, #8a5a30, #5c3a1d 75%);
-    border-radius: 50% 50% 45% 45% / 65% 65% 35% 35%;
-    box-shadow: inset 0 -10px 14px rgba(0,0,0,0.35);
-  }
-  .nest-bowl::after{
-    content:''; position:absolute; left:6%; right:6%; top:10%; height:16px; z-index:3; pointer-events:none;
-    background: radial-gradient(ellipse at 50% 0%, rgba(255,235,180,0.45), rgba(255,235,180,0) 75%);
-  }
-  .nest-twig{
-    position:absolute; height:4px; border-radius:3px;
-    background: linear-gradient(90deg, var(--twig-dark,#6b4423), var(--twig-light,#9c6a36) 50%, var(--twig-dark,#6b4423));
-    box-shadow: 0 1px 1.5px rgba(0,0,0,0.4);
-    z-index:1;
-  }
-  .nest-wisp{
-    position:absolute; width:7px; height:3px; border-radius:50%; z-index:2; pointer-events:none;
-    background: radial-gradient(ellipse at 40% 40%, rgba(255,250,235,0.9), rgba(230,220,195,0.5) 70%, transparent 100%);
-  }
-  .nest-inner{
-    position:absolute; left:9%; right:9%; top:16%; bottom:22%; z-index:2;
-    background:
-      radial-gradient(circle at 30% 85%, rgba(120,110,60,0.35) 0 2px, transparent 2.6px) 0 0/9px 9px,
-      radial-gradient(circle at 70% 90%, rgba(150,130,70,0.3) 0 2px, transparent 2.6px) 4px 4px/9px 9px,
-      radial-gradient(ellipse at 50% 0%, #3b2614, #241508 75%);
-    border-radius: 50% 50% 40% 40% / 68% 68% 32% 32%;
-    box-shadow: inset 0 8px 10px rgba(0,0,0,0.55);
-    display:flex; align-items:flex-end; justify-content:center; gap:10px;
-    padding-bottom:8px; overflow:hidden;
-  }
-  .owl-scale{ transform:scale(2.3); transform-origin:bottom center; }
-  .owl-scale-back{ position:absolute; left:50%; bottom:30px; margin-left:8px; z-index:0; }
-  .owl-scale-back .owl-egg{ transform:rotate(-14deg); }
-  .owl-scale-back-left{ margin-left:-14px; bottom:30px; }
-  .owl-scale-back-left .owl-egg{ transform:rotate(10deg); }
-  .baby-owl{ position:relative; width:14px; height:17px; animation: owl-bob 4s ease-in-out infinite; }
-  .baby-owl.owl-2{ animation-delay:0.6s; }
-  .baby-owl.owl-3{ animation-delay:1.2s; }
-  :root[data-theme="light"] .baby-owl{ animation-duration: 2.6s; }
-  .owl-body{
-    position:relative; width:100%; height:100%; border-radius:50% 50% 45% 45%;
-    background:
-      radial-gradient(circle at 70% 75%, rgba(0,0,0,0.12) 0 1px, transparent 1.4px) 0 0/3.2px 3.2px,
-      radial-gradient(circle at 30% 25%, rgba(255,255,255,0.18) 0 1px, transparent 1.4px) 1.6px 1.6px/3.2px 3.2px,
-      radial-gradient(circle at 35% 30%, #c89968, #8a6238 80%);
-    box-shadow: inset -2px -2px 2px rgba(0,0,0,0.3);
-  }
-  .owl-face{
-    position:absolute; left:50%; top:30%; width:11px; height:10px; margin:-5px 0 0 -5.5px;
-    background: radial-gradient(circle at 45% 40%, #ead9b8, #c8a877 85%);
-    border-radius:50%;
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
-  }
-  .owl-foot{
-    position:absolute; bottom:-1.5px; width:3px; height:2px; background:#e8932f;
-    border-radius:0 0 2px 2px;
-  }
-  .owl-foot-l{ left:3px; }
-  .owl-foot-r{ right:3px; }
-  .owl-wing{
-    position:absolute; top:32%; width:4px; height:8px; border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
-    background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.22));
-  }
-  .owl-wing-l{ left:-0.5px; }
-  .owl-wing-r{ right:-0.5px; }
-  .owl-belly{
-    position:absolute; left:50%; top:55%; width:8px; height:7px; margin-left:-4px;
-    background: radial-gradient(circle at 40% 30%, #fff7e2, #f3e3c9 70%);
-    border-radius:50%;
-  }
-  .owl-eye{
-    position:absolute; top:24%; width:6px; height:1.6px; border-radius:1px; background:#4a3420;
-  }
-  .owl-eye-l{ left:1px; }
-  .owl-eye-r{ right:1px; }
-  .owl-eye span{ display:none; }
-  /* Hellmodus = Tag: Eulen sind wach, Augen offen */
-  :root[data-theme="light"] .owl-eye{
-    height:6px; border-radius:50%; background:#fff8e8;
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
-  }
-  :root[data-theme="light"] .owl-eye span{
-    display:block; position:absolute; top:1px; left:1px; width:3px; height:3px;
-    border-radius:50%; background:#2a1a0a;
-  }
-  .owl-beak{
-    position:absolute; left:50%; top:45%; width:0; height:0; margin-left:-2px;
-    border-left:2px solid transparent; border-right:2px solid transparent; border-top:3px solid #e8932f;
-  }
-  .owl-ear{ position:absolute; top:-3px; width:4px; height:6px; background:#8a6238; border-radius:50% 50% 0 0; }
-  .owl-ear-l{ left:1px; transform:rotate(-15deg); }
-  .owl-ear-r{ right:1px; transform:rotate(15deg); }
-  @keyframes owl-bob{
-    0%, 100%{ transform:translateY(0); }
-    50%{ transform:translateY(-2px); }
-  }
-  .owl-egg{
-    position:relative; width:11px; height:14px;
-    background: radial-gradient(circle at 35% 25%, #fffaf0, #e9ddc5 70%, #d2c4a0 100%);
-    border-radius: 50% 50% 50% 50% / 58% 58% 42% 42%;
-    box-shadow: inset -2px -2px 3px rgba(0,0,0,0.15), inset 1px 1px 1px rgba(255,255,255,0.6), 0 1px 2px rgba(0,0,0,0.3);
-  }
-  .owl-egg::after{
-    content:''; position:absolute; inset:0; border-radius:inherit;
-    background:
-      radial-gradient(circle at 32% 58%, rgba(140,110,70,0.28) 0 1px, transparent 1.5px),
-      radial-gradient(circle at 62% 32%, rgba(140,110,70,0.22) 0 1px, transparent 1.5px),
-      radial-gradient(circle at 48% 78%, rgba(140,110,70,0.25) 0 1px, transparent 1.5px),
-      radial-gradient(circle at 70% 65%, rgba(140,110,70,0.2) 0 1px, transparent 1.5px);
-  }
-
   .city-card{
     background:var(--card); color:var(--ink); border-radius:2px;
     padding:24px 22px 20px; position:relative; overflow:hidden;
@@ -4281,3 +4161,34 @@
     .tc-marquee b{ font-size:1.25rem; }
     .tetris-wrap .tc-hud{ gap:5px; } .tetris-wrap .tc-hud .snake-hud-item{ min-width:52px; padding:5px 6px 4px; }
   }
+
+/* Weltzeit: Kartenraster mit Bahnhofsuhr, Digitalzeit und Abweichung zu Zürich */
+.time-view-layout .wz-main{ flex:1 1 100%; min-width:0; container:pk / inline-size; }
+.wz-head{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+.wz-head h2{ font-family:'Archivo', 'Inter', sans-serif; font-weight:800; font-size:1.5rem; letter-spacing:-0.01em; color:rgb(var(--fg)); }
+.wz-head span{ font-family:'JetBrains Mono'; font-size:0.68rem; letter-spacing:0.06em; color:rgba(var(--fg),0.45); }
+#board-time.board-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:18px; max-width:none; padding:0; background:none; }
+@media (min-width:700px){ #board-time.board-grid{ grid-template-columns:repeat(4, minmax(0, 1fr)); } }
+#board-time .city-card{ container-type:inline-size; display:flex; flex-direction:column; align-items:stretch; gap:0; padding:28px 26px 22px; background:#d93a34; border:none; border-radius:3px; box-shadow:none; overflow:visible; color:#fff; text-align:left; }
+#board-time .city-card:hover{ transform:none; box-shadow:none; }
+#board-time .pb-head{ margin-bottom:22px; }
+#board-time .pb-name{ min-width:0; min-height:2.6rem; display:flex; align-items:flex-end; }
+#board-time .pb-name b{ display:block; font-family:'Archivo Black', 'Inter', sans-serif; font-weight:400; font-size:clamp(1.3rem, 19cqw, 2.3rem); line-height:1; letter-spacing:-.04em; color:#fff; white-space:nowrap; }
+#board-time .pb-name b.long{ font-size:clamp(1.05rem, 13cqw, 1.8rem); }
+#board-time .pb-sub{ flex:1; min-width:0; text-align:center; }
+/* Stunde links, Minute rechts darunter – mit Luft dazwischen, damit sich nichts berührt */
+#board-time .pk-time{ display:flex; flex-direction:column; gap:.14em; font-family:'Inter Tight', 'Inter', 'Helvetica Neue', Arial, sans-serif; font-weight:800; font-size:50cqw; line-height:.78; letter-spacing:-.05em; font-variant-numeric:tabular-nums; margin:0 0 30px -.03em; }
+#board-time .pk-h{ align-self:flex-start; color:#fff; }
+#board-time .pk-m{ align-self:flex-end; color:#ffc9c4; }
+#board-time .pb-foot{ margin-top:auto; }
+#board-time .pb-bar{ height:8px; background:rgba(255,255,255,.3); overflow:hidden; }
+#board-time .pb-bar i{ display:block; height:100%; width:0; background:#fff; transition:width .9s linear; }
+#board-time .pb-meta{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; min-height:3.8em; font-family:'Inter', sans-serif; font-weight:700; font-size:.6rem; line-height:1.25; color:#fff; }
+#board-time .pb-meta > span:first-child, #board-time .pb-meta > span:last-child{ flex:none; }
+@media (max-width:480px){ #board-time.board-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; } #board-time .city-card{ padding:20px 14px 18px; } #board-time .pb-name b{ font-size:1.3rem; } #board-time .pb-name b.long{ font-size:1rem; } }
+/* schmale Karten (Tablet): Tag und Datum in einer Zeile, Land und Zeitunterschied darunter in der Mitte */
+@media (min-width:700px) and (max-width:999px){ #board-time .city-card{ padding:24px 16px 20px; } }
+@container (max-width:150px){
+  #board-time .pb-meta{ flex-wrap:wrap; min-height:0; }
+  #board-time .pb-sub{ order:3; flex:1 0 100%; min-height:3.6em; margin-top:6px; }
+}

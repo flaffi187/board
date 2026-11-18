@@ -9947,6 +9947,11 @@ wzBuild();
   const sayBtn = document.getElementById('gt-say');
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const hasTTS = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+  // Flaggen (Bilder von flagcdn.com); Sprachen ohne eigenes Land bekommen eine Weltkugel
+  const FLAG = { de:'ch', en:'gb', fr:'fr', it:'it', es:'es', pt:'pt', nl:'nl', sv:'se', pl:'pl', ru:'ru', tr:'tr', el:'gr', ar:'sa', hi:'in', th:'th', ja:'jp', ko:'kr', 'zh-CN':'cn', 'zh-TW':'tw', af:'za', sq:'al', am:'et', hy:'am', az:'az', be:'by', bn:'bd', bs:'ba', bg:'bg', my:'mm', ceb:'ph', hr:'hr', cs:'cz', da:'dk', et:'ee', fi:'fi', fy:'nl', gl:'es', ka:'ge', gu:'in', ht:'ht', ha:'ng', haw:'us', he:'il', hu:'hu', is:'is', ig:'ng', id:'id', ga:'ie', jv:'id', kn:'in', kk:'kz', km:'kh', rw:'rw', ky:'kg', lo:'la', la:'va', lv:'lv', lt:'lt', lb:'lu', mk:'mk', mg:'mg', ms:'my', ml:'in', mt:'mt', mi:'nz', mr:'in', mn:'mn', ne:'np', no:'no', ny:'mw', or:'in', ps:'af', fa:'ir', pa:'in', ro:'ro', sm:'ws', gd:'gb-sct', sr:'rs', st:'ls', sn:'zw', sd:'pk', si:'lk', sk:'sk', sl:'si', so:'so', su:'id', sw:'tz', tl:'ph', tg:'tj', ta:'in', tt:'ru', te:'in', tk:'tm', uk:'ua', ur:'pk', ug:'cn', uz:'uz', vi:'vn', cy:'gb-wls', xh:'za', yi:'il', yo:'ng', zu:'za' };
+  FLAG.de = 'de';
+  const GLOBE = '<svg class="gt-flag gt-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg>';
+  const flagImg = (c) => FLAG[c] ? `<img class="gt-flag" src="https://flagcdn.com/w80/${FLAG[c]}.png" alt="" loading="lazy" width="40" height="40" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'gt-flag gt-noflag'}))">` : GLOBE;
   // Auswahl-Knopf mit Suchfeld und Liste
   const closers = [];
   function makePicker(host, key, withAuto, onChange){
@@ -9955,13 +9960,13 @@ wzBuild();
     const btn = host.querySelector('.gt-pick-btn'), label = btn.firstElementChild, pop = host.querySelector('.gt-pick-pop'), q = pop.querySelector('input'), list = pop.querySelector('.gt-pick-list');
     let items = [], hi = 0;
     const items0 = () => LANGS.filter(l => withAuto || l[0] !== 'auto');
-    const paint = () => { label.textContent = name(state[key]); };
+    const paint = () => { label.innerHTML = flagImg(state[key]) + '<b>' + wxEsc(name(state[key])) + '</b>'; };
     const render = () => {
       const t = fold(q.value.trim());
       items = items0().filter(l => !t || fold(l[1]).includes(t) || fold(l[2]).includes(t));
       hi = Math.max(0, items.findIndex(l => l[0] === state[key]));
       if(t) hi = 0;
-      list.innerHTML = items.length ? items.map((l, i) => `<button type="button" role="option" class="gt-opt${l[0] === state[key] ? ' sel' : ''}${i === hi ? ' hi' : ''}" data-c="${l[0]}">${l[0] === state[key] ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>' : '<i></i>'}<span>${l[1]}</span></button>`).join('') : '<div class="gt-none">Keine Sprache gefunden</div>';
+      list.innerHTML = items.length ? items.map((l, i) => `<button type="button" role="option" class="gt-opt${l[0] === state[key] ? ' sel' : ''}${i === hi ? ' hi' : ''}" data-c="${l[0]}">${l[0] === state[key] ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>' : '<i></i>'}${flagImg(l[0])}<span>${l[1]}</span></button>`).join('') : '<div class="gt-none">Keine Sprache gefunden</div>';
       const sel = list.querySelector('.hi'); if(sel) sel.scrollIntoView({ block: 'nearest' });
     };
     const pick = (c) => { state[key] = c; store('gt_' + key, c); paint(); close(); onChange(); };
@@ -9999,17 +10004,33 @@ wzBuild();
     status.textContent = '…';
     try{
       const pair = (state.from === 'auto' ? 'Autodetect' : state.from) + '|' + state.to;
-      const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(q) + '&langpair=' + encodeURIComponent(pair));
-      const j = await r.json();
-      if(mine !== seq) return;
-      status.textContent = '';
-      if(Number(j.responseStatus) !== 200 || !j.responseData){
-        const msg = String(j.responseDetails || '') + String(j.responseData && j.responseData.translatedText || '');
-        out.classList.add('gt-hint'); out.textContent = /all available free translations|quota/i.test(msg) ? 'Für heute ist das Gratis-Limit erreicht.' : 'Übersetzung gerade nicht möglich.'; copyBtn.hidden = true; sayBtn.hidden = true;
-        return;
+      // MyMemory nimmt pro Anfrage nur etwa 500 Zeichen: lange Texte werden an Satzgrenzen in Stücke geteilt
+      const parts = [];
+      let curP = '';
+      const push = () => { if(curP.trim()) parts.push(curP.trim()); curP = ''; };
+      q.split(/(?<=[.!?…])\s+|\n+/).forEach(sent => {
+        while(sent.length > 420){ push(); let cut = sent.lastIndexOf(' ', 420); if(cut < 100) cut = 420; parts.push(sent.slice(0, cut).trim()); sent = sent.slice(cut); }
+        if((curP + ' ' + sent).length > 420) push();
+        curP += (curP ? ' ' : '') + sent;
+      });
+      push();
+      const outParts = [];
+      for(const piece of parts){
+        const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(piece) + '&langpair=' + encodeURIComponent(pair));
+        const j = await r.json();
+        if(mine !== seq) return;
+        if(Number(j.responseStatus) !== 200 || !j.responseData){
+          const msg = String(j.responseDetails || '') + String(j.responseData && j.responseData.translatedText || '');
+          status.textContent = ''; out.classList.add('gt-hint'); out.textContent = /all available free translations|quota/i.test(msg) ? 'Für heute ist das Gratis-Limit erreicht.' : 'Übersetzung gerade nicht möglich.'; copyBtn.hidden = true; sayBtn.hidden = true;
+          return;
+        }
+        let t = decode(j.responseData.translatedText || '').trim();
+        if(!/^[-–—•]/.test(piece)) t = t.replace(/^[-–—•]\s+/, '');   // der Dienst setzt manchmal einen Strich davor
+        outParts.push(t);
+        if(parts.length > 1){ out.classList.remove('gt-hint'); out.textContent = outParts.join(' '); }
       }
-      last = decode(j.responseData.translatedText || '').trim();
-      if(!/^[-–—•]/.test(q)) last = last.replace(/^[-–—•]\s+/, '');   // der Dienst setzt manchmal einen Strich davor
+      status.textContent = '';
+      last = outParts.join(' ').trim();
       out.classList.remove('gt-hint'); out.textContent = last; copyBtn.hidden = !last; sayBtn.hidden = !last || !hasTTS;
     } catch(err){
       if(mine !== seq) return;
@@ -10018,7 +10039,7 @@ wzBuild();
   }
   const later = () => { clearTimeout(timer); timer = setTimeout(go, 600); };
   input.addEventListener('input', () => {
-    count.textContent = input.value ? input.value.length + ' / 500' : '';
+    count.textContent = input.value.length + ' / 5000';
     clearBtn.hidden = !input.value; sayInBtn.hidden = !input.value.trim() || !hasTTS;
     if(!input.value.trim()){ clearTimeout(timer); seq++; showEmpty(); status.textContent = ''; return; }
     status.textContent = '…'; later();

@@ -571,11 +571,8 @@ export default async function Page() {
 </div>
 
 <div className="view" id="apps-view">
-  <div className="panel-label">Schnellzugriff</div>
+  <div className="panel-label apps-cat">Social & Chat</div>
   <div className="apps-grid">
-    <a className="app-tile app-tile-image" href="https://www.youtube.com" target="_blank" rel="noopener" style={{ '--tile-color': "#FF0000", '--tile-image': "url(/youtube-neon.jpg)" }}>
-      <span className="app-name">YouTube</span>
-    </a>
     <a className="app-tile app-tile-image" href="whatsapp://" rel="noopener" style={{ '--tile-color': "#25D366", '--tile-image': "url(/whatsapp-glitzer.jpg)", '--tile-pos': "55% 60%" }}>
       <span className="app-name">WhatsApp</span>
     </a>
@@ -591,18 +588,27 @@ export default async function Page() {
     <a className="app-tile app-tile-image" href="discord://" rel="noopener" style={{ '--tile-color': "#3aa0ff", '--tile-image': "url(/discord-blitz.jpg)", '--tile-size': "auto 68%", '--tile-pos': "50% 22%", '--tile-bg': "#04020f" }}>
       <span className="app-name">Discord</span>
     </a>
+  </div>
+  <div className="panel-label apps-cat" style={{ marginTop: "36px" }}>Video & Musik</div>
+  <div className="apps-grid">
+    <a className="app-tile app-tile-image" href="https://www.youtube.com" target="_blank" rel="noopener" style={{ '--tile-color': "#FF0000", '--tile-image': "url(/youtube-neon.jpg)" }}>
+      <span className="app-name">YouTube</span>
+    </a>
+    <a className="app-tile app-tile-image" href="spotify:" rel="noopener" style={{ '--tile-color': "#c9cdd4", '--tile-image': "url(/spotify-chrom.jpg)", '--tile-size': "auto 88%", '--tile-pos': "50% 15%", '--tile-bg': "#000000" }}>
+      <span className="app-name">Spotify</span>
+    </a>
+  </div>
+  <div className="panel-label apps-cat" style={{ marginTop: "36px" }}>Games</div>
+  <div className="apps-grid">
     <a className="app-tile app-tile-image" href="steam://open/main" rel="noopener" style={{ '--tile-color': "#5a8ae0", '--tile-image': "url(/steam-neon.jpg)", '--tile-pos': "50% 45%" }}>
       <span className="app-name">Steam</span>
     </a>
     <a className="app-tile app-tile-image" href="https://www.riotgames.com/de" target="_blank" rel="noopener" style={{ '--tile-color': "#d9a63a", '--tile-image': "url(/riot-gold.jpg)", '--tile-size': "auto 90%", '--tile-pos': "50% 0%", '--tile-bg': "#090a0f" }}>
       <span className="app-name">Riot</span>
     </a>
-    <a className="app-tile app-tile-image" href="spotify:" rel="noopener" style={{ '--tile-color': "#c9cdd4", '--tile-image': "url(/spotify-chrom.jpg)", '--tile-size': "auto 88%", '--tile-pos': "50% 15%", '--tile-bg': "#000000" }}>
-      <span className="app-name">Spotify</span>
-    </a>
-    <a className="app-tile app-tile-image" href="https://www.amazon.com" target="_blank" rel="noopener" style={{ '--tile-color': "#5fc0b0", '--tile-image': "url(/amazon-glas.jpg)" }}>
-      <span className="app-name">Amazon</span>
-    </a>
+  </div>
+  <div className="panel-label apps-cat" style={{ marginTop: "36px" }}>KI & Suche</div>
+  <div className="apps-grid">
     <a className="app-tile app-tile-image" href="https://claude.ai" target="_blank" rel="noopener" style={{ '--tile-color': "#D97757", '--tile-image': "url(/claude-3d.jpg)", '--tile-pos': "50% 35%" }}>
       <span className="app-name">Claude AI</span>
     </a>
@@ -611,6 +617,15 @@ export default async function Page() {
     </a>
     <a className="app-tile app-tile-image" href="https://www.google.com" target="_blank" rel="noopener" style={{ '--tile-color': "#4285F4", '--tile-image': "url(/google-farbe.jpg)", '--tile-pos': "50% 40%" }}>
       <span className="app-name">Google</span>
+    </a>
+  </div>
+  <div className="panel-label apps-cat" style={{ marginTop: "36px" }}>Shopping</div>
+  <div className="apps-grid">
+    <a className="app-tile app-tile-image" href="https://www.amazon.de" target="_blank" rel="noopener" style={{ '--tile-color': "#5fc0b0", '--tile-image': "url(/amazon-glas.jpg)" }}>
+      <span className="app-name">Amazon</span>
+    </a>
+    <a className="app-tile app-tile-image" href="https://www.zalando.ch" target="_blank" rel="noopener" style={{ '--tile-color': "#ff6900", '--tile-image': "url(/zalando.jpg)", '--tile-pos': "52% 55%"}}>
+      <span className="app-name">Zalando</span>
     </a>
   </div>
 </div>

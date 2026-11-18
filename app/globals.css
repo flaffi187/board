@@ -4208,113 +4208,6 @@
 #board-time .fl.flip{ animation:wzflip .6s cubic-bezier(.25,.9,.35,1.15); }
 @keyframes wzflip{ 0%{ transform:perspective(500px) rotateX(-90deg); opacity:0; } 35%{ opacity:1; } 100%{ transform:perspective(500px) rotateX(0); opacity:1; } }
 
-/* ===== Wetter im Redaktions-Stil ===== */
-#wx-view .city-select{ display:flex; justify-content:space-between; align-items:center; gap:18px; flex-wrap:wrap; padding:0; margin:0 0 38px; border-bottom:1px solid var(--line); }
-#wx-view .wx-tab-list{ display:flex; gap:26px; overflow-x:auto; scrollbar-width:none; }
-#wx-view .wx-tab-list::-webkit-scrollbar{ display:none; }
-#wx-view .wx-tab{ position:relative; display:inline-flex; align-items:center; gap:6px; padding:8px 0 11px; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; cursor:pointer; font-family:'JetBrains Mono', monospace; font-size:.72rem; letter-spacing:.03em; color:rgba(var(--fg),.5); white-space:nowrap; }
-#wx-view .wx-tab:hover{ color:rgb(var(--fg)); }
-#wx-view .wx-tab.active{ color:rgb(var(--fg)); border-bottom-color:rgb(var(--fg)); }
-#wx-view .wx-tab-x{ display:none; font-style:normal; font-size:.95rem; line-height:1; color:rgba(var(--fg),.45); padding:0 1px; }
-#wx-view .wx-tab:hover .wx-tab-x, #wx-view .wx-tab.active .wx-tab-x{ display:inline; }
-#wx-view .wx-tab-x:hover{ color:#e0604a; }
-#wx-view .wx-add{ position:relative; margin-left:auto; }
-#wx-view .wx-add-btn{ background:none; border:none; padding:8px 0 11px; cursor:pointer; font-family:'JetBrains Mono', monospace; font-size:.7rem; color:rgba(var(--fg),.45); }
-#wx-view .wx-add-btn:hover{ color:rgb(var(--fg)); }
-#wx-view .wx-add-pop{ position:absolute; right:0; top:calc(100% + 6px); z-index:20; width:min(300px, 86vw); padding:10px; background:var(--board-2); border:1px solid var(--line); border-radius:10px; box-shadow:0 14px 30px rgba(0,0,0,.4); }
-#wx-view .wx-add-pop input{ width:100%; padding:9px 11px; border-radius:7px; border:1px solid var(--line); background:var(--board); color:rgb(var(--fg)); font:inherit; font-size:.85rem; outline:none; }
-#wx-view .wx-add-res{ max-height:260px; overflow:auto; margin-top:8px; display:flex; flex-direction:column; }
-#wx-view .wx-add-res button{ display:flex; justify-content:space-between; gap:10px; padding:8px 8px; background:none; border:none; border-radius:6px; cursor:pointer; color:rgb(var(--fg)); font-size:.82rem; text-align:left; }
-#wx-view .wx-add-res button:hover{ background:rgba(var(--fg),.08); }
-#wx-view .wx-add-res small{ color:rgba(var(--fg),.45); font-size:.7rem; align-self:center; text-align:right; }
-#wx-view .wx-add-note{ padding:8px; font-size:.75rem; color:rgba(var(--fg),.5); }
-
-#wx-view .wx-detail-panel{ max-width:none; }
-#wx-detail .wx-loading{ padding:40px 0; color:rgba(var(--fg),.5); font-family:'JetBrains Mono', monospace; font-size:.8rem; }
-#wx-detail .k-sun, #wx-detail .k-partly{ color:#e0a840; }
-#wx-detail .k-cloud{ color:#d2b17c; }
-#wx-detail .k-fog{ color:#8fb4d9; }
-#wx-detail .k-rain{ color:#7ec1dc; }
-#wx-detail .k-snow{ color:#bcd6f2; }
-#wx-detail .k-storm{ color:#c9a0ff; }
-
-#wx-detail .wx-hero{ display:flex; align-items:flex-start; gap:34px; margin-bottom:34px; }
-#wx-detail .wx-big{ flex:none; font-family:'Archivo Black', 'Inter', sans-serif; font-size:clamp(6rem, 17vw, 10.5rem); line-height:.82; letter-spacing:-.04em; color:rgb(var(--fg)); }
-#wx-detail .wx-text{ min-width:0; padding-top:6px; }
-#wx-detail .wx-meta{ display:flex; align-items:center; gap:7px; font-family:'JetBrains Mono', monospace; font-size:.68rem; color:#7f98bd; margin-bottom:14px; }
-#wx-detail .wx-meta-ic{ display:inline-flex; }
-#wx-detail .wx-headline{ text-transform:none; font-family:'Inter Tight', 'Inter', sans-serif; font-weight:800; font-size:clamp(1.35rem, 2.9vw, 2rem); line-height:1.22; letter-spacing:-.02em; color:rgb(var(--fg)); margin:0 0 14px; }
-#wx-detail .wx-sub{ font-family:'JetBrains Mono', monospace; font-size:.7rem; color:#e0a840; }
-#wx-detail .wx-sub em{ font-style:normal; color:#7f98bd; }
-
-#wx-detail .wx-stats{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin-bottom:26px; }
-#wx-detail .wx-stats > div{ padding:18px 18px 16px; border-left:1px solid var(--line); }
-#wx-detail .wx-stats > div:first-child{ border-left:none; padding-left:0; }
-#wx-detail .wx-stats span{ display:block; font-family:'JetBrains Mono', monospace; font-size:.64rem; color:rgba(var(--fg),.5); margin-bottom:8px; }
-#wx-detail .wx-stats b{ font-family:'Archivo Black', 'Inter', sans-serif; font-weight:400; font-size:clamp(1.7rem, 3.3vw, 2.4rem); line-height:1; letter-spacing:-.02em; color:rgb(var(--fg)); }
-#wx-detail .wx-stats small{ margin-left:3px; font-family:'JetBrains Mono', monospace; font-size:.8rem; color:rgba(var(--fg),.55); letter-spacing:0; }
-
-#wx-detail .wx-sec-head{ display:flex; justify-content:space-between; gap:12px; font-family:'JetBrains Mono', monospace; font-size:.64rem; color:rgba(var(--fg),.55); }
-#wx-detail .wx-week .wx-sec-head span:first-child{ color:#e0a840; }
-#wx-detail .wx-light{ padding-bottom:26px; border-bottom:1px solid var(--line); margin-bottom:26px; }
-#wx-detail .wx-light-bar{ position:relative; height:12px; margin:26px 0 10px; border-bottom:1px solid rgba(var(--fg),.25); }
-#wx-detail .wx-daybar{ position:absolute; top:3px; height:7px; border-radius:4px; background:#e5b23c; }
-#wx-detail .wx-nowmark{ position:absolute; top:-8px; bottom:-3px; width:1px; background:rgb(var(--fg)); }
-#wx-detail .wx-nowmark em{ position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:3px; font-style:normal; font-family:'JetBrains Mono', monospace; font-weight:700; font-size:.6rem; color:rgb(var(--fg)); }
-#wx-detail .wx-light-scale{ display:flex; justify-content:space-between; font-family:'JetBrains Mono', monospace; font-size:.58rem; color:rgba(var(--fg),.45); }
-#wx-detail .wx-light-times{ display:flex; gap:26px; margin-top:16px; font-family:'JetBrains Mono', monospace; font-size:.66rem; color:#7f98bd; }
-#wx-detail .wx-light-times b{ color:rgb(var(--fg)); margin-left:4px; }
-
-#wx-detail .wx-week .wx-sec-head{ margin-bottom:12px; }
-#wx-detail .wx-row{ display:grid; grid-template-columns:minmax(96px, 1.1fr) 34px minmax(110px, 2fr) 44px 44px; align-items:center; gap:12px; padding:13px 12px; border-radius:10px; cursor:pointer; }
-#wx-detail .wx-row:hover{ background:rgba(var(--fg),.04); }
-#wx-detail .wx-row.today{ background:rgba(var(--fg),.07); }
-#wx-detail .wx-dayname b{ display:block; font-family:'Inter Tight', 'Inter', sans-serif; font-weight:800; font-size:1.02rem; letter-spacing:-.01em; color:rgb(var(--fg)); }
-#wx-detail .wx-dayname small{ font-family:'JetBrains Mono', monospace; font-size:.6rem; color:rgba(var(--fg),.45); }
-#wx-detail .wx-ic{ display:flex; justify-content:center; }
-#wx-detail .wx-desc{ font-family:'JetBrains Mono', monospace; font-size:.72rem; }
-#wx-detail .wx-lo, #wx-detail .wx-hi{ font-family:'JetBrains Mono', monospace; font-size:.78rem; }
-#wx-detail .wx-lo{ text-align:right; }
-#wx-detail .wx-track{ position:relative; height:7px; border-radius:4px; background:rgba(var(--fg),.1); }
-#wx-detail .wx-track i{ position:absolute; top:0; bottom:0; border-radius:4px; }
-#wx-detail .wx-dot{ position:absolute; top:50%; width:9px; height:9px; margin:-4.5px 0 0 -4.5px; border-radius:50%; background:#fff; box-shadow:0 0 0 2px rgba(0,0,0,.35); }
-#wx-detail .wx-hours{ display:none; gap:4px; overflow-x:auto; padding:2px 12px 14px; }
-#wx-detail .wx-row.open + .wx-hours{ display:flex; }
-#wx-detail .wx-hour{ flex:none; display:flex; flex-direction:column; align-items:center; gap:5px; min-width:42px; padding:7px 4px; border-radius:8px; background:rgba(var(--fg),.05); font-family:'JetBrains Mono', monospace; }
-#wx-detail .wx-hour span{ font-size:.58rem; color:rgba(var(--fg),.5); }
-#wx-detail .wx-hour b{ font-size:.72rem; color:rgb(var(--fg)); }
-@media (max-width:700px){
-  #wx-detail .wx-hero{ flex-direction:column; gap:18px; }
-  #wx-detail .wx-stats{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
-  #wx-detail .wx-stats > div:nth-child(3){ border-left:none; padding-left:0; }
-  #wx-detail .wx-stats > div:nth-child(n+3){ border-top:1px solid var(--line); }
-  #wx-detail .wx-row{ grid-template-columns:minmax(80px, 1fr) 28px minmax(70px, 1.2fr) 34px 34px; gap:8px; padding:12px 6px; }
-  #wx-detail .wx-desc{ font-size:.62rem; }
-}
-
-/* Wetter: nächste Stunden, Regenrisiko pro Tag, Ladezustand */
-#wx-detail .wx-next{ padding-bottom:26px; border-bottom:1px solid var(--line); margin-bottom:26px; }
-#wx-detail .wx-next .wx-sec-head span:first-child{ color:#7f98bd; }
-#wx-detail .wx-next-list{ display:flex; gap:6px; overflow-x:auto; margin-top:14px; padding-bottom:4px; scrollbar-width:thin; }
-#wx-detail .wx-nx{ flex:none; width:64px; display:flex; flex-direction:column; align-items:center; gap:7px; padding:11px 4px 9px; border-radius:10px; background:rgba(var(--fg),.05); font-family:'JetBrains Mono', monospace; }
-#wx-detail .wx-nx:first-child{ background:rgba(var(--fg),.1); }
-#wx-detail .wx-nx span{ font-size:.6rem; color:rgba(var(--fg),.55); }
-#wx-detail .wx-nx i{ display:flex; font-style:normal; }
-#wx-detail .wx-nx b{ font-size:.85rem; color:rgb(var(--fg)); }
-#wx-detail .wx-nx small{ min-height:1em; font-size:.58rem; color:#7ec1dc; }
-#wx-detail .wx-desc small{ margin-left:7px; font-size:.6rem; color:#7ec1dc; }
-#wx-detail .wx-skel{ opacity:.55; }
-#wx-detail .wx-skel .wx-big{ color:rgba(var(--fg),.25); }
-#wx-detail .wx-skel .wx-stats b{ color:rgba(var(--fg),.3); }
-#wx-detail .sk{ display:block; height:14px; border-radius:7px; background:rgba(var(--fg),.1); margin-bottom:12px; animation:wxpulse 1.2s ease-in-out infinite; }
-#wx-detail .sk-s{ width:40%; } #wx-detail .sk-l{ width:92%; height:26px; }
-@keyframes wxpulse{ 50%{ opacity:.45; } }
-
-/* Sonnenzeiten als einfache Zeile */
-#wx-detail .wx-sun{ display:flex; flex-wrap:wrap; gap:8px 28px; padding-bottom:26px; border-bottom:1px solid var(--line); margin-bottom:26px; font-family:'JetBrains Mono', monospace; font-size:.68rem; color:#7f98bd; }
-#wx-detail .wx-sun b{ color:rgb(var(--fg)); margin-left:5px; }
-#wx-detail .wx-hi{ text-align:right; }
-
 /* Weltzeit: Städte hinzufügen und entfernen */
 #time-view .wz-head{ align-items:center; }
 #time-view .wz-add{ margin-left:0; }
@@ -4389,3 +4282,148 @@
 #tr-view #gt-mic.listening{ color:#fff; background:#d93025; animation:gtpulse 1.1s ease-in-out infinite; }
 #tr-view #gt-mic.gt-off{ opacity:.45; }
 @keyframes gtpulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(217,48,37,.55); } 50%{ box-shadow:0 0 0 9px rgba(217,48,37,0); } }
+
+/* ===== Wetter im Stil der iPhone-Wetter-App ===== */
+#wx-view .city-select{ display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; max-width:520px; margin:0 auto 14px; padding:0; }
+#wx-view .wx-tab-list{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; }
+#wx-view .wx-tab-list::-webkit-scrollbar{ display:none; }
+#wx-view .wx-tab{ display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border:1px solid var(--line); border-radius:999px; background:none; cursor:pointer; font-family:'Inter', sans-serif; font-size:.8rem; color:rgba(var(--fg),.65); white-space:nowrap; }
+#wx-view .wx-tab:hover{ color:rgb(var(--fg)); }
+#wx-view .wx-tab.active{ background:rgba(var(--fg),.12); color:rgb(var(--fg)); border-color:rgba(var(--fg),.3); }
+#wx-view .wx-tab-x{ display:none; font-style:normal; font-size:.95rem; line-height:1; opacity:.6; }
+#wx-view .wx-tab:hover .wx-tab-x, #wx-view .wx-tab.active .wx-tab-x{ display:inline; }
+#wx-view .wx-tab-x:hover{ opacity:1; color:#ff6a5a; }
+#wx-view .wx-add{ position:relative; margin-left:auto; }
+#wx-view .wx-add-btn{ background:none; border:none; padding:7px 4px; cursor:pointer; font-family:'Inter', sans-serif; font-size:.8rem; color:rgba(var(--fg),.55); }
+#wx-view .wx-add-btn:hover{ color:rgb(var(--fg)); }
+#wx-view .wx-add-pop{ position:absolute; right:0; top:calc(100% + 6px); z-index:30; width:min(300px, 86vw); padding:10px; background:var(--board-2); border:1px solid var(--line); border-radius:12px; box-shadow:0 14px 30px rgba(0,0,0,.4); }
+#wx-view .wx-add-pop input{ width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--line); background:var(--board); color:rgb(var(--fg)); font:inherit; font-size:.85rem; outline:none; }
+#wx-view .wx-add-res{ max-height:260px; overflow:auto; margin-top:8px; display:flex; flex-direction:column; }
+#wx-view .wx-add-res button{ display:flex; justify-content:space-between; gap:10px; padding:8px; background:none; border:none; border-radius:6px; cursor:pointer; color:rgb(var(--fg)); font-size:.82rem; text-align:left; }
+#wx-view .wx-add-res button:hover{ background:rgba(var(--fg),.08); }
+#wx-view .wx-add-res small{ color:rgba(var(--fg),.45); font-size:.7rem; align-self:center; text-align:right; }
+#wx-view .wx-add-note{ padding:8px; font-size:.75rem; color:rgba(var(--fg),.5); }
+#wx-view .wx-detail-panel{ max-width:none; }
+
+#wx-detail .ios{ --g1:#5b8fb4; --g2:#2f5f8a; position:relative; overflow:hidden; max-width:520px; margin:0 auto; padding:34px 14px 18px; border-radius:30px; color:#fff;
+  font-family:'Inter', -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif; background:linear-gradient(180deg, var(--g1) 0%, var(--g2) 100%); box-shadow:0 20px 50px rgba(0,0,0,.45); transition:background .6s ease; }
+#wx-detail .ios[data-theme-wx="rain"]{ --g1:#7898ad; --g2:#3d6b94; }
+#wx-detail .ios[data-theme-wx="storm"]{ --g1:#5d6472; --g2:#2a2f3f; }
+#wx-detail .ios[data-theme-wx="snow"]{ --g1:#9bb2c6; --g2:#5f7f9d; }
+#wx-detail .ios[data-theme-wx="fog"]{ --g1:#9aa6b2; --g2:#68788a; }
+#wx-detail .ios[data-theme-wx="cloud"]{ --g1:#8a9db0; --g2:#566d85; }
+#wx-detail .ios[data-theme-wx="partly"]{ --g1:#5a9ad6; --g2:#8fb7d8; }
+#wx-detail .ios[data-theme-wx="sun"]{ --g1:#2f80d4; --g2:#79b6ee; }
+#wx-detail .ios[data-theme-wx="night"]{ --g1:#0d1a38; --g2:#25396b; }
+#wx-detail .ios > *{ position:relative; z-index:1; }
+#wx-detail .ios .ios-fx{ position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+#wx-detail .ios-fx i{ position:absolute; top:-70px; width:1.6px; border-radius:2px; background:linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,.75)); animation:iosrain linear infinite; }
+@keyframes iosrain{ to{ transform:translateY(calc(var(--H, 1200px) + 90px)); } }
+#wx-detail .ios-fx b{ position:absolute; top:-12px; border-radius:50%; background:#fff; animation:iossnow linear infinite; }
+@keyframes iossnow{ 0%{ transform:translate(0, 0); } 50%{ transform:translate(18px, calc(var(--H, 1200px) / 2)); } 100%{ transform:translate(-8px, calc(var(--H, 1200px) + 20px)); } }
+#wx-detail .ios[data-theme-wx="storm"]::after{ content:''; position:absolute; inset:0; z-index:0; background:#fff; opacity:0; pointer-events:none; animation:iosflash 7s linear infinite; }
+@keyframes iosflash{ 0%, 92%, 100%{ opacity:0; } 93%{ opacity:.35; } 94%{ opacity:0; } 95.5%{ opacity:.22; } 97%{ opacity:0; } }
+#wx-detail .ios[data-theme-wx="sun"]::before, #wx-detail .ios[data-theme-wx="partly"]::before{ content:''; position:absolute; left:50%; top:-120px; width:520px; height:520px; margin-left:-260px; z-index:0; background:radial-gradient(circle, rgba(255,236,170,.55), rgba(255,236,170,0) 62%); pointer-events:none; }
+
+#wx-detail .ios-head{ text-align:center; padding:26px 0 28px; text-shadow:0 1px 12px rgba(0,0,0,.18); }
+#wx-detail .ios-head h2{ margin:0; font-family:'Inter', -apple-system, 'Helvetica Neue', sans-serif; font-size:2.35rem; font-weight:400; letter-spacing:-.01em; text-transform:none; color:#fff; }
+#wx-detail .ios-cond{ margin-top:2px; font-size:1.15rem; font-weight:500; opacity:.95; }
+#wx-detail .ios-temp{ position:relative; display:inline-block; margin:2px 0 0; font-size:8.6rem; font-weight:200; line-height:1.02; letter-spacing:-.03em; padding-right:.18em; }
+#wx-detail .ios-temp sup{ position:absolute; top:.06em; right:0; font-size:.62em; font-weight:200; }
+#wx-detail .ios-ht{ margin-top:-4px; font-size:1.15rem; font-weight:500; }
+#wx-detail .ios-sent{ max-width:390px; margin:14px auto 0; font-size:.88rem; line-height:1.4; opacity:.9; padding:0 10px; }
+
+#wx-detail .ios-card{ margin-bottom:12px; padding:14px 16px 12px; border-radius:18px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.16); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); }
+#wx-detail .ios-lbl{ margin-bottom:8px; font-size:.7rem; font-weight:500; letter-spacing:.06em; opacity:.7; }
+#wx-detail .ios-hours{ padding:14px 6px 10px; }
+#wx-detail .ios-hours-row{ display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; padding:0 8px; }
+#wx-detail .ios-hours-row::-webkit-scrollbar{ display:none; }
+#wx-detail .ios-h{ flex:none; width:60px; display:flex; flex-direction:column; align-items:center; text-align:center; }
+#wx-detail .ios-h span{ font-size:.92rem; font-weight:500; white-space:nowrap; }
+#wx-detail .ios-h i{ height:1.1em; margin:2px 0 0; font-style:normal; font-size:.78rem; font-weight:600; color:#8fd8ff; text-shadow:0 1px 4px rgba(0,0,0,.25); }
+#wx-detail .ios-ic{ display:flex; justify-content:center; align-items:center; height:38px; }
+#wx-detail .ios-h b{ margin-top:6px; font-size:1.18rem; font-weight:500; }
+#wx-detail .ios-h.ios-sun{ width:92px; } #wx-detail .ios-h.ios-sun b{ font-size:.7rem; font-weight:500; margin-top:10px; line-height:1.2; }
+#wx-detail .ios-days{ padding:14px 16px 6px; }
+#wx-detail .ios-day{ display:grid; grid-template-columns:1fr 92px 40px 40px; align-items:center; padding:5px 0; border-top:1px solid rgba(255,255,255,.18); cursor:pointer; font-size:1.2rem; }
+#wx-detail .ios-day:first-of-type{ border-top:1px solid rgba(255,255,255,.18); }
+#wx-detail .ios-dn{ font-weight:500; }
+#wx-detail .ios-di{ display:flex; align-items:center; gap:6px; }
+#wx-detail .ios-di .ios-ic{ width:34px; height:32px; }
+#wx-detail .ios-di em{ font-style:normal; font-size:.82rem; font-weight:600; color:#8fd8ff; min-width:30px; text-shadow:0 1px 4px rgba(0,0,0,.25); }
+#wx-detail .ios-hi{ text-align:right; font-weight:500; }
+#wx-detail .ios-lo{ text-align:right; opacity:.55; font-weight:500; }
+#wx-detail .ios-dh{ display:none; gap:4px; overflow-x:auto; padding:2px 0 10px; scrollbar-width:none; }
+#wx-detail .ios-day.open + .ios-dh{ display:flex; }
+#wx-detail .ios-hh{ flex:none; width:44px; display:flex; flex-direction:column; align-items:center; gap:2px; font-size:.78rem; }
+#wx-detail .ios-hh .ios-ic{ height:28px; }
+#wx-detail .ios-hh b{ font-weight:500; font-size:.92rem; }
+#wx-detail .ios-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+#wx-detail .ios-grid .ios-card{ margin:0; min-height:132px; display:flex; flex-direction:column; }
+#wx-detail .ios-grid b{ font-size:2.1rem; font-weight:400; line-height:1.1; }
+#wx-detail .ios-grid b .u{ font-size:.95rem; opacity:.8; }
+#wx-detail .ios-grid small{ margin-top:auto; font-size:.8rem; line-height:1.25; opacity:.85; }
+#wx-detail .ios-grid .ios-wide{ grid-column:1 / -1; min-height:0; }
+#wx-detail .ios-sunrow{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+#wx-detail .ios-sunrow small{ display:block; margin:0 0 3px; }
+#wx-detail .ios-sunrow b{ font-size:1.3rem; }
+#wx-detail .ios-foot{ margin-top:14px; text-align:center; font-size:.68rem; opacity:.6; }
+@media (max-width:420px){ #wx-detail .ios{ border-radius:24px; padding:26px 10px 14px; } #wx-detail .ios-temp{ font-size:7.4rem; } #wx-detail .ios-head h2{ font-size:2rem; } #wx-detail .ios-day{ font-size:1.05rem; } }
+@media (prefers-reduced-motion:reduce){ #wx-detail .ios-fx i, #wx-detail .ios-fx b, #wx-detail .ios[data-theme-wx="storm"]::after{ animation:none; } }
+
+/* Querformat: auf breiten Bildschirmen links Kopf, rechts Stunden und Tage, unten die Kennzahlen in einer Reihe */
+@media (min-width:900px){
+  #wx-view .city-select{ max-width:1120px; }
+  #wx-detail .ios{ max-width:1120px; display:grid; grid-template-columns:minmax(300px, 380px) minmax(0, 1fr); grid-template-areas:"head hours" "head days" "grid grid" "foot foot"; gap:14px 18px; padding:30px 24px 18px; }
+  #wx-detail .ios-head{ grid-area:head; align-self:center; padding:10px 0; }
+  #wx-detail .ios-hours{ grid-area:hours; margin:0; }
+  #wx-detail .ios-days{ grid-area:days; margin:0; }
+  #wx-detail .ios-grid{ grid-area:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); }
+  #wx-detail .ios-grid .ios-card{ min-height:118px; }
+  #wx-detail .ios-grid .ios-wide{ grid-column:auto; }
+  #wx-detail .ios-sunrow{ grid-template-columns:1fr; gap:4px; }
+  #wx-detail .ios-sunrow > div{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  #wx-detail .ios-sunrow small{ margin:0; }
+  #wx-detail .ios-sunrow b{ font-size:1.02rem; }
+  #wx-detail .ios-foot{ grid-area:foot; margin-top:2px; }
+  #wx-detail .ios-day{ padding:7px 0; }
+}
+@media (min-width:600px) and (max-width:899px){ #wx-view .city-select{ max-width:760px; } #wx-detail .ios{ max-width:760px; } }
+
+/* Stundenleiste: weiterblättern */
+#wx-detail .ios-hours{ position:relative; }
+#wx-detail .ios-hours-row, #wx-detail .ios-dh{ cursor:grab; -webkit-overflow-scrolling:touch; }
+#wx-detail .ios-hours-row.drag, #wx-detail .ios-dh.drag{ cursor:grabbing; user-select:none; }
+#wx-detail .ios-h.ios-dd{ width:58px; justify-content:center; margin-left:4px; border-left:1px solid rgba(255,255,255,.4); }
+#wx-detail .ios-dd span{ font-size:.92rem; font-weight:600; }
+#wx-detail .ios-dd b{ margin-top:2px; font-size:.78rem; font-weight:400; opacity:.85; }
+/* Sichtbarer Balken zum Verschieben nach rechts (oben und in den aufgeklappten Tagen); Text beim Ziehen nicht markieren */
+#wx-detail .ios-hours-row, #wx-detail .ios-dh{ scrollbar-width:none; padding-bottom:6px; user-select:none; -webkit-user-select:none; }
+#wx-detail .ios-hours-row::-webkit-scrollbar, #wx-detail .ios-dh::-webkit-scrollbar{ display:block; height:8px; }
+#wx-detail .ios-hours-row::-webkit-scrollbar-track, #wx-detail .ios-dh::-webkit-scrollbar-track{ background:rgba(255,255,255,.18); border-radius:4px; }
+#wx-detail .ios-hours-row::-webkit-scrollbar-thumb, #wx-detail .ios-dh::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.7); border-radius:4px; }
+#wx-detail .ios-hours-row::-webkit-scrollbar-thumb:hover, #wx-detail .ios-dh::-webkit-scrollbar-thumb:hover{ background:#fff; }
+#wx-detail .ios-day, #wx-detail .ios-h, #wx-detail .ios-hh{ user-select:none; -webkit-user-select:none; }
+
+/* Eigener Balken */
+#wx-detail .ios-sb{ position:relative; height:8px; margin:4px 8px 4px; border-radius:4px; background:rgba(255,255,255,.2); cursor:pointer; touch-action:none; }
+#wx-detail .ios-sb.off{ display:none; }
+#wx-detail .ios-sb i{ position:absolute; top:0; bottom:0; min-width:28px; border-radius:4px; background:rgba(255,255,255,.85); cursor:grab; box-shadow:0 1px 4px rgba(0,0,0,.25); }
+#wx-detail .ios-sb i:hover, #wx-detail .ios-sb i.on{ background:#fff; cursor:grabbing; }
+#wx-detail .ios-dh + .ios-sb{ display:none; }
+#wx-detail .ios-day.open + .ios-dh + .ios-sb:not(.off){ display:block; }
+
+/* Wetter: Astronaut als Hintergrund */
+#wx-detail .ios, #wx-detail .ios[data-theme-wx]{ background:linear-gradient(180deg, rgba(4,10,28,.28), rgba(4,10,28,.5)), url(/astronaut.png) center 38% / cover no-repeat #050b1c; }
+#wx-detail .ios::before{ display:none !important; }
+#wx-detail .ios .ios-card{ background:rgba(8,16,38,.42); border-color:rgba(255,255,255,.18); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); }
+#wx-detail .ios-head{ text-shadow:0 2px 18px rgba(0,0,0,.55); }
+#wx-detail .ios-di em, #wx-detail .ios-h i{ color:#8fd8ff; }
+#wx-detail .ios .ios-card{ background:rgba(6,12,30,.24); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); border-color:rgba(255,255,255,.2); }
+#wx-detail .ios .ios-days, #wx-detail .ios .ios-hours{ text-shadow:0 1px 8px rgba(0,0,0,.7); }
+#wx-detail .ios .ios-lbl{ opacity:.85; }
+
+/* Wetter: Galaxie rechts hinter dem Astronauten (blendet sich mit dem dunklen Weltraum zusammen) */
+#wx-detail .ios::before{ display:block !important; content:''; position:absolute; z-index:0; right:-6%; top:-14%; width:58%; height:130%; margin:0; left:auto;
+  background:url(/galaxy.png) center / cover no-repeat; mix-blend-mode:screen; opacity:.95; pointer-events:none;
+  -webkit-mask-image:linear-gradient(90deg, transparent 0%, #000 42%); mask-image:linear-gradient(90deg, transparent 0%, #000 42%); }

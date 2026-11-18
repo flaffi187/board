@@ -986,11 +986,7 @@ function wxTempColor(t){
 
 async function loadFullWeather(city, silent){
   const mine = ++wxSeq;
-  if(!silent) wxDetail.innerHTML = `
-    <div class="wx-skel" aria-label="Wetter wird geladen">
-      <div class="wx-hero"><div class="wx-big">–°</div><div class="wx-text"><i class="sk sk-s"></i><i class="sk sk-l"></i><i class="sk sk-l"></i></div></div>
-      <div class="wx-stats"><div><span>Gefühlt</span><b>[–]</b></div><div><span>Wind</span><b>[–]</b></div><div><span>Luftfeuchtigkeit</span><b>[–]</b></div><div><span>Regenrisiko</span><b>[–]</b></div></div>
-    </div>`;
+  if(!silent) wxDetail.innerHTML = `<div class="ios" data-theme-wx="cloud"><div class="ios-head"><h2>${wxEsc(city.name)}</h2><div class="ios-cond">Wetter wird geladen …</div><div class="ios-temp">–<sup>°</sup></div></div></div>`;
   try{
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}` +
       `&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code` +
@@ -1003,105 +999,189 @@ async function loadFullWeather(city, silent){
     if(!data.current || !data.daily) throw new Error('keine Daten');
     renderWeatherDetail(city, data);
   } catch(err){
-    if(mine === wxSeq && !silent) wxDetail.innerHTML = `<div class="wx-loading">Wetter nicht verfügbar</div>`;
+    if(mine === wxSeq && !silent) wxDetail.innerHTML = `<div class="ios" data-theme-wx="cloud"><div class="ios-head"><h2>${wxEsc(city.name)}</h2><div class="ios-cond">Wetter nicht verfügbar</div></div></div>`;
   }
+}
+
+// ---- Wetter im Stil der iPhone-Wetter-App: Farbverlauf nach Wetter, Regen/Schnee-Animation, Stundenleiste, Tagesliste ----
+function iosIcon(kind, night, size = 34){
+  const cloud = (fill1 = '#ffffff', fill2 = '#d9e3ee') => `<path d="M14 31a8.5 8.5 0 0 1-1.4-16.9A11.5 11.5 0 0 1 34.6 12 9 9 0 0 1 37 31z" fill="url(#c${fill1.slice(1)})"/>`;
+  const defs = (a, b) => `<defs><linearGradient id="c${a.slice(1)}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>`;
+  let body = '';
+  const drops = (n) => { let d = ''; for(let i = 0; i < n; i++){ const x = 15 + i * 8; d += `<path d="M${x + 1} 33.5l-2.6 6.5" stroke="#3fa9ff" stroke-width="3" stroke-linecap="round"/>`; } return d; };
+  if(kind === 'sun'){
+    body = night
+      ? `<path d="M30 8a14 14 0 1 0 10 24 12 12 0 0 1-10-24z" fill="#f4f1e0"/>`
+      : `<circle cx="24" cy="22" r="9" fill="#ffd54a"/>` + [0, 45, 90, 135, 180, 225, 270, 315].map(a => `<path d="M24 6.5v4" stroke="#ffd54a" stroke-width="2.4" stroke-linecap="round" transform="rotate(${a} 24 22)"/>`).join('');
+  } else if(kind === 'partly'){
+    body = (night ? `<path d="M26 5a11 11 0 1 0 8 19 9.5 9.5 0 0 1-8-19z" fill="#f4f1e0"/>` : `<circle cx="17" cy="15" r="7.5" fill="#ffd54a"/>` + [0, 60, 120, 180, 240, 300].map(a => `<path d="M17 3v3.5" stroke="#ffd54a" stroke-width="2.2" stroke-linecap="round" transform="rotate(${a} 17 15)"/>`).join('')) + defs('#ffffff', '#d9e3ee') + `<g transform="translate(2 3)">${cloud()}</g>`;
+  } else if(kind === 'cloud'){
+    body = defs('#ffffff', '#d9e3ee') + cloud();
+  } else if(kind === 'fog'){
+    body = defs('#e9eef4', '#c3cfdb') + cloud('#e9eef4') + [33, 37, 41].map((y, i) => `<path d="M${10 + i * 3} ${y}h${26 - i * 6}" stroke="#d6e0ea" stroke-width="2.2" stroke-linecap="round"/>`).join('');
+  } else if(kind === 'rain'){
+    body = defs('#f2f6fa', '#cfd9e4') + cloud('#f2f6fa') + drops(4);
+  } else if(kind === 'snow'){
+    body = defs('#f2f6fa', '#cfd9e4') + cloud('#f2f6fa') + [14, 22, 30, 38].map((x, i) => `<circle cx="${x}" cy="${36 + (i % 2) * 3}" r="1.7" fill="#fff"/>`).join('');
+  } else if(kind === 'storm'){
+    body = defs('#aeb8c6', '#7e8a9a') + cloud('#aeb8c6') + `<path d="M26 27l-5 8h4l-2 7 7-10h-4z" fill="#ffd54a"/>`;
+  }
+  return `<svg viewBox="0 0 48 44" width="${size}" height="${Math.round(size * 44 / 48)}" aria-hidden="true">${body}</svg>`;
+}
+
+function iosFx(theme, box){
+  // Regen- oder Schneetropfen über die ganze Karte
+  const fx = box.querySelector('.ios-fx'); if(!fx) return;
+  const H = box.offsetHeight || 1200;
+  fx.style.setProperty('--H', H + 'px');
+  let n = 0, html = '';
+  if(theme === 'rain' || theme === 'storm'){
+    n = 70;
+    for(let i = 0; i < n; i++){
+      const h = 16 + Math.random() * 38, x = Math.random() * 100, d = (0.9 + Math.random() * 0.9) * (H / 900), dl = -Math.random() * d, o = 0.25 + Math.random() * 0.4;
+      html += `<i style="left:${x.toFixed(1)}%;height:${h.toFixed(0)}px;animation-duration:${d.toFixed(2)}s;animation-delay:${dl.toFixed(2)}s;opacity:${o.toFixed(2)}"></i>`;
+    }
+  } else if(theme === 'snow'){
+    n = 60;
+    for(let i = 0; i < n; i++){
+      const s = 3 + Math.random() * 4, x = Math.random() * 100, d = (7 + Math.random() * 7) * (H / 900), dl = -Math.random() * d, o = 0.4 + Math.random() * 0.5;
+      html += `<b style="left:${x.toFixed(1)}%;width:${s.toFixed(1)}px;height:${s.toFixed(1)}px;animation-duration:${d.toFixed(1)}s;animation-delay:${dl.toFixed(1)}s;opacity:${o.toFixed(2)}"></b>`;
+    }
+  }
+  fx.innerHTML = html;
 }
 
 function renderWeatherDetail(city, data){
   const cur = data.current, dl = data.daily, hr = data.hourly;
   const now = new Date();
-  const nowDesc = wxDesc(cur.weather_code);
-  const dateStr = new Intl.DateTimeFormat('de-CH', { weekday: 'long', day: 'numeric', month: 'long', timeZone: city.tz }).format(now);
-  const timeStr = new Intl.DateTimeFormat('de-CH', { hour: '2-digit', minute: '2-digit', timeZone: city.tz }).format(now);
-  const tm = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: city.tz }).format(now).split(':').map(Number);
-  const nowPct = (tm[0] * 60 + tm[1]) / 1440 * 100;
+  const maxes = dl.temperature_2m_max, mins = dl.temperature_2m_min;
+  const val = (v, d = 0) => (v == null || !isFinite(v)) ? '–' : String(Math.round(v * 10 ** d) / 10 ** d).replace('.', ',');
 
-  // Satz: aktuelles Wetter, morgen, wärmster Tag
-  const maxes = dl.temperature_2m_max;
+  // Tag oder Nacht an einem Zeitpunkt (nach Sonnenauf- und -untergang des Tages)
+  const isNight = (iso) => {
+    const i = dl.time.indexOf(iso.slice(0, 10));
+    if(i < 0 || !dl.sunrise[i]) { const h = Number(iso.slice(11, 13)); return h < 6 || h >= 20; }
+    return iso < dl.sunrise[i] || iso > dl.sunset[i];
+  };
+  const curNight = isNight(cur.time);
+  const kind = wxKind(cur.weather_code);
+  const theme = kind === 'storm' ? 'storm' : kind === 'snow' ? 'snow' : kind === 'rain' ? 'rain' : kind === 'fog' ? 'fog' : (kind === 'cloud') ? 'cloud' : curNight ? 'night' : kind === 'partly' ? 'partly' : 'sun';
+
+  // Satz zu morgen / wärmstem Tag
   let wi = 0; maxes.forEach((m, i) => { if(m > maxes[wi]) wi = i; });
   const warm = Math.round(maxes[wi]);
   const wdName = (i) => weekdayFull[new Date(dl.time[i] + 'T12:00:00').getDay()];
   let s2 = '';
   if(dl.time.length > 1){
     s2 = 'Morgen ' + wxLower(wxDesc(dl.weather_code[1]));
-    if(wi === 0) s2 += `, heute ist es mit ${warm}° am wärmsten.`;
-    else if(wi === 1) s2 += `, dabei wird es mit ${warm}° am wärmsten.`;
-    else s2 += `, am ${wdName(wi)} wird es mit ${warm}° am wärmsten.`;
+    s2 += wi === 0 ? `, heute ist es mit ${warm}° am wärmsten.` : wi === 1 ? `, dabei wird es mit ${warm}° am wärmsten.` : `, am ${wdName(wi)} wird es mit ${warm}° am wärmsten.`;
   } else s2 = `Heute wird es mit ${warm}° am wärmsten.`;
 
-  // Regenrisiko dieser Stunde (sonst Tagesmaximum)
   const hi = hr.time.findIndex(t => t.slice(0, 13) === cur.time.slice(0, 13));
-  let rain = hi >= 0 && hr.precipitation_probability ? hr.precipitation_probability[hi] : null;
-  if(rain == null) rain = dl.precipitation_probability_max ? dl.precipitation_probability_max[0] : null;
-  const val = (v, d = 0) => (v == null || !isFinite(v)) ? '–' : String(Math.round(v * 10 ** d) / 10 ** d).replace('.', ',');
+  let rainNow = hi >= 0 && hr.precipitation_probability ? hr.precipitation_probability[hi] : null;
+  if(rainNow == null) rainNow = dl.precipitation_probability_max ? dl.precipitation_probability_max[0] : null;
 
-  // Nächste 12 Stunden
-  let nextHours = '';
+  // Stundenleiste (24 Stunden) mit Sonnenauf- und -untergang
+  const sunAt = [];   // [ISO, Text, Symbol]
+  dl.time.forEach((d, i) => { if(dl.sunrise[i]) sunAt.push([dl.sunrise[i], 'Sonnenaufgang', 'rise']); if(dl.sunset[i]) sunAt.push([dl.sunset[i], 'Sonnenuntergang', 'set']); });
+  let hours = '';
   if(hi >= 0){
-    const items = [];
-    for(let k = hi; k < Math.min(hr.time.length, hi + 12); k++){
+    const today = cur.time.slice(0, 10);   // oben nur der heutige Tag; die anderen Tage klappen in der Liste darunter auf
+    for(let k = hi, n = 0; k < hr.time.length && n < 24; k++, n++){
+      const t = hr.time[k], prevT = k > hi ? hr.time[k - 1] : null;
+      if(t.slice(0, 10) !== today) break;
+      if(prevT && t.slice(11, 13) === '00'){   // neuer Tag: Trennmarke mit Wochentag und Datum
+        const dd = new Date(t.slice(0, 10) + 'T12:00:00');
+        hours += `<div class="ios-h ios-dd"><span>${dayNames[dd.getDay()]}.</span><b>${t.slice(8, 10)}.${t.slice(5, 7)}.</b></div>`;
+      }
+      if(prevT) sunAt.filter(s => s[0] > prevT && s[0] <= t).forEach(s => {
+        hours += `<div class="ios-h ios-sun"><span>${s[0].slice(11, 16)}</span><i></i><div class="ios-ic"><svg viewBox="0 0 48 44" width="34" height="31" aria-hidden="true"><path d="M8 32h32" stroke="#ffd54a" stroke-width="2.4" stroke-linecap="round"/><path d="M14 32a10 10 0 0 1 20 0z" fill="#ffd54a"/>${[-60, -30, 0, 30, 60].map(a => `<path d="M24 12v4" stroke="#ffd54a" stroke-width="2.2" stroke-linecap="round" transform="rotate(${a} 24 32)"/>`).join('')}</svg></div><b>${s[1]}</b></div>`;
+      });
       const kd = wxKind(hr.weather_code[k]), pr = hr.precipitation_probability ? hr.precipitation_probability[k] : null;
-      items.push(`<div class="wx-nx"><span>${k === hi ? 'Jetzt' : hr.time[k].slice(11, 13) + ' Uhr'}</span><i class="k-${kd}">${wxIcon(kd, 20)}</i><b>${Math.round(hr.temperature_2m[k])}°</b><small>${pr != null && pr >= 10 ? Math.round(pr) + '%' : ''}</small></div>`);
+      hours += `<div class="ios-h"><span>${k === hi ? 'Jetzt' : t.slice(11, 13) + ' Uhr'}</span><i>${pr != null && pr >= 10 && (kd === 'rain' || kd === 'storm' || kd === 'snow' || kd === 'fog' || pr >= 20) ? Math.round(pr / 10) * 10 + '%' : ''}</i><div class="ios-ic">${iosIcon(kd, isNight(t))}</div><b>${Math.round(hr.temperature_2m[k])}°</b></div>`;
     }
-    nextHours = `<div class="wx-next"><div class="wx-sec-head"><span>Nächste Stunden</span><span>Temperatur · Regenrisiko</span></div><div class="wx-next-list">${items.join('')}</div></div>`;
   }
 
-  // Tageslicht
-  const hm = (iso) => iso ? iso.slice(11, 16) : null;
-  const pct = (iso) => iso ? (Number(iso.slice(11, 13)) * 60 + Number(iso.slice(14, 16))) / 1440 * 100 : null;
-  const sr = hm(dl.sunrise[0]), ss = hm(dl.sunset[0]), a = pct(dl.sunrise[0]), b = pct(dl.sunset[0]);
-  const dur = dl.daylight_duration && dl.daylight_duration[0] != null ? `${Math.floor(dl.daylight_duration[0] / 3600)} h ${String(Math.round(dl.daylight_duration[0] % 3600 / 60)).padStart(2, '0')} min` : '';
-
-  // 7 Tage
-  const mins = dl.temperature_2m_min, wkMin = Math.min(...mins), wkMax = Math.max(...maxes), span = Math.max(1, wkMax - wkMin);
-  const rows = dl.time.map((ds, i) => {
-    const d = new Date(ds + 'T12:00:00');
-    const code = dl.weather_code[i], kind = wxKind(code);
-    const lo = Math.round(mins[i]), hiT = Math.round(maxes[i]);
-    const left = (mins[i] - wkMin) / span * 100, width = Math.max(4, (maxes[i] - mins[i]) / span * 100);
-    const label = i === 0 ? 'Heute' : weekdayFull[d.getDay()];
-    const dm = ds.substring(8, 10) + '.' + ds.substring(5, 7) + '.';
-    const dot = i === 0 ? `<b class="wx-dot" style="left:${Math.min(100, Math.max(0, (cur.temperature_2m - wkMin) / span * 100)).toFixed(1)}%"></b>` : '';
-    const hours = hr.time.map((t, k) => t.slice(0, 10) === ds ? k : -1).filter(k => k >= 0).map(k => `
-      <div class="wx-hour"><span>${hr.time[k].slice(11, 13)}</span><i class="k-${wxKind(hr.weather_code[k])}">${wxIcon(wxKind(hr.weather_code[k]), 16)}</i><b>${Math.round(hr.temperature_2m[k])}°</b></div>`).join('');
-    return `
-      <div class="wx-row${i === 0 ? ' today' : ''}" data-wx-row>
-        <div class="wx-dayname"><b>${label}</b><small>${i === 0 ? dayNames[d.getDay()] + ', ' : ''}${dm}</small></div>
-        <div class="wx-ic k-${kind}">${wxIcon(kind)}</div>
-        <div class="wx-desc k-${kind}">${wxDesc(code)}${dl.precipitation_probability_max && dl.precipitation_probability_max[i] >= 20 ? `<small>${Math.round(dl.precipitation_probability_max[i])}%</small>` : ''}</div>
-        <div class="wx-lo" style="color:${wxTempColor(mins[i])}">${lo}°</div>
-        <div class="wx-hi" style="color:${wxTempColor(maxes[i])}">${hiT}°</div>
-      </div>
-      <div class="wx-hours">${hours}</div>`;
+  // Tage
+  const days = dl.time.map((ds, i) => {
+    const d = new Date(ds + 'T12:00:00'), kd = wxKind(dl.weather_code[i]);
+    const pr = dl.precipitation_probability_max ? dl.precipitation_probability_max[i] : null;
+    const hrs = hr.time.map((t, k) => t.slice(0, 10) === ds ? k : -1).filter(k => k >= 0).map(k => `<div class="ios-hh"><span>${hr.time[k].slice(11, 13)}</span><div class="ios-ic">${iosIcon(wxKind(hr.weather_code[k]), isNight(hr.time[k]), 24)}</div><b>${Math.round(hr.temperature_2m[k])}°</b></div>`).join('');
+    return `<div class="ios-day" data-wx-row><span class="ios-dn">${i === 0 ? 'Heute' : weekdayFull[d.getDay()]}</span><span class="ios-di"><div class="ios-ic">${iosIcon(kd, false, 30)}</div><em>${pr != null && pr >= 10 ? Math.round(pr / 10) * 10 + '%' : ''}</em></span><span class="ios-hi">${Math.round(maxes[i])}</span><span class="ios-lo">${Math.round(mins[i])}</span></div><div class="ios-dh">${hrs}</div>`;
   }).join('');
 
+  const hm = (iso) => iso ? iso.slice(11, 16) : '–';
+  const dur = dl.daylight_duration && dl.daylight_duration[0] != null ? `${Math.floor(dl.daylight_duration[0] / 3600)} h ${String(Math.round(dl.daylight_duration[0] % 3600 / 60)).padStart(2, '0')} min` : '–';
+  const timeStr = new Intl.DateTimeFormat('de-CH', { hour: '2-digit', minute: '2-digit', timeZone: city.tz }).format(now);
+
   wxDetail.innerHTML = `
-    <div class="wx-hero">
-      <div class="wx-big">${val(cur.temperature_2m)}°</div>
-      <div class="wx-text">
-        <div class="wx-meta"><span class="wx-meta-ic k-${wxKind(cur.weather_code)}">${wxIcon(wxKind(cur.weather_code), 15)}</span>${wxEsc(nowDesc)} · ${wxEsc(dateStr)} · ${timeStr} Uhr</div>
-        <h2 class="wx-headline">${wxEsc(s2)}</h2>
-        <div class="wx-sub"><span>Heute höchstens ${Math.round(maxes[0])}°,</span> <em>in der Nacht ${Math.round(mins[0])}°.</em></div>
+    <div class="ios" data-theme-wx="${theme}">
+      <div class="ios-fx" aria-hidden="true"></div>
+      <div class="ios-head">
+        <h2>${wxEsc(city.name)}</h2>
+        <div class="ios-cond">${wxEsc(wxDesc(cur.weather_code))}</div>
+        <div class="ios-temp">${val(cur.temperature_2m)}<sup>°</sup></div>
+        <div class="ios-ht">H:${Math.round(maxes[0])}° &nbsp;T:${Math.round(mins[0])}°</div>
+        <div class="ios-sent">${wxEsc(s2)}</div>
       </div>
-    </div>
-
-    <div class="wx-stats">
-      <div><span>Gefühlt</span><b>${val(cur.apparent_temperature)}<small>°C</small></b></div>
-      <div><span>Wind</span><b>${val(cur.wind_speed_10m)}<small>km/h</small></b></div>
-      <div><span>Luftfeuchtigkeit</span><b>${val(cur.relative_humidity_2m)}<small>%</small></b></div>
-      <div><span>Regenrisiko</span><b>${val(rain)}<small>%</small></b></div>
-    </div>
-
-    ${nextHours}
-
-    ${sr && ss ? `<div class="wx-sun"><span>Sonnenaufgang <b>${sr}</b></span><span>Sonnenuntergang <b>${ss}</b></span>${dur ? `<span>Tageslicht <b>${dur}</b></span>` : ''}</div>` : ''}
-
-    <div class="wx-week">
-      <div class="wx-sec-head"><span>Die nächsten 7 Tage</span><span>tief · hoch</span></div>
-      ${rows}
-    </div>
-  `;
+      <div class="ios-card ios-hours"><div class="ios-hours-row">${hours}</div></div>
+      <div class="ios-card ios-days"><div class="ios-lbl">7-TAGE-VORHERSAGE</div>${days}</div>
+      <div class="ios-grid">
+        <div class="ios-card"><div class="ios-lbl">GEFÜHLT</div><b>${val(cur.apparent_temperature)}°</b><small>Temperatur, wie sie sich anfühlt</small></div>
+        <div class="ios-card"><div class="ios-lbl">WIND</div><b>${val(cur.wind_speed_10m)}<small class="u"> km/h</small></b><small>Windgeschwindigkeit</small></div>
+        <div class="ios-card"><div class="ios-lbl">LUFTFEUCHTIGKEIT</div><b>${val(cur.relative_humidity_2m)}%</b><small>Relative Luftfeuchtigkeit</small></div>
+        <div class="ios-card"><div class="ios-lbl">REGENRISIKO</div><b>${val(rainNow)}%</b><small>In dieser Stunde</small></div>
+        <div class="ios-card ios-wide"><div class="ios-lbl">SONNE</div><div class="ios-sunrow"><div><small>Aufgang</small><b>${hm(dl.sunrise[0])}</b></div><div><small>Untergang</small><b>${hm(dl.sunset[0])}</b></div><div><small>Tageslicht</small><b>${dur}</b></div></div></div>
+      </div>
+      <div class="ios-foot">Stand ${timeStr} Uhr · Wetterdaten via Open-Meteo</div>
+    </div>`;
   wxDetail.querySelectorAll('[data-wx-row]').forEach(r => r.addEventListener('click', () => r.classList.toggle('open')));
+  // Seitlich blättern: Pfeile, Mausrad (senkrecht dreht seitwärts) und mit der Maus ziehen
+  const swipe = (row) => {
+    row.addEventListener('wheel', (e) => {
+      if(Math.abs(e.deltaY) <= Math.abs(e.deltaX) || row.scrollWidth <= row.clientWidth) return;
+      const max = row.scrollWidth - row.clientWidth;
+      if((row.scrollLeft <= 0 && e.deltaY < 0) || (row.scrollLeft >= max - 1 && e.deltaY > 0)) return;
+      e.preventDefault(); row.scrollLeft += e.deltaY;
+    }, { passive: false });
+    let down = null, moved = false;
+    row.addEventListener('pointerdown', (e) => { if(e.pointerType !== 'mouse' || e.button !== 0) return; down = { x: e.clientX, l: row.scrollLeft }; moved = false; });
+    window.addEventListener('pointermove', (e) => { if(!down) return; const dx = e.clientX - down.x; if(Math.abs(dx) > 3){ moved = true; row.classList.add('drag'); } row.scrollLeft = down.l - dx; });
+    window.addEventListener('pointerup', () => { if(down){ down = null; setTimeout(() => row.classList.remove('drag'), 0); } });
+  };
+  const hrow = wxDetail.querySelector('.ios-hours-row');
+  if(hrow){
+    swipe(hrow);
+  }
+  wxDetail.querySelectorAll('.ios-dh').forEach(swipe);
+  // Eigener Balken unter jeder Leiste: zeigt die Position, lässt sich ziehen, ein Klick in die Leiste springt dorthin
+  const scrollbar = (row) => {
+    const sb = document.createElement('div');
+    sb.className = 'ios-sb'; sb.innerHTML = '<i></i>';
+    row.insertAdjacentElement('afterend', sb);
+    const th = sb.firstChild;
+    const upd = () => {
+      const w = row.scrollWidth, c = row.clientWidth;
+      if(!c || w <= c + 2){ sb.classList.add('off'); return; }
+      sb.classList.remove('off');
+      th.style.width = (c / w * 100).toFixed(2) + '%';
+      th.style.left = (row.scrollLeft / w * 100).toFixed(2) + '%';
+    };
+    row.addEventListener('scroll', upd, { passive: true });
+    if('ResizeObserver' in window) new ResizeObserver(upd).observe(row);
+    upd();
+    let d = null;
+    th.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); d = { x: e.clientX, l: row.scrollLeft }; th.setPointerCapture(e.pointerId); th.classList.add('on'); });
+    th.addEventListener('pointermove', (e) => { if(!d) return; row.scrollLeft = d.l + (e.clientX - d.x) * (row.scrollWidth / sb.clientWidth); });
+    const end = () => { d = null; th.classList.remove('on'); };
+    th.addEventListener('pointerup', end); th.addEventListener('pointercancel', end);
+    sb.addEventListener('pointerdown', (e) => { if(e.target === th) return; const r = sb.getBoundingClientRect(); row.scrollTo({ left: (e.clientX - r.left) / r.width * row.scrollWidth - row.clientWidth / 2, behavior: 'smooth' }); });
+  };
+  if(hrow) scrollbar(hrow);
+  wxDetail.querySelectorAll('.ios-dh').forEach(scrollbar);
+  const box = wxDetail.querySelector('.ios');
+  iosFx(theme, box);
+  if('ResizeObserver' in window){ if(wxDetail._ro) wxDetail._ro.disconnect(); let last = box.offsetHeight; wxDetail._ro = new ResizeObserver(() => { if(Math.abs(box.offsetHeight - last) > 40){ last = box.offsetHeight; iosFx(theme, box); } }); wxDetail._ro.observe(box); }
 }
 
 // Wetter alle 10 Minuten still aktualisieren, solange der Wetter-Tab offen ist
